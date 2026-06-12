@@ -1,0 +1,6 @@
+apng==0.3.4
+openscad-runner==1.2.5
+openscad-test==1.2.4
+pillow==12.2.0
+pygifsicle==1.1.0
+scadm==0.8.0

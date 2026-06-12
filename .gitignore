@@ -4,3 +4,9 @@ bin/
 # Python
 .venv
 .uv_cache
+
+# Direnv
+.direnv
+
+# Mac
+.DS_Store

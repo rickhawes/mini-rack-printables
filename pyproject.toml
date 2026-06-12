@@ -6,5 +6,6 @@ dependencies = []
 
 [dependency-groups]
 dev = [
+    "openscad-test>=1.2.4",
     "scadm>=0.8.0",
 ]
