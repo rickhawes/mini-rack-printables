@@ -1,0 +1,7 @@
+{
+  "files.associations": {
+    "*.scad": "scad"
+  },
+  "files.eol": "\n",
+  "scad-lsp.launchPath": "/Volumes/Bonus/code/mini-rack-printables/cmd/linux/openscad-wrapper.sh"
+}

@@ -1,0 +1,27 @@
+version = 1
+revision = 3
+requires-python = ">=3.14"
+
+[[package]]
+name = "mini-rack-printables"
+version = "0.1.0"
+source = { virtual = "." }
+
+[package.dev-dependencies]
+dev = [
+    { name = "scadm" },
+]
+
+[package.metadata]
+
+[package.metadata.requires-dev]
+dev = [{ name = "scadm", specifier = ">=0.8.0" }]
+
+[[package]]
+name = "scadm"
+version = "0.8.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/9f/a5/4e8999642a34a7594cfb751e60e576ddc51001d5469b70f72c635f1907d5/scadm-0.8.0.tar.gz", hash = "sha256:a1667b6bb12f7a709d4a739bb11f45bef069625ed20b0f7ad670cf8db235dc80", size = 38286, upload-time = "2026-05-10T07:57:05.309Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/19/1b/602966388f0b34f14d88163e38c0c11618ca949bf649588f64b5df36d489/scadm-0.8.0-py3-none-any.whl", hash = "sha256:fcd28d5ba84d918a88e66c1b50568eec76c881dcc01c5d76ea34e8a2b6414e21", size = 27237, upload-time = "2026-05-10T07:57:03.711Z" },
+]

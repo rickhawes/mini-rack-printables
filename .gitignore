@@ -1,0 +1,6 @@
+# OpenScad
+bin/
+
+# Python
+.venv
+.uv_cache

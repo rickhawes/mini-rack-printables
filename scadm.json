@@ -1,0 +1,14 @@
+{
+    "openscad": {
+        "type": "nightly",
+        "version": "2026.06.06e"
+    },
+    "dependencies": [
+    {
+      "name": "BOSL2",
+      "repository": "BelfrySCAD/BOSL2",
+      "source": "github",
+      "version": "v2.0.743"
+    }
+  ]
+}
