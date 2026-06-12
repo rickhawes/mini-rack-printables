@@ -23,25 +23,25 @@ function layout_rack_screw_holes(
             // bottom half units
             for(u = 0; u < bottom_half_units; u = u+1)
                 if (middle_holes) 
-                    [rack_screw_dy_middle - rack_1u_height/2, rack_screw_dy_top - rack_1u_height/2] 
+                    [rack_screw_middle - rack_1u_height/2, rack_screw_top - rack_1u_height/2] 
                 else
-                    [rack_screw_dy_top - rack_1u_height/2],
+                    [rack_screw_top - rack_1u_height/2],
             
             // middle full units
             for(u = 0; u < full_units; u = u+1)
                 let(y_slot = u*rack_1u_height + bottom_half_units*rack_1u_height/2)
                 if (middle_holes)
-                    [rack_screw_dy_bottom+y_slot, rack_screw_dy_middle+y_slot, rack_screw_dy_top+y_slot]
+                    [rack_screw_bottom+y_slot, rack_screw_middle+y_slot, rack_screw_top+y_slot]
                 else
-                    [rack_screw_dy_bottom+y_slot, rack_screw_dy_top+y_slot],
+                    [rack_screw_bottom+y_slot, rack_screw_top+y_slot],
             
             // top half units 
             for(u = 0; u < top_half_units; u = u+1)
                 let(y_slot = rack_1u_height*full_units + bottom_half_units*rack_1u_height/2)
                 if (middle_holes)
-                    [rack_screw_dy_bottom+y_slot, rack_screw_dy_middle+y_slot]
+                    [rack_screw_bottom+y_slot, rack_screw_middle+y_slot]
                 else
-                    [rack_screw_dy_bottom+y_slot]
+                    [rack_screw_bottom+y_slot]
                  
         ]
     );
@@ -61,7 +61,7 @@ module rack_screw_holes(
     }
 
     module right_tab() {
-        translate([rack_screw_dx_10inch/2, -height/2, 0]) {
+        translate([rack_screw_dx/2, -height/2, 0]) {
             y_values = layout_rack_screw_holes(rack_units, middle_holes, bottom_is_half_height);
             echo(y_values);
             for (y = y_values) {
