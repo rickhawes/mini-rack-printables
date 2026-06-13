@@ -8,7 +8,7 @@
 //------------------------------------------------
 // Rack Dimensions
 //------------------------------------------------
-/* [Hidden */
+/* [Hidden] */
 
 // For the 10 inch rack specification see this file
 // https://upload.wikimedia.org/wikipedia/commons/8/84/19_inch_vs_10_inch_rack_dimensions.svg
@@ -46,8 +46,6 @@ rack_screw_top_bottom_dy = 12.70;
 shelf_tab_width_tecmojo = 19.53; 
 // Minimal width of the rack tab from the standard
 shelf_tab_width_min = 15.875;
-
-
 
 
 //------------------------------------------------

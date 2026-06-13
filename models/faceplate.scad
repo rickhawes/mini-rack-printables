@@ -3,9 +3,22 @@ include <BOSL2/fnliterals.scad>
 include <./dimensions.scad>
 include <./shapes.scad>
 
+//------------------------------------------------------------------------------------------------
+// Face Plate 
+//
+// Modules to render a faceplate 
+//
+//------------------------------------------------------------------------------------------------
+
 /* [Hidden] */
 // Width of the tab hole found  (use 10-24 screw hole diameter for height)
 shelf_tab_hole_width_tecmojo = 9.28; 
+// Rounding applied to corners of a faceplate
+faceplate_rounding = 3.0;
+// Rib depth 
+rib_depth = 1.0;                 // Z axis. 1.0 makes a rib that fits well with the Tec Mojo shelf
+// Rib width
+rib_width = 2.5;                 // Y axis. 2.5 is a good default. 
 
 function layout_rack_screw_holes(
     rack_units,
@@ -56,14 +69,16 @@ module rack_screw_holes(
     height = rack_units * rack_1u_height;
 
     module one_hole(faceplate_thickness) {
-        linear_extrude(height = faceplate_thickness) 
-            slot_2d(shelf_tab_hole_width_tecmojo, screw_hole_10_32/2);
+        attachable() {
+            linear_extrude(height = faceplate_thickness) 
+                slot_xaxis(shelf_tab_hole_width_tecmojo, screw_hole_10_32/2);
+            children();
+        }
     }
 
     module right_tab() {
         translate([rack_screw_dx/2, -height/2, 0]) {
             y_values = layout_rack_screw_holes(rack_units, middle_holes, bottom_is_half_height);
-            echo(y_values);
             for (y = y_values) {
                 translate([0, y])
                     one_hole(faceplate_thickness);
@@ -76,44 +91,22 @@ module rack_screw_holes(
         right_tab(); 
 }
 
-// TODO: add consider using achors and primoids from BOSL2
-module plate_ribs(
-    plate_dim, 
-    dx_tab, 
-    rib_width = 2.5,
-    rib_depth = 1.0
-) {
-    module rib(dx, dy, dz) {
-        translate([0, dy/2, dz/2])
-            rotate([90, 0, 0])
-                linear_extrude(height = dy) 
-                    trapezoid(w2=dx, h=dz, ang=30);
-    }
-
-    y_rib = (plate_dim.y-rib_width)/2;
-    for(y = [y_rib, -y_rib])
-        translate([0, y, plate_dim.z])
-            rib(dx=plate_dim.x-2*dx_tab-4, dy=rib_width, dz=rib_depth);
+module ribs(plate_dim) {
+    rib_length = plate_dim.x-2*shelf_tab_width_tecmojo-4;
+    tag("rib") align(TOP, [FRONT,BACK]) 
+        prismoid(size2=[rib_length, rib_width], h=rib_depth, xang=30, yang=90);
 }
-
-
-module blank_plate(plate_dim) {
-    linear_extrude(plate_dim.z)
-        rect([plate_dim.x, plate_dim.y], rounding=3);
-}
-
 
 module faceplate(rack_units, faceplate_thickness, middle_holes = true, bottom_is_half_height = false, add_ribs = true) {
     height = rack_units * rack_1u_height;
     plate_dim = [rack_width_10inch, height, faceplate_thickness];
-    difference() {
-        union() {
-            blank_plate(plate_dim);
+    diff(remove="cutout") {
+        cuboid(plate_dim, rounding=faceplate_rounding, edges=[FRONT+LEFT,FRONT+RIGHT,BACK+RIGHT,BACK+LEFT], anchor=TOP) {
             if (add_ribs) {
-                plate_ribs(plate_dim, shelf_tab_width_tecmojo);
+                ribs(plate_dim);
             }
+            tag("cutout") align(BOTTOM) 
+                rack_screw_holes(rack_units, faceplate_thickness, middle_holes, bottom_is_half_height);
         }
-
-        rack_screw_holes(rack_units, faceplate_thickness, middle_holes, bottom_is_half_height);
     }
 }
