@@ -54,8 +54,8 @@ shelf_tab_width_min = 15.875;
 // Hardware Constants
 //------------------------------------------------
 
-// 10-24 screw hole diameter
-screw_hole_10_24 = 4.84;
-// 10-24 screw head diameter
-screw_head_10_24 = 10.57;
+// 10-32 screw hole diameter
+screw_hole_10_32 = 4.84;
+// 10-32 screw head diameter
+screw_head_10_32 = 10.57;
 

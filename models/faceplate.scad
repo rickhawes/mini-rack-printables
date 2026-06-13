@@ -57,7 +57,7 @@ module rack_screw_holes(
 
     module one_hole(faceplate_thickness) {
         linear_extrude(height = faceplate_thickness) 
-            slot_2d(shelf_tab_hole_width_tecmojo, screw_hole_10_24/2);
+            slot_2d(shelf_tab_hole_width_tecmojo, screw_hole_10_32/2);
     }
 
     module right_tab() {
@@ -76,15 +76,44 @@ module rack_screw_holes(
         right_tab(); 
 }
 
-module blank_plate(height, faceplate_thickness) {
-    linear_extrude(faceplate_thickness)
-        rect([rack_width_10inch, height], rounding=3);
+// TODO: add consider using achors and primoids from BOSL2
+module plate_ribs(
+    plate_dim, 
+    dx_tab, 
+    rib_width = 2.5,
+    rib_depth = 1.0
+) {
+    module rib(dx, dy, dz) {
+        translate([0, dy/2, dz/2])
+            rotate([90, 0, 0])
+                linear_extrude(height = dy) 
+                    trapezoid(w2=dx, h=dz, ang=30);
+    }
+
+    y_rib = (plate_dim.y-rib_width)/2;
+    for(y = [y_rib, -y_rib])
+        translate([0, y, plate_dim.z])
+            rib(dx=plate_dim.x-2*dx_tab-4, dy=rib_width, dz=rib_depth);
 }
 
-module faceplate(rack_units, faceplate_thickness, middle_holes = true, bottom_is_half_height = false) {
+
+module blank_plate(plate_dim) {
+    linear_extrude(plate_dim.z)
+        rect([plate_dim.x, plate_dim.y], rounding=3);
+}
+
+
+module faceplate(rack_units, faceplate_thickness, middle_holes = true, bottom_is_half_height = false, add_ribs = true) {
     height = rack_units * rack_1u_height;
+    plate_dim = [rack_width_10inch, height, faceplate_thickness];
     difference() {
-        blank_plate(height, faceplate_thickness);
+        union() {
+            blank_plate(plate_dim);
+            if (add_ribs) {
+                plate_ribs(plate_dim, shelf_tab_width_tecmojo);
+            }
+        }
+
         rack_screw_holes(rack_units, faceplate_thickness, middle_holes, bottom_is_half_height);
     }
 }
