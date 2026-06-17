@@ -2,7 +2,7 @@
 //------------------------------------------------------------------------------------------------
 // Shapes 
 //
-// Modules to draw common 2d shapes
+// Modules to draw common 2d & 3d shapes
 //
 //------------------------------------------------------------------------------------------------
 
@@ -26,4 +26,22 @@ module slot_yaxis(dy, r) {
         translate([0, -d])
             circle(r=r);
     }    
+}
+
+// Made with achnor points and attablable
+module extruded_roundrect(size, r, anchor) {
+    cuboid(size, rounding=r, edges=[FRONT+LEFT,FRONT+RIGHT,BACK+RIGHT,BACK+LEFT], anchor=anchor) {
+        children();
+    }
+}
+
+// Extrude a rib based on the 2d shape of the children
+module extrude_rib(rib_size) {
+
+    linear_extrude(height=rib_size.y) 
+        difference() {
+            outset(d=rib_size.x) 
+                children();
+            children();
+        }
 }

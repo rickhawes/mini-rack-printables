@@ -1,7 +1,7 @@
 include <BOSL2/std.scad>
-include <BOSL2/fnliterals.scad>
 include <./dimensions.scad>
 include <./shapes.scad>
+include <./part_dispatch.scad>
 
 //------------------------------------------------------------------------------------------------
 // Face Plate 
@@ -15,10 +15,6 @@ include <./shapes.scad>
 shelf_tab_hole_width_tecmojo = 9.28; 
 // Rounding applied to corners of a faceplate
 faceplate_rounding = 3.0;
-// Rib depth 
-rib_depth = 1.0;                 // Z axis. 1.0 makes a rib that fits well with the Tec Mojo shelf
-// Rib width
-rib_width = 2.5;                 // Y axis. 2.5 is a good default. 
 
 function layout_rack_screw_holes(
     rack_units,
@@ -59,54 +55,77 @@ function layout_rack_screw_holes(
         ]
     );
 
-module rack_screw_holes(
-    rack_units,
+
+
+module faceplate(
+    rack_units, 
     faceplate_thickness, 
-    middle_holes = true,
-    bottom_is_half_height = false
+    middle_holes = true, 
+    bottom_is_half_height = false, 
+    rib_size,
+    parts
 ) {
-    assert(!is_undef(rack_units), "rack_units is undefined");
-    height = rack_units * rack_1u_height;
+    module rack_screw_holes(
+        rack_units,
+        faceplate_thickness, 
+        middle_holes = true,
+        bottom_is_half_height = false
+    ) {
+        assert(!is_undef(rack_units), "rack_units is undefined");
+        height = rack_units * rack_1u_height;
 
-    module one_hole(faceplate_thickness) {
-        attachable() {
-            linear_extrude(height = faceplate_thickness) 
-                slot_xaxis(shelf_tab_hole_width_tecmojo, screw_hole_10_32/2);
-            children();
-        }
-    }
-
-    module right_tab() {
-        translate([rack_screw_dx/2, -height/2, 0]) {
-            y_values = layout_rack_screw_holes(rack_units, middle_holes, bottom_is_half_height);
-            for (y = y_values) {
-                translate([0, y])
-                    one_hole(faceplate_thickness);
+        module one_hole(faceplate_thickness) {
+            attachable() {
+                linear_extrude(height = faceplate_thickness) 
+                    slot_xaxis(shelf_tab_hole_width_tecmojo, screw_hole_10_32/2);
+                children();
             }
         }
+
+        module right_tab() {
+            translate([rack_screw_dx/2, -height/2, 0]) {
+                y_values = layout_rack_screw_holes(rack_units, middle_holes, bottom_is_half_height);
+                for (y = y_values) {
+                    translate([0, y])
+                        one_hole(faceplate_thickness);
+                }
+            }
+        }
+
+        right_tab();
+        xflip()
+            right_tab(); 
     }
 
-    right_tab();
-    xflip()
-        right_tab(); 
-}
+    module faceplate_ribs(plate_size, parts_size, rib_size) {
+        tag("rib") 
+        align(TOP, [FRONT,BACK]) 
+            prismoid(size2=[parts_size.x, rib_size.x], h=rib_size.y, xang=30, yang=90);
+    }
 
-module ribs(plate_dim) {
-    rib_length = plate_dim.x-2*shelf_tab_width_tecmojo-4;
-    tag("rib") align(TOP, [FRONT,BACK]) 
-        prismoid(size2=[rib_length, rib_width], h=rib_depth, xang=30, yang=90);
-}
-
-module faceplate(rack_units, faceplate_thickness, middle_holes = true, bottom_is_half_height = false, add_ribs = true) {
+    // Layout calculations
     height = rack_units * rack_1u_height;
-    plate_dim = [rack_width_10inch, height, faceplate_thickness];
-    diff(remove="cutout") {
-        cuboid(plate_dim, rounding=faceplate_rounding, edges=[FRONT+LEFT,FRONT+RIGHT,BACK+RIGHT,BACK+LEFT], anchor=TOP) {
-            if (add_ribs) {
-                ribs(plate_dim);
+    plate_size = [rack_width_10inch, height, faceplate_thickness];
+    parts_area_width = plate_size.x - 2*shelf_tab_width_tecmojo - 2*rib_size.x;
+    parts_area_height = plate_size.y - 2*rib_size.x;
+    parts_area_size = [parts_area_width, parts_area_height, faceplate_thickness];
+
+    diff(remove=REMOVE_TAG) {
+        extruded_roundrect(plate_size, r = faceplate_rounding, anchor=TOP) {
+            // Ribs on top and bottoms 
+            if (!is_undef(rib_size)) {
+                faceplate_ribs(plate_size, parts_area_size, rib_size);
             }
-            tag("cutout") align(BOTTOM) 
+ 
+            // Rack Screw
+            tag(REMOVE_TAG) align(BOTTOM) {
                 rack_screw_holes(rack_units, faceplate_thickness, middle_holes, bottom_is_half_height);
+            }
+
+            // Parts
+            if (!is_undef(part)) {
+                render_parts(part = part, section_size = parts_area_size);
+            }
         }
     }
 }
