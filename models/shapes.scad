@@ -3,6 +3,7 @@
 // Shapes 
 //
 // Modules to draw useful 2d & 3d shapes
+// Modules to draw common 2d & 3d shapes
 //
 //------------------------------------------------------------------------------------------------
 
@@ -43,4 +44,11 @@ module extrude_rib(rib_size) {
                 children();
             children();
         }
+}
+
+// Made with achnor points and attablable
+module extruded_roundrect(size, r, anchor) {
+    cuboid(size, rounding=r, edges=[FRONT+LEFT,FRONT+RIGHT,BACK+RIGHT,BACK+LEFT], anchor=anchor) {
+        children();
+    }
 }
