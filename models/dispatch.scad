@@ -7,6 +7,7 @@
 include <BOSL2/std.scad>;
 include <part_base.scad>;
 include <rect_cutout.scad>;
+include <assembly_base.scad>;
 include <face_plate.scad>;
 
 
