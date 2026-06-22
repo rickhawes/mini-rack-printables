@@ -2,7 +2,7 @@
 //------------------------------------------------------------------------------------------------
 // Shapes 
 //
-// Modules to draw common 2d & 3d shapes
+// Modules to draw useful 2d & 3d shapes
 //
 //------------------------------------------------------------------------------------------------
 
@@ -37,7 +37,6 @@ module extruded_roundrect(size, r, anchor) {
 
 // Extrude a rib based on the 2d shape of the children
 module extrude_rib(rib_size) {
-
     linear_extrude(height=rib_size.y) 
         difference() {
             outset(d=rib_size.x) 

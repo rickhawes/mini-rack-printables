@@ -1,7 +1,7 @@
 //------------------------------------------------------------------------------------------------
-// Layout
+// Geometry
 //
-// Functions dealing with layout
+// Helpful structures and functions for rectangles and their padding
 //
 //------------------------------------------------------------------------------------------------
 include <BOSL2/std.scad>;

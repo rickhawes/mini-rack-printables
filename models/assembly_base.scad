@@ -1,7 +1,7 @@
 //------------------------------------------------------------------------------------------------
-// Part Base
+// Assembly base
 //
-// Base structure for a plate part. 
+// Base structure for an assembly description. 
 //
 //------------------------------------------------------------------------------------------------
 include <BOSL2/std.scad>;
@@ -11,22 +11,16 @@ include <BOSL2/std.scad>;
 //------------------------------------------------
 /* [Hidden] */
 
-// Tag for subtraction 
-REMOVE_TAG = "remove_tag";
-
-// KEY for PART_TYPE
-PART_TYPE_KEY = "type";
+ASSEMBLY_KIND_KEY = "kind";
 
 //------------------------------------------------
 // Functions
 //------------------------------------------------
 
-function part_base(type, name="", sub_parts=[]) = 
+function assembly_base(kind) = 
     object([
-        [PART_TYPE_KEY, type],
-        ["name", name],
-        ["sub_parts", sub_parts]
+        [ASSEMBLY_KIND_KEY, kind]
     ]);
 
-function is_part(part) =
-    is_object(part) && has_key(part, PART_TYPE_KEY);
+function is_assembly(assembly) =
+    is_object(assembly) && has_key(assembly, ASSEMBLY_KIND_KEY);

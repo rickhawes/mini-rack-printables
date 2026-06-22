@@ -6,7 +6,7 @@ include <./part_dispatch.scad>
 //------------------------------------------------------------------------------------------------
 // Face Plate 
 //
-// Modules to render a faceplate 
+// Modules to render a face plate assembly 
 //
 //------------------------------------------------------------------------------------------------
 
@@ -15,6 +15,31 @@ include <./part_dispatch.scad>
 shelf_tab_hole_width_tecmojo = 9.28; 
 // Rounding applied to corners of a faceplate
 faceplate_rounding = 3.0;
+
+FACE_PLATE_KIND = "face_plate";
+
+function face_plate(
+    rack_units, 
+    face_plate_thickness, 
+    middle_holes = true, 
+    bottom_is_half_height = false, 
+    rib_size,
+    part
+) = object(
+    assembly_base(FACE_PLATE_KIND), 
+    [
+        ["rack_units", rack_units],
+        ["face_plate_thinkness", face_plate_thickness],
+        [middle_holes],
+        [bottom_is_half_height],
+        [rib_size],
+        [part]
+    ]
+);
+
+function is_face_plate(plate) = 
+    is_object(plate) && plate.kind == FACE_PLATE_KIND;
+
 
 function layout_rack_screw_holes(
     rack_units,
@@ -56,15 +81,14 @@ function layout_rack_screw_holes(
     );
 
 
+module _render_faceplate(face_plate) {
+    rack_units = face_plate.rack_units;
+    faceplate_thickness = face_plate.faceplate_thickness;
+    middle_holes = face_plate.middle_holes;
+    bottom_is_half_height = face_plate.bottom_is_half_height;
+    rib_size = face_plate.rib_size;
+    part = face_plate.part; 
 
-module faceplate(
-    rack_units, 
-    faceplate_thickness, 
-    middle_holes = true, 
-    bottom_is_half_height = false, 
-    rib_size,
-    parts
-) {
     module rack_screw_holes(
         rack_units,
         faceplate_thickness, 
@@ -97,24 +121,24 @@ module faceplate(
             right_tab(); 
     }
 
-    module faceplate_ribs(plate_size, parts_size, rib_size) {
+    module faceplate_ribs(plate_size, part_size, rib_size) {
         tag("rib") 
         align(TOP, [FRONT,BACK]) 
-            prismoid(size2=[parts_size.x, rib_size.x], h=rib_size.y, xang=30, yang=90);
+            prismoid(size2=[part_size.x, rib_size.x], h=rib_size.y, xang=30, yang=90);
     }
 
     // Layout calculations
     height = rack_units * rack_1u_height;
     plate_size = [rack_width_10inch, height, faceplate_thickness];
-    parts_area_width = plate_size.x - 2*shelf_tab_width_tecmojo - 2*rib_size.x;
-    parts_area_height = plate_size.y - 2*rib_size.x;
-    parts_area_size = [parts_area_width, parts_area_height, faceplate_thickness];
+    part_area_width = plate_size.x - 2*shelf_tab_width_tecmojo - 2*rib_size.x;
+    part_area_height = plate_size.y - 2*rib_size.x;
+    part_area_size = [part_area_width, part_area_height, faceplate_thickness];
 
     diff(remove=REMOVE_TAG) {
         extruded_roundrect(plate_size, r = faceplate_rounding, anchor=TOP) {
             // Ribs on top and bottoms 
             if (!is_undef(rib_size)) {
-                faceplate_ribs(plate_size, parts_area_size, rib_size);
+                faceplate_ribs(plate_size, part_area_size, rib_size);
             }
  
             // Rack Screw
@@ -124,7 +148,7 @@ module faceplate(
 
             // Parts
             if (!is_undef(part)) {
-                render_parts(part = part, section_size = parts_area_size);
+                _render_part(part = part, section_size = parts_area_size);
             }
         }
     }
