@@ -5,12 +5,11 @@
 //------------------------------------------------
 // Dependencies
 //------------------------------------------------
-include <BOSL2/std.scad>
-include <scad-utils/morphology.scad>
+include <BOSL2/std.scad>;
 
 //------------------------------------------------
 // Project models
 //------------------------------------------------
-include <models/dimensions.scad>
-include <models/faceplate.scad>
-include <models/shapes.scad>
+include <models/dimensions.scad>;
+include <models/shapes.scad>;
+include <models/dispatch.scad>;
