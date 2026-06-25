@@ -1,0 +1,45 @@
+[config]
+
+
+[[test]]
+name = "test rect_cutout builder"
+script = '''
+include <../models/rect_cutout.scad>
+
+r  = build_rect(-1,-2,4,6);
+rc = rect_cutout(r);
+
+assert(is_rect_cutout(rc));
+'''
+
+[[test]]
+name = "test rect_cutout_layout_bound"
+script = '''
+include <../models/rect_cutout.scad>
+
+r1  = build_rect(-2,-3,4,6);
+rc1 = rect_cutout(r1);
+bound1 = rect_cutout_layout_bound(rc1);
+assert(bound1 == r1);
+
+r2 = build_rect(-1,-4,4,6);
+rc2 = rect_cutout(r2);
+bound2 = rect_cutout_layout_bound(rc2);
+assert(bound2 == [-3,-4,6,8]);
+
+r3 = build_rect(-1,-4,4,6);
+rc3 = rect_cutout(r3, margin=build_margin(right=1));
+bound3 = rect_cutout_layout_bound(rc3);
+assert(bound3 == [-3,-4,7,8]);
+'''
+
+[[test]]
+name = "test render_rect_cutout"
+script = '''
+include <../models/rect_cutout.scad>
+
+r1  = build_rect(-2,-3,4,6);
+rc1 = rect_cutout(r1);
+options = render_options(add_ribs=false);
+render_rect_cutout(rc1, plate_size = [100,100,5], options);
+'''

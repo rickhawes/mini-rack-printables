@@ -1,0 +1,8 @@
+{
+  "files.associations": {
+    "*.scad": "scad"
+  },
+  "files.eol": "\n",
+  "openscad.enableLazyUnion": false,
+  "openscad.executablePath": "/opt/homebrew/bin/openscad"
+}

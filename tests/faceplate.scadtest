@@ -1,0 +1,92 @@
+[config]
+
+
+[[test]]
+name = "test layout_rack_screw_holes 1u" 
+script = '''
+include <../models/face_plate.scad>
+
+values = layout_rack_screw_holes(rack_units = 1.0);
+
+assert(len(values) == 3)
+assert(values[0] == rack_screw_bottom);
+assert(values[1] == rack_screw_middle);
+assert(values[2] == rack_screw_top);
+'''
+
+[[test]]
+name = "test layout_rack_screw_holes 3u" 
+script = '''
+include <../models/face_plate.scad>
+
+values = layout_rack_screw_holes(rack_units = 3.0);
+
+assert(len(values) == 9)
+assert(values[0] == rack_screw_bottom);
+assert(values[1] == rack_screw_middle);
+assert(values[8] == rack_screw_top + 2*rack_1u_height);
+'''
+
+[[test]]
+name = "test layout_rack_screw_holes 2u without middle holes" 
+script = '''
+include <../models/face_plate.scad>
+
+values = layout_rack_screw_holes(rack_units = 2.0, middle_holes = false);
+
+assert(len(values) == 4)
+assert(values[0] == rack_screw_bottom);
+assert(values[1] == rack_screw_top);
+assert(values[3] == rack_screw_top + 1*rack_1u_height);
+'''
+
+[[test]]
+name = "test layout_rack_screw_holes 0.5u" 
+script = '''
+include <../models/face_plate.scad>
+
+values = layout_rack_screw_holes(rack_units = 0.5);
+
+assert(len(values) == 2)
+assert(values[0] == rack_screw_bottom);
+assert(values[1] == rack_screw_middle);
+'''
+
+[[test]]
+name = "test layout_rack_screw_holes 1.5u" 
+script = '''
+include <../models/face_plate.scad>
+
+values = layout_rack_screw_holes(rack_units = 1.5);
+
+assert(len(values) == 5)
+assert(values[0] == rack_screw_bottom);
+assert(values[1] == rack_screw_middle);
+assert(values[4] == rack_screw_middle + rack_1u_height);
+'''
+
+[[test]]
+name = "test layout_rack_screw_holes 0.5u bottom aligned" 
+script = '''
+include <../models/face_plate.scad>
+
+values = layout_rack_screw_holes(rack_units = 0.5, bottom_is_half_height=true);
+
+assert(len(values) == 2)
+assert(values[0] == rack_screw_middle - rack_1u_height/2);
+assert(values[1] == rack_screw_top - rack_1u_height/2);
+'''
+
+[[test]]
+name = "test layout_rack_screw_holes 1u bottom aligned" 
+script = '''
+include <../models/face_plate.scad>
+
+values = layout_rack_screw_holes(rack_units = 1.0, bottom_is_half_height=true);
+
+assert(len(values) == 4)
+assert(values[0] == rack_screw_middle - rack_1u_height/2);
+assert(values[1] == rack_screw_top - rack_1u_height/2);
+assert(values[2] == rack_screw_bottom + rack_1u_height/2);
+assert(values[3] == rack_screw_middle + rack_1u_height/2);
+'''
