@@ -6,8 +6,9 @@
 //
 //------------------------------------------------------------------------------------------------
 include <BOSL2/std.scad>
-include <part_base.scad>
+include <base.scad>
 include <geometry.scad>
+include <shapes.scad>
 
 //------------------------------------------------
 // Part Constants
@@ -15,7 +16,12 @@ include <geometry.scad>
 /* [Hidden] */
 
 // value for the type of a part
-RECT_CUTOUT = "rect_cutout";
+RECT_CUTOUT_TYPE = "rect_cutout";
+
+RC_SIZE         = "size";
+RC_MARGIN       = "margin";
+RC_ROUNDING     = "rounding";
+RC_RIB_SIZE     = "rib_size";
 
 //------------------------------------------------
 // Functions and modules
@@ -28,17 +34,23 @@ function rect_cutout(
 ) = 
     assert(size.x > 0 && size.y > 0)
     assert(is_margin(margin))
-    let(base = part_base(RECT_CUTOUT))
-    object(base, 
-        size = size,
-        margin = margin,
-        rounding = rounding,
-        rib_size = rib_size
-    );
+    let(base = part_base(RECT_CUTOUT_TYPE))
+    struct_set(base, [
+        RC_SIZE, size,
+        RC_MARGIN, margin,
+        RC_ROUNDING, rounding,
+        RC_RIB_SIZE, rib_size
+    ]);
 
 function is_rect_cutout(part) = 
-    is_object(part) && part.type == RECT_CUTOUT;
+    get_subtype(part) == RECT_CUTOUT_TYPE;
 
+function rc_size(rc) = struct_val(rc, RC_SIZE);
+function rc_margin(rc) = struct_val(rc, RC_MARGIN);
+function rc_rounding(rc) = struct_val(rc, RC_ROUNDING);
+function rc_rib_size(rc) = struct_val(rc, RC_RIB_SIZE);
+
+// layout function
 function rect_cutout_layout_size(part) =
     assert(is_rect_cutout(part))
     let (
@@ -47,19 +59,18 @@ function rect_cutout_layout_size(part) =
     )
     apply_margin(rect = bound, margin = union_margin);
 
-module render_rect_cutout(
+module _render_rect_cutout(
     part,
-    part_size,
-    options
+    section_size
 ) {
-    cutout_size     = part.size;
-    rounding        = part.rounding;
-    rib_size        = part.rib_size;
+    cutout_size     = rc_size(part);
+    rounding        = rc_rounding(part);
+    rib_size        = rc_rib_size(part);
     
     // Cutout
     tag(REMOVE_TAG)
         position(BOTTOM)
-            extruded_roundrect(size=[cutout_size.x, cutout_size.y, part_size.z], r=rounding, anchor=BOTTOM);
+            extruded_roundrect(size=[cutout_size.x, cutout_size.y, section_size.z], r=rounding, anchor=BOTTOM);
     
     // Rib around the cutout
     if (!is_undef(rib_size)) {

@@ -16,27 +16,40 @@ shelf_tab_hole_width_tecmojo = 9.28;
 // Rounding applied to corners of a face_plate
 face_plate_rounding = 3.0;
 
-FACE_PLATE_KIND = "face_plate";
+FACE_PLATE_TYPE = "face_plate";
+
+FP_RACK_UNITS       = "rack_units";
+FP_THICKNESS        = "thickness";
+FP_MIDDLE_HOLES     = "middle_holes";
+FP_HALF_ALIGNMENT   = "half_alignment";
+FP_RIB_SIZE         = "rib_size";
+FP_PART             = "part";
 
 function face_plate(
     rack_units, 
     thickness, 
     middle_holes = true, 
-    bottom_is_half_height = false, 
-    rib_size,
-    part
-) = object(
-    assembly_base(FACE_PLATE_KIND), 
-    rack_units = rack_units,
-    thickness = thickness,
-    middle_holes = middle_holes,
-    bottom_is_half_height = bottom_is_half_height,
-    rib_size = rib_size,
-    part = part
-);
+    half_alignment = false, 
+    rib_size = [0,0],
+    part = undef
+) = struct_set(assembly_base(FACE_PLATE_TYPE), [
+    FP_RACK_UNITS,      rack_units,
+    FP_THICKNESS,       thickness,
+    FP_MIDDLE_HOLES,    middle_holes,
+    FP_HALF_ALIGNMENT,     half_alignment,
+    FP_RIB_SIZE,        rib_size,
+    FP_PART,            part
+]);
 
 function is_face_plate(plate) = 
-    is_object(plate) && plate.kind == FACE_PLATE_KIND;
+    get_subtype(plate) == FACE_PLATE_TYPE;
+
+function fp_rack_units(fp)      = struct_val(fp, FP_RACK_UNITS  );
+function fp_thickness(fp)       = struct_val(fp, FP_THICKNESS   );
+function fp_middle_holes(fp)    = struct_val(fp, FP_MIDDLE_HOLES);
+function fp_half_alignment(fp)  = struct_val(fp, FP_HALF_ALIGNMENT);
+function fp_rib_size(fp)        = struct_val(fp, FP_RIB_SIZE    );
+function fp_part(fp)            = struct_val(fp, FP_PART        );
 
 function layout_rack_screw_holes(
     rack_units,
@@ -80,12 +93,12 @@ function layout_rack_screw_holes(
 
 module _render_face_plate(fp) {
     assert(is_face_plate(fp));
-    rack_units              = fp.rack_units;
-    thickness               = fp.thickness;
-    middle_holes            = fp.middle_holes;
-    bottom_is_half_height   = fp.bottom_is_half_height;
-    rib_size                = fp.rib_size;
-    part                    = fp.part; 
+    rack_units              = fp_rack_units(fp);
+    thickness               = fp_thickness(fp);
+    middle_holes            = fp_middle_holes(fp);
+    half_alignment          = fp_half_alignment(fp);
+    rib_size                = fp_rib_size(fp);
+    part                    = fp_part(fp); 
 
     module rack_screw_holes(
         rack_units,
@@ -135,13 +148,13 @@ module _render_face_plate(fp) {
     diff(remove=REMOVE_TAG) {
         extruded_roundrect(plate_size, r = face_plate_rounding, anchor=TOP) {
             // Ribs on top and bottoms 
-            if (!is_undef(rib_size)) {
+            if (!is_undef(rib_size) && rib_size.y > 0) {
                 face_plate_ribs(plate_size, part_area_size, rib_size);
             }
  
             // Rack Screw
             tag(REMOVE_TAG) align(BOTTOM) {
-                rack_screw_holes(rack_units, thickness, middle_holes, bottom_is_half_height);
+                rack_screw_holes(rack_units, thickness, middle_holes, half_alignment);
             }
 
             // Parts
