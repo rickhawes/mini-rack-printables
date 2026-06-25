@@ -21,10 +21,9 @@ PART_TYPE_KEY = "type";
 // Functions
 //------------------------------------------------
 
-function part_base(type, name="", sub_parts=[]) = 
+function part_base(type, sub_parts=[]) = 
     object([
         [PART_TYPE_KEY, type],
-        ["name", name],
         ["sub_parts", sub_parts]
     ]);
 

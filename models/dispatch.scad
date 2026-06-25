@@ -4,11 +4,10 @@
 // Polymorphic functions and modules that all parts can do
 //
 //------------------------------------------------------------------------------------------------
-include <BOSL2/std.scad>;
-include <part_base.scad>;
-include <rect_cutout.scad>;
-include <assembly_base.scad>;
-include <face_plate.scad>;
+include <part_base.scad>
+include <rect_cutout.scad>
+include <assembly_base.scad>
+include <face_plate.scad>
 
 
 module _render_parts(part, section_size) {
@@ -23,7 +22,7 @@ module _render_parts(part, section_size) {
 module render_assembly(assembly) {
     assert(is_assembly(assembly));
     if (assembly.kind == FACE_PLATE_KIND) {
-        _render_faceplate(assembly);
+        _render_face_plate(assembly);
     } else {
         assert(false, "unknown assembly kind");
     }
