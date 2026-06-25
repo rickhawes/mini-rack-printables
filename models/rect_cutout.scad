@@ -52,9 +52,9 @@ module render_rect_cutout(
     part_size,
     options
 ) {
-    cutout_size = rect_cutout_size(part);
-    rounding = rect_cutout_rounding(part);
-    rib_size = rect_cutout_rib_size(part);
+    cutout_size     = part.size;
+    rounding        = part.rounding;
+    rib_size        = part.rib_size;
     
     // Cutout
     tag(REMOVE_TAG)

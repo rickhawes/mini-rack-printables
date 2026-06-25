@@ -5,11 +5,11 @@
 //------------------------------------------------
 // Dependencies
 //------------------------------------------------
-include <BOSL2/std.scad>;
+include <BOSL2/std.scad>
 
 //------------------------------------------------
 // Project models
 //------------------------------------------------
-include <models/dimensions.scad>;
-include <models/shapes.scad>;
-include <models/dispatch.scad>;
+include <models/dimensions.scad>
+include <models/render_assembly.scad>
+include <models/render_part.scad>

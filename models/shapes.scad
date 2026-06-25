@@ -40,7 +40,7 @@ module extruded_roundrect(size, r, anchor) {
 module extrude_rib(rib_size) {
     linear_extrude(height=rib_size.y) 
         difference() {
-            outset(d=rib_size.x) 
+            offset(delta=rib_size.x) 
                 children();
             children();
         }
