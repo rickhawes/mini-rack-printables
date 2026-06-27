@@ -6,50 +6,52 @@ name = "test rect functions"
 script = '''
 include <../models/geometry.scad>
 
-rc = build_rect(-1,-2,4,6);
+rc = rc(size=[4,6], shift=[1,1]);
 
-assert(is_rect(rc))
-assert(rect_x(rc) == -1);
-assert(rect_y(rc) == -2);
-assert(rect_dx(rc) == 4);
-assert(rect_dy(rc) == 6);
-assert(rect_left(rc) == -1);
-assert(rect_right(rc) == 3);
-assert(rect_top(rc) == 4);
-assert(rect_bottom(rc) == -2);
-assert(rect_offset_x(rc) == 1);
-assert(rect_offset_y(rc) == 1);
-assert(rect_offset(rc) == [1,1]);
+assert(is_rc(rc));
+assert(rc_size(rc).x == 4);
+assert(rc_size(rc).y == 6);
+assert(rc_left(rc) == -1);
+assert(rc_right(rc) == 3);
+assert(rc_top(rc) == 4);
+assert(rc_bottom(rc) == -2);
+assert(rc_shift(rc) == [1,1]);
 '''
 
 [[test]]
-name = "test rect_from_edges"
+name = "test rc_from_edges"
 script = '''
 include <../models/geometry.scad>
 
-rc1 = build_rect(-1,-2,4,6);
-rc2 = rect_from_edges(
-    left = rect_left(rc1),
-    right = rect_right(rc1),
-    top = rect_top(rc1),
-    bottom = rect_bottom(rc1)
+rc1 = rc(size=[4,6], shift=[1,1]);
+rc2 = rc_from_edges(
+    left = rc_left(rc1),
+    right = rc_right(rc1),
+    top = rc_top(rc1),
+    bottom = rc_bottom(rc1)
 );
 assert(rc1 == rc2);
 '''
 
 [[test]]
-name = "test build_rect_with_offset"
+name = "test rc_divided_horizontally"
 script = '''
 include <../models/geometry.scad>
 
-rc1 = build_rect(-1,-2,4,6);
-rc2 = build_rect_with_offset(
-    dx = rect_dx(rc1),
-    dy = rect_dy(rc1),
-    offset_x = rect_offset(rc1)[0],
-    offset_y = rect_offset(rc1)[1]
-);
-assert(rc1 == rc2);
+rc1 = rc([4,6]);
+divisions1 = rc_divided_horizontally(rc1, 2);
+assert(divisions1[0] == rc(size=[2,6], shift=[-1,0]));
+assert(divisions1[1] == rc(size=[2,6], shift=[1,0]));
+
+rc2 = rc([4,6]);
+divisions2 = rc_divided_horizontally(rc2, 1);
+assert(divisions2[0] == rc2);
+
+rc3 = rc([6,6]);
+divisions3 = rc_divided_horizontally(rc3, 3);
+assert(divisions3[0] == rc(size=[2,6], shift=[-2,0]));
+assert(divisions3[1] == rc(size=[2,6], shift=[0,0]));
+assert(divisions3[2] == rc(size=[2,6], shift=[2,0]));
 '''
 
 [[test]]
@@ -72,21 +74,65 @@ name = "test apply_padding"
 script = '''
 include <../models/geometry.scad>
 
-rc = build_rect(-1,-2,4,6);
-rc1 = apply_padding(rc, 1);
-assert(rc1 == [-2,-3,6,8]);
+rc1 = rc(size=[4,6], shift=[1,1]);
+rc2 = apply_padding(rc1, 1);
+assert(rc2 == rc(size=[6,8], shift=[1,1]));
 '''
 
 [[test]]
-name = "test grow_to_center"
+name = "test rc_union"
+script = '''
+include <../models/geometry.scad>
+rc1 = rc(size=[4,6], shift=[1,1]);
+rc2 = rc(size=[4,6], shift=[-1,-1]);
+rc3 = rc_union(rc1, rc2);
+assert(rc3 == rc(size=[6,8], shift=[0,0]));
+'''
+
+[[test]]
+name = "test centered_bounding_rc"
 script = '''
 include <../models/geometry.scad>
 
-rc1 = build_rect_with_offset(4,6, offset_x=1, offset_y=1);
-rc2 = grow_to_center(rc1);
-assert(rc2 == [-3,-4,6,8]);
+rc1 = rc(size=[4,6], shift=[1,1]);
+rc2 = centered_bounding_rc(rc1);
+assert(rc2 == rc(size=[6,8], shift=[0,0]));
 
-rc3 = build_rect_with_offset(4,6, offset_x=-1, offset_y=-1);
-rc4 = grow_to_center(rc3);
-assert(rc4 == [-3,-4,6,8]);
+rc3 = rc(size=[4,6], shift=[-1,-1]);
+rc4 = centered_bounding_rc(rc3);
+assert(rc4 == rc(size=[6,8], shift=[0,0]));
+'''
+
+[[test]]
+name = "test cubiod functions"
+script = '''
+include <../models/geometry.scad>
+
+cu1 = cu(size=[2,2,2], shift=[-1,-1,-1]);
+assert(is_cu(cu1));
+assert(cu_size(cu1).x == cu_size(cu1).z);
+
+center1 = cu_shift(cu1);
+assert(center1 == [-1,-1, -1]);
+'''
+
+[[test]]
+name = "test alignment_shift"
+script = '''
+include <../models/geometry.scad>
+bounding_rc = rc(size=[10,10], shift=[0,0]);
+shiftLeft = alignment_shift(bounding_rc, LEFT, [2,2]);
+assert(shiftLeft == [-4,0]);   
+shiftBack = alignment_shift(bounding_rc, BACK, [2,2]);
+assert(shiftBack == [0,4]);    
+shiftFrontRight = alignment_shift(bounding_rc, FRONT+RIGHT, [2,2]);  
+assert(shiftFrontRight == [4,-4]);
+
+bounding_rc2 = rc(size=[10,10], shift=[20,20]);
+shiftLeft2 = alignment_shift(bounding_rc2, LEFT, [2,2]);
+assert(shiftLeft2 == [16,20]);   
+shiftBack2 = alignment_shift(bounding_rc2, BACK, [2,2]);
+assert(shiftBack2 == [20,24]);    
+shiftFrontRight2 = alignment_shift(bounding_rc2, FRONT+RIGHT, [2,2]);  
+assert(shiftFrontRight2 == [24,16]);
 '''

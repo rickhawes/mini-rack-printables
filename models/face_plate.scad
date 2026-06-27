@@ -137,7 +137,7 @@ module _render_face_plate(fp) {
 
     module face_plate_ribs(plate_size, part_size, rib_size) {
         tag("rib") 
-        align(TOP, [FRONT,BACK]) 
+        align(TOP, [FRONT, BACK]) 
             prismoid(size2=[part_size.x, rib_size.x], h=rib_size.y, xang=30, yang=90);
     }
 

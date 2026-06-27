@@ -8,57 +8,82 @@ include <BOSL2/std.scad>;
 
 
 //
-// rects are vectors with x,y,dx,dy tuples
+// RC are structures representing a rectangle in the x-y plane. 
+// They contain a size vector [dx, dy] and a shift vector [x, y].
+// They have nice arithmetical attributes for layout, with a centered rectangle being the default. 
 //
-function build_rect(x, y, dx, dy) =
-    assert(dx >= 0 && dy >= 0)
-    [x, y, dx, dy];
+RC_SIZE = "size";
+RC_SHIFT = "shift";
 
-function build_rect_with_offset(dx, dy, offset_x=0, offset_y=0) =
-    build_rect(-dx/2 + offset_x, -dy/2 + offset_y, dx, dy);
+function rc(size, shift=[0,0]) =
+    assert(size.x >= 0 && size.y >= 0)
+    struct_set([], [RC_SIZE, size, RC_SHIFT, shift]);
 
-function rect_from_edges(right, left, top, bottom) =
-    build_rect(left, bottom, right-left, top-bottom);
+function rc_from_edges(right, left, top, bottom) =
+    rc(size = [right-left, top-bottom], shift = [(right+left)/2, (top+bottom)/2]);
 
-function is_rect(rect) =
-    is_list(rect) && len(rect) == 4 && is_num(rect[0]);
+function is_rc(r) =
+    let(keys = struct_keys(r))
+    is_struct(r) && in_list(RC_SIZE, keys) && in_list(RC_SHIFT, keys);
 
-function rect_x(rect) = 
-    assert(is_rect(rect))
-    rect[0];
+function rc_size(r) = 
+    struct_val(r, RC_SIZE);
 
-function rect_y(rect) = 
-    assert(is_rect(rect))
-    rect[1];
+function rc_shift(r) = 
+    struct_val(r, RC_SHIFT);
 
-function rect_dx(rect) = 
-    assert(is_rect(rect))
-    rect[2];
+function rc_left(r) = 
+    -rc_size(r).x/2 + rc_shift(r).x;
 
-function rect_dy(rect) =
-    assert(is_rect(rect))
-    rect[3];    
+function rc_bottom(r) = 
+    -rc_size(r).y/2 + rc_shift(r).y;
 
-function rect_left(rect) = 
-    rect_x(rect);
+function rc_right(r) = 
+    rc_left(r) + rc_size(r).x;
 
-function rect_bottom(rect) = 
-    rect_y(rect);
+function rc_top(r) =
+    rc_bottom(r) + rc_size(r).y;
 
-function rect_right(rect) = 
-    rect_x(rect) + rect_dx(rect);
+function rc_union(r1, r2) = 
+    assert(is_rc(r1) && is_rc(r2))
+    rc_from_edges(
+        right = max(rc_right(r1), rc_right(r2)),
+        left = min(rc_left(r1), rc_left(r2)),
+        top = max(rc_top(r1), rc_top(r2)),
+        bottom = min(rc_bottom(r1), rc_bottom(r2))
+    );
 
-function rect_top(rect) =
-    rect_y(rect) + rect_dy(rect);
 
-function rect_offset_x(rect) = 
-    rect_x(rect) + rect_dx(rect)/2;
 
-function rect_offset_y(rect) = 
-    rect_y(rect) + rect_dy(rect)/2;
+// 
+// CU are structures representing a cuboid in the 3d space. 
+// They contain a size vector [dx, dy, dz] and a shift vector [x, y, z].
+// They have nice arithmetical attributes for layout, with a centered cuboid being the default. 
+// 
 
-function rect_offset(rect) = 
-    [rect_offset_x(rect), rect_offset_y(rect)];
+CU_SIZE = "cu_size";
+CU_SHIFT = "cu_shift";
+
+function cu(size, shift=[0,0,0]) = 
+    assert(size.x >= 0 && size.y >= 0 && size.z >= 0)
+    struct_set([], [CU_SIZE, size, CU_SHIFT, shift]);
+
+function is_cu(c) =
+    let(keys = struct_keys(c))
+    is_struct(c) && in_list(CU_SIZE, keys) && in_list(CU_SHIFT, keys);
+
+
+function cu_shift(c) = 
+    struct_val(c, CU_SHIFT);
+
+function cu_size(c) =
+    struct_val(c, CU_SIZE);
+
+function rc_from_cu(c) =
+    rc(size = [cu_size(c).x, cu_size(c).y], shift = [cu_shift(c).x, cu_shift(c).y]);
+
+function cu_from_rc(r, z=0, dz=0) = 
+    cu(size = [rc_size(r).x, rc_size(r).y, dz], shift = [rc_shift(r).x, rc_shift(r).y, z]);
 
 //
 // A padding has multiple forms
@@ -98,27 +123,59 @@ function union_padding(padding1, padding2) =
         max(norm1[3], norm2[3])         
     ];
 
-function apply_padding(rect, padding) =
+
+//
+// RC functions for layout
+//
+
+function rc_divided_horizontally(r, by) = 
+    let(
+        division_dx = rc_size(r).x/by,
+        even = by % 2 == 0,
+        end = even ? floor(by/2) - 0.5 : floor(by/2),
+        start = -end
+
+    )[
+        for(i = [start:1.0:end])
+            rc([division_dx, rc_size(r).y], [rc_shift(r).x + i*division_dx, rc_shift(r).y])
+    ];
+
+function rc_divided_vertically(r, by) = 
+    let(
+        division_dy = rc_size(r).y/by,
+        even = by % 2 == 0,
+        end = even ? floor(by/2) - 0.5 : floor(by/2),
+        start = -end
+
+    )[
+        for(i = [start:1.0:end])
+            rc([rc_size(r).x, division_dy], [rc_shift(r).x, rc_shift(r).y + i*division_dy])
+    ];
+
+// Apply padding to a rectangle. Given a rectangle and a padding, return a new rectangle with the padding applied.
+function apply_padding(r, padding) =
+    assert(is_rc(r) && is_padding(padding))
     let(b = normalize_padding(padding))
-    rect_from_edges(
-        right = rect_right(rect) + b[0], 
-        left = rect_left(rect) - b[1], 
-        top = rect_top(rect) + b[2],
-        bottom = rect_bottom(rect) - b[3] 
+    rc_from_edges(
+        right = rc_right(r) + b[0], 
+        left = rc_left(r) - b[1], 
+        top = rc_top(r) + b[2],
+        bottom = rc_bottom(r) - b[3] 
     );
 
+// Shift by alignment. Given a bounding rectangle, another rectangle's size and an alignment, return a shift amount to align.
+function alignment_shift(bounding_rc, align, size) =
+    [
+        (rc_size(bounding_rc).x - size.x)*align.x/2 + rc_shift(bounding_rc).x,
+        (rc_size(bounding_rc).y - size.y)*align.y/2 + rc_shift(bounding_rc).y
+    ];
 
 // Grow a rectangle in opposite direction of the offset by the amount needed to 
 // to center a rect. 
-function grow_to_center(rc) = 
-    assert(is_rect(rc))
+function centered_bounding_rc(r) = 
+    assert(is_rc(r))
     let(
-        offset_x = rect_offset_x(rc),
-        offset_y = rect_offset_y(rc),
-        left = offset_x >= 0 ? rect_left(rc) - 2*offset_x : rect_left(rc),
-        right = offset_x >= 0 ? rect_right(rc) : rect_right(rc) - 2*offset_x, 
-        bottom = offset_y >= 0 ? rect_bottom(rc) - 2*offset_y : rect_bottom(rc),
-        top = offset_y >= 0 ? rect_top(rc) : rect_top(rc) - 2*offset_y 
+        shift = rc_shift(r),
+        rc_mirror = rc(size = rc_size(r), shift = [-shift.x, -shift.y]),
     )
-    rect_from_edges(right,left,top,bottom);
-
+    rc_union(r, rc_mirror);
