@@ -8,57 +8,129 @@ include <BOSL2/std.scad>;
 
 
 //
-// rects are vectors with x,y,dx,dy tuples
+// rc are vectors representing a rectangle. They are vectors with [x,y,dx,dy] values.
 //
-function build_rect(x, y, dx, dy) =
+function rc(x=0, y=0, dx=0, dy=0) =
     assert(dx >= 0 && dy >= 0)
     [x, y, dx, dy];
 
-function build_rect_with_offset(dx, dy, offset_x=0, offset_y=0) =
-    build_rect(-dx/2 + offset_x, -dy/2 + offset_y, dx, dy);
+function centered_rc(dx, dy) =
+    assert(dx >= 0 && dy >= 0)
+    [-dx/2, -dy/2, dx, dy];
 
-function rect_from_edges(right, left, top, bottom) =
-    build_rect(left, bottom, right-left, top-bottom);
+function shifted_rc(dx, dy, shift_x=0, shift_y=0) =
+    rc(-dx/2 + shift_x, -dy/2 + shift_y, dx, dy);
 
-function is_rect(rect) =
-    is_list(rect) && len(rect) == 4 && is_num(rect[0]);
+function rc_from_edges(right, left, top, bottom) =
+    rc(left, bottom, right-left, top-bottom);
 
-function rect_x(rect) = 
-    assert(is_rect(rect))
-    rect[0];
+function is_rc(r) =
+    is_list(r) && len(r) == 4 && is_num(r[0]);
 
-function rect_y(rect) = 
-    assert(is_rect(rect))
-    rect[1];
+function rc_x(r) = 
+    assert(is_rc(r))
+    r[0];
 
-function rect_dx(rect) = 
-    assert(is_rect(rect))
-    rect[2];
+function rc_y(r) = 
+    assert(is_rc(r))
+    r[1];
 
-function rect_dy(rect) =
-    assert(is_rect(rect))
-    rect[3];    
+function rc_dx(r) = 
+    assert(is_rc(r))
+    r[2];
 
-function rect_left(rect) = 
-    rect_x(rect);
+function rc_dy(r) =
+    assert(is_rc(r))
+    r[3];    
 
-function rect_bottom(rect) = 
-    rect_y(rect);
+function rc_left(r) = 
+    rc_x(r);
 
-function rect_right(rect) = 
-    rect_x(rect) + rect_dx(rect);
+function rc_bottom(r) = 
+    rc_y(r);
 
-function rect_top(rect) =
-    rect_y(rect) + rect_dy(rect);
+function rc_right(r) = 
+    rc_x(r) + rc_dx(r);
 
-function rect_offset_x(rect) = 
-    rect_x(rect) + rect_dx(rect)/2;
+function rc_top(r) =
+    rc_y(r) + rc_dy(r);
 
-function rect_offset_y(rect) = 
-    rect_y(rect) + rect_dy(rect)/2;
+function rc_shift(r) = 
+    [rc_x(r) + rc_dx(r)/2, rc_y(r) + rc_dy(r)/2];
 
-function rect_offset(rect) = 
-    [rect_offset_x(rect), rect_offset_y(rect)];
+function rc_size(r) =
+    [rc_dx(r), rc_dy(r)];
+
+function rc_from_size(s) =
+    centered_rc(s.x, s.y);
+
+function rc_divided_horizontally(r, by) = 
+    let(
+        dx = rc_dx(r), 
+        sub_section_dx = dx/by
+    )[
+        for(i = [0:1:by-1])
+            let(x = rc_x(r) + i*sub_section_dx)
+            rc(x, y=rc_y(r), dx=sub_section_dx, dy=rc_dy(r))
+    ];
+
+// 
+// Cubiods are sometimes called rectangular parallelpideds or rectangular cubiods in analytical geometry.
+// They have 3 pairs of rectangles as faces. They defined by an [x, y, z, dx, dy, dz] vector. 
+// 
+
+function cu(x=0, y=0, z=0, dx=0, dy=0, dz=0) = 
+    assert(dx >= 0 && dy >= 0 && dz >= 0)
+    [x, y, z, dx, dy, dz];
+
+function centered_cu(dx, dy, dz) =
+    cu(-dx/2, -dy/2, -dz/2, dx, dy, dz);
+
+function shifted_cu(dx, dy, dz, shift_x=0, shift_y=0, shift_z=0) = 
+    cu(-dx/2 + shift_x, -dy/2 + shift_y, -dz/2 + shift_z, dx, dy, dz);
+
+function is_cu(c) =
+    is_list(c) && len(c) == 6 && is_num(c[0]);
+
+function cu_x(c) = 
+    assert(is_cu(c))
+    c[0];
+
+function cu_y(c) = 
+    assert(is_cu(c))
+    c[1];
+
+function cu_z(c) = 
+    assert(is_cu(c))
+    c[2];
+
+function cu_dx(c) = 
+    assert(is_cu(c))
+    c[3];
+
+function cu_dy(c) =
+    assert(is_cu(c))
+    c[4];    
+
+function cu_dz(c) =
+    assert(is_cu(c))
+    c[5];   
+
+function cu_from_rc(r, z=0, dz=0) = 
+    cu(rc_x(r), rc_y(r), z, rc_dx(r), rc_dy(r), dz);
+
+function cu_center(c) = 
+    [cu_x(c) + cu_dx(c)/2, cu_y(c) + cu_dy(c)/2, cu_z(c) + cu_dz(c)/2];
+
+function cu_size(c) =
+    [cu_dx(c), cu_dy(c), cu_dz(c)];
+
+function cu_from_size(s) =
+    centered_cu(s.x, s.y, s.z);
+
+function rc_from_cu(c) =
+    rc(cu_x(c), cu_y(c), cu_dx(c), cu_dy(c));
+
 
 //
 // A padding has multiple forms
@@ -98,27 +170,26 @@ function union_padding(padding1, padding2) =
         max(norm1[3], norm2[3])         
     ];
 
-function apply_padding(rect, padding) =
+function apply_padding(r, padding) =
     let(b = normalize_padding(padding))
-    rect_from_edges(
-        right = rect_right(rect) + b[0], 
-        left = rect_left(rect) - b[1], 
-        top = rect_top(rect) + b[2],
-        bottom = rect_bottom(rect) - b[3] 
+    rc_from_edges(
+        right = rc_right(r) + b[0], 
+        left = rc_left(r) - b[1], 
+        top = rc_top(r) + b[2],
+        bottom = rc_bottom(r) - b[3] 
     );
 
 
 // Grow a rectangle in opposite direction of the offset by the amount needed to 
 // to center a rect. 
-function grow_to_center(rc) = 
-    assert(is_rect(rc))
+function grow_to_center(r) = 
+    assert(is_rc(r))
     let(
-        offset_x = rect_offset_x(rc),
-        offset_y = rect_offset_y(rc),
-        left = offset_x >= 0 ? rect_left(rc) - 2*offset_x : rect_left(rc),
-        right = offset_x >= 0 ? rect_right(rc) : rect_right(rc) - 2*offset_x, 
-        bottom = offset_y >= 0 ? rect_bottom(rc) - 2*offset_y : rect_bottom(rc),
-        top = offset_y >= 0 ? rect_top(rc) : rect_top(rc) - 2*offset_y 
+        shift = rc_shift(r),
+        left    = shift.x >= 0 ? rc_left(r) - 2*shift.x     : rc_left(r),
+        right   = shift.x >= 0 ? rc_right(r)                : rc_right(r) - 2*shift.x, 
+        bottom  = shift.y >= 0 ? rc_bottom(r) - 2*shift.y   : rc_bottom(r),
+        top     = shift.y >= 0 ? rc_top(r)                  : rc_top(r) - 2*shift.y 
     )
-    rect_from_edges(right,left,top,bottom);
+    rc_from_edges(right,left,top,bottom);
 

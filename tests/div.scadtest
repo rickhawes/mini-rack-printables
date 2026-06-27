@@ -1,0 +1,40 @@
+[config]
+
+
+[[test]]
+name = "test divide_section"
+script = '''
+include <../models/div.scad>
+
+size = [100,100,100];
+sections = divide_horizontally(size, 2);
+
+assert(len(sections) == 2);
+assert(sections[0] == [-50, -50, 50, 100]);
+assert(sections[1] == [  0, -50, 50, 100]);
+'''
+
+[[test]]
+name = "test layout_parts"
+script = '''
+include <../models/div.scad>
+
+size = [100,100,5];
+
+//
+parts3 = [part_base("test"), part_base("test2"), part_base("test3")];
+centers3 = layout_parts(parts3, size); 
+
+assert(len(centers3) == 3);
+assert(centers3[0] == [-100/3,0]);
+assert(centers3[1] == [0,0]);
+assert(centers3[2] == [100/3,0]);
+
+//
+parts2 = [part_base("test"), part_base("test2")];
+centers2 = layout_parts(parts2, size); 
+
+assert(len(centers2) == 2);
+assert(centers2[0] == [-100/4,0]);
+assert(centers2[1] == [100/4,0]);
+'''

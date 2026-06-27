@@ -18,10 +18,10 @@ include <shapes.scad>
 // value for the type of a part
 RECT_CUTOUT_TYPE = "rect_cutout";
 
-RC_SIZE         = "size";
-RC_PADDING      = "padding";
-RC_ROUNDING     = "rounding";
-RC_RIB_SIZE     = "rib_size";
+CO_SIZE         = "size";
+CO_PADDING      = "padding";
+CO_ROUNDING     = "rounding";
+CO_RIB_SIZE     = "rib_size";
 
 //------------------------------------------------
 // Functions and modules
@@ -36,37 +36,37 @@ function rect_cutout(
     assert(is_padding(padding))
     let(base = part_base(RECT_CUTOUT_TYPE))
     struct_set(base, [
-        RC_SIZE, size,
-        RC_PADDING, padding,
-        RC_ROUNDING, rounding,
-        RC_RIB_SIZE, rib_size
+        CO_SIZE, size,
+        CO_PADDING, padding,
+        CO_ROUNDING, rounding,
+        CO_RIB_SIZE, rib_size
     ]);
 
 function is_rect_cutout(part) = 
     get_subtype(part) == RECT_CUTOUT_TYPE;
 
-function rc_size(rc) = struct_val(rc, RC_SIZE);
-function rc_padding(rc) = struct_val(rc, RC_PADDING);
-function rc_rounding(rc) = struct_val(rc, RC_ROUNDING);
-function rc_rib_size(rc) = struct_val(rc, RC_RIB_SIZE);
+function co_size(rc) = struct_val(rc, CO_SIZE);
+function co_padding(rc) = struct_val(rc, CO_PADDING);
+function co_rounding(rc) = struct_val(rc, CO_ROUNDING);
+function co_rib_size(rc) = struct_val(rc, CO_RIB_SIZE);
 
-// layout function
-function rect_cutout_layout_size(part) =
-    assert(is_rect_cutout(part))
-    let (
-        bound = build_rect_with_offset(dx=part.size.x, dy=part.size.y),
-        union_padding = union_padding(part.padding, part.rib_size.x)
+// Calculate the layout size including ribs for the part
+function rect_cutout_layout_size(rc) =
+    assert(is_rect_cutout(rc))
+    let(
+        size = rc_size(rc),
+        rib_size = co_rib_size(rc),
+        rib_padding = rib_size.x,
+        cutout_rc = rc_from_size(size),
+        layout_rc = apply_padding(cutout_rc, rib_padding)
     )
-    apply_padding(rect = bound, padding = union_padding);
+    rc_size(layout_rc);
 
 // Render the part in the context of an assembly
-module _render_rect_cutout(
-    part,
-    section_size
-) {
-    cutout_size     = rc_size(part);
-    rounding        = rc_rounding(part);
-    rib_size        = rc_rib_size(part);
+module _render_rect_cutout(part, section_size) {
+    cutout_size     = co_size(part);
+    rounding        = co_rounding(part);
+    rib_size        = co_rib_size(part);
     
     // Cutout
     tag(REMOVE_TAG)

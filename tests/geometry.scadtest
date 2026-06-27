@@ -6,50 +6,59 @@ name = "test rect functions"
 script = '''
 include <../models/geometry.scad>
 
-rc = build_rect(-1,-2,4,6);
+rc = rc(-1,-2,4,6);
 
-assert(is_rect(rc))
-assert(rect_x(rc) == -1);
-assert(rect_y(rc) == -2);
-assert(rect_dx(rc) == 4);
-assert(rect_dy(rc) == 6);
-assert(rect_left(rc) == -1);
-assert(rect_right(rc) == 3);
-assert(rect_top(rc) == 4);
-assert(rect_bottom(rc) == -2);
-assert(rect_offset_x(rc) == 1);
-assert(rect_offset_y(rc) == 1);
-assert(rect_offset(rc) == [1,1]);
+assert(is_rc(rc))
+assert(rc_x(rc) == -1);
+assert(rc_y(rc) == -2);
+assert(rc_dx(rc) == 4);
+assert(rc_dy(rc) == 6);
+assert(rc_left(rc) == -1);
+assert(rc_right(rc) == 3);
+assert(rc_top(rc) == 4);
+assert(rc_bottom(rc) == -2);
+assert(rc_shift(rc) == [1,1]);
 '''
 
 [[test]]
-name = "test rect_from_edges"
+name = "test rc_from_edges"
 script = '''
 include <../models/geometry.scad>
 
-rc1 = build_rect(-1,-2,4,6);
-rc2 = rect_from_edges(
-    left = rect_left(rc1),
-    right = rect_right(rc1),
-    top = rect_top(rc1),
-    bottom = rect_bottom(rc1)
+rc1 = rc(-1,-2,4,6);
+rc2 = rc_from_edges(
+    left = rc_left(rc1),
+    right = rc_right(rc1),
+    top = rc_top(rc1),
+    bottom = rc_bottom(rc1)
 );
 assert(rc1 == rc2);
 '''
 
 [[test]]
-name = "test build_rect_with_offset"
+name = "test shifted_rc"
 script = '''
 include <../models/geometry.scad>
 
-rc1 = build_rect(-1,-2,4,6);
-rc2 = build_rect_with_offset(
-    dx = rect_dx(rc1),
-    dy = rect_dy(rc1),
-    offset_x = rect_offset(rc1)[0],
-    offset_y = rect_offset(rc1)[1]
+rc1 = rc(-1,-2,4,6);
+rc2 = shifted_rc(
+    dx = rc_dx(rc1),
+    dy = rc_dy(rc1),
+    shift_x = rc_shift(rc1)[0],
+    shift_y = rc_shift(rc1)[1]
 );
 assert(rc1 == rc2);
+'''
+
+[[test]]
+name = "test rc_divided_horizontally"
+script = '''
+include <../models/geometry.scad>
+
+rc1 = rc(-2,-3,4,6);
+divisions = rc_divided_horizontally(rc1, 2);
+assert(divisions[0] == [-2,-3,2,6]);
+assert(divisions[1] == [0,-3,2,6]);
 '''
 
 [[test]]
@@ -72,9 +81,9 @@ name = "test apply_padding"
 script = '''
 include <../models/geometry.scad>
 
-rc = build_rect(-1,-2,4,6);
-rc1 = apply_padding(rc, 1);
-assert(rc1 == [-2,-3,6,8]);
+rc1 = rc(-1,-2,4,6);
+rc2 = apply_padding(rc1, 1);
+assert(rc2 == [-2,-3,6,8]);
 '''
 
 [[test]]
@@ -82,11 +91,36 @@ name = "test grow_to_center"
 script = '''
 include <../models/geometry.scad>
 
-rc1 = build_rect_with_offset(4,6, offset_x=1, offset_y=1);
+rc1 = shifted_rc(4, 6, shift_x=1, shift_y=1);
 rc2 = grow_to_center(rc1);
 assert(rc2 == [-3,-4,6,8]);
 
-rc3 = build_rect_with_offset(4,6, offset_x=-1, offset_y=-1);
+rc3 = shifted_rc(4,6, shift_x=-1, shift_y=-1);
 rc4 = grow_to_center(rc3);
 assert(rc4 == [-3,-4,6,8]);
+'''
+
+[[test]]
+name = "test cubiod functions"
+script = '''
+include <../models/geometry.scad>
+
+cu1 = cu(-1,-1,-1,2,2,2);
+assert(is_cu(cu1));
+assert(cu_dx(cu1) == cu_dz(cu1));
+
+center1 = cu_center(cu1);
+assert(center1 == [0,0,0]);
+'''
+
+[[test]]
+name = "test cubiod and size"
+script = '''
+include <../models/geometry.scad>
+
+size = [2,4,6];
+cu = cu_from_size(size);
+
+assert(cu_center(cu) == [0,0,0]);
+assert(cu_size(cu) == size);
 '''
