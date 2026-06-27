@@ -60,10 +60,7 @@ function rect_cutout_layout_size(part) =
     apply_padding(rect = bound, padding = union_padding);
 
 // Render the part in the context of an assembly
-module _render_rect_cutout(
-    part,
-    section_size
-) {
+module _render_rect_cutout(part, section_size) {
     cutout_size     = rc_size(part);
     rounding        = rc_rounding(part);
     rib_size        = rc_rib_size(part);

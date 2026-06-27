@@ -60,6 +60,8 @@ function rect_offset_y(rect) =
 function rect_offset(rect) = 
     [rect_offset_x(rect), rect_offset_y(rect)];
 
+
+
 //
 // A padding has multiple forms
 // - An constant outset

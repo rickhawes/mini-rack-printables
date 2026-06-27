@@ -3,7 +3,6 @@
 // Shapes 
 //
 // Modules to draw useful 2d & 3d shapes
-// Modules to draw common 2d & 3d shapes
 //
 //------------------------------------------------------------------------------------------------
 

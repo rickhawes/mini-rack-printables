@@ -11,7 +11,7 @@ include <rect_cutout.scad>
 REMOVE_TAG = "remove_tag";
 
 // Render a part based on its type
-module render_part(part, section_size) {
+module render_part(part, section_bound) {
     assert(is_part(part));
     if (get_subtype(part) == RECT_CUTOUT_TYPE) { 
         _render_rect_cutout(part, section_size);
@@ -19,3 +19,4 @@ module render_part(part, section_size) {
         assert(false, "unknown part type");
     }
 }
+
