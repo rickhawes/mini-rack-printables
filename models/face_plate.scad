@@ -6,7 +6,7 @@ include <render_part.scad>
 //------------------------------------------------------------------------------------------------
 // Face Plate 
 //
-// Modules to render a face plate assembly 
+// Modules to describe and render a face plate assembly 
 //
 //------------------------------------------------------------------------------------------------
 
@@ -25,6 +25,7 @@ FP_HALF_ALIGNMENT   = "half_alignment";
 FP_RIB_SIZE         = "rib_size";
 FP_PART             = "part";
 
+// Describe a face plate assembly
 function face_plate(
     rack_units, 
     thickness, 
@@ -41,6 +42,7 @@ function face_plate(
     FP_PART,            part
 ]);
 
+// Is the passed struct a face plate?
 function is_face_plate(plate) = 
     get_subtype(plate) == FACE_PLATE_TYPE;
 
@@ -51,6 +53,7 @@ function fp_half_alignment(fp)  = struct_val(fp, FP_HALF_ALIGNMENT);
 function fp_rib_size(fp)        = struct_val(fp, FP_RIB_SIZE    );
 function fp_part(fp)            = struct_val(fp, FP_PART        );
 
+// Layout the screw holes
 function layout_rack_screw_holes(
     rack_units,
     middle_holes = true,
@@ -90,7 +93,7 @@ function layout_rack_screw_holes(
         ]
     );
 
-
+// Render the face plate defined by fp
 module _render_face_plate(fp) {
     assert(is_face_plate(fp));
     rack_units              = fp_rack_units(fp);

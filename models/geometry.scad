@@ -61,35 +61,35 @@ function rect_offset(rect) =
     [rect_offset_x(rect), rect_offset_y(rect)];
 
 //
-// A margin has multiple forms
+// A padding has multiple forms
 // - An constant outset
 // - Different x and y outset 
 // - Different right, left, top, bottom
 //
-function build_margin(margin,dx,dy,right,left,top,bottom) = 
+function build_padding(padding,dx,dy,right,left,top,bottom) = 
     let (
-        x_right = !is_undef(right) ? right : !is_undef(dx) ? dx : !is_undef(margin) ? margin : 0,
-        x_left = !is_undef(left) ? left : !is_undef(dx) ? dx : !is_undef(margin) ? margin : 0, 
-        y_top = !is_undef(top) ? top : !is_undef(dy) ? dy : !is_undef(margin) ? margin : 0, 
-        y_bottom = !is_undef(bottom) ? bottom : !is_undef(dy) ? dy : !is_undef(margin) ? margin : 0
+        x_right = !is_undef(right) ? right : !is_undef(dx) ? dx : !is_undef(padding) ? padding : 0,
+        x_left = !is_undef(left) ? left : !is_undef(dx) ? dx : !is_undef(padding) ? padding : 0, 
+        y_top = !is_undef(top) ? top : !is_undef(dy) ? dy : !is_undef(padding) ? padding : 0, 
+        y_bottom = !is_undef(bottom) ? bottom : !is_undef(dy) ? dy : !is_undef(padding) ? padding : 0
     )
     [x_right, x_left, y_top, y_bottom];
 
-function is_margin(margin) =
-    is_num(margin) ||
-    is_list(margin) && len(margin) == 2 && is_num(margin[0]) && is_num(margin[1]) ||
-    is_list(margin) && len(margin) == 4 && is_num(margin[0]) && is_homogeneous(margin);
+function is_padding(padding) =
+    is_num(padding) ||
+    is_list(padding) && len(padding) == 2 && is_num(padding[0]) && is_num(padding[1]) ||
+    is_list(padding) && len(padding) == 4 && is_num(padding[0]) && is_homogeneous(padding);
 
-function normalize_margin(margin) =
-    assert(is_margin(margin))
-    is_num(margin) ? [margin, margin, margin, margin] :
-    is_list(margin) && len(margin) == 2 ? [margin[0], margin[1], margin[0], margin[1]] :
-    margin;
+function normalize_padding(padding) =
+    assert(is_padding(padding))
+    is_num(padding) ? [padding, padding, padding, padding] :
+    is_list(padding) && len(padding) == 2 ? [padding[0], padding[1], padding[0], padding[1]] :
+    padding;
 
-function union_margin(margin1, margin2) =
+function union_padding(padding1, padding2) =
     let (
-        norm1 = normalize_margin(margin1),
-        norm2 = normalize_margin(margin2)
+        norm1 = normalize_padding(padding1),
+        norm2 = normalize_padding(padding2)
     )
     [
         max(norm1[0], norm2[0]), 
@@ -98,8 +98,8 @@ function union_margin(margin1, margin2) =
         max(norm1[3], norm2[3])         
     ];
 
-function apply_margin(rect, margin) =
-    let(b = normalize_margin(margin))
+function apply_padding(rect, padding) =
+    let(b = normalize_padding(padding))
     rect_from_edges(
         right = rect_right(rect) + b[0], 
         left = rect_left(rect) - b[1], 

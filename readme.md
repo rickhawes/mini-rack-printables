@@ -24,5 +24,5 @@ A plate assembly can contain parts. Parts model customizations for a rack face p
 - part - features on a plate implemented by a polymorphic struct.
 - subpart - a part can contain sub-parts which are just parts.
 - section - the section of a plate that holds a part.
-- margin - a single distance or a vector of distances for an outset, always positive.
+- padding - a single distance or a vector of distances for an outset, always positive.
 - rect - A [x, y, dx, dy] vector defining a 2d rectangle
