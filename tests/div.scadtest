@@ -10,8 +10,8 @@ size = [100,100,100];
 sections = divide_horizontally(size, 2);
 
 assert(len(sections) == 2);
-assert(sections[0] == [-50, -50, 50, 100]);
-assert(sections[1] == [  0, -50, 50, 100]);
+assert(sections[0] == rc(size = [50, 100], shift = [-25, 0]));
+assert(sections[1] == rc(size = [50, 100], shift = [ 25, 0]));
 '''
 
 [[test]]

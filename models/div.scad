@@ -54,10 +54,9 @@ function div_dir(part) =
 
 // Take a section and divide it into even sections. Return the results as cubiods. 
 function divide_horizontally(section_size, by) = 
-    let(section_rc = centered_rc(section_size.x, section_size.y))
+    let(section_rc = rc(size = [section_size.x, section_size.y]))
     rc_divided_horizontally(r = section_rc, by = by);
     
-
 // 
 function layout_parts(parts, section_size) = 
     let(
@@ -80,7 +79,7 @@ module _render_div(part, section_size) {
     layout_pts = layout_parts(sub_parts, section_size);
 
     for(i = [0:1:len(sub_parts)-1]) {
-        sub_size = [rc_dx(sub_sections[i]), rc_dy(sub_sections[i]), section_size.z];
+        sub_size = [rc_size(sub_sections[i]).x, rc_size(sub_sections[i]).y, section_size.z];
         translate(layout_pts[i]) {
             render_part(sub_parts[i], sub_size);
         }

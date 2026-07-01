@@ -8,129 +8,102 @@ include <BOSL2/std.scad>;
 
 
 //
-// rc are vectors representing a rectangle. They are vectors with [x,y,dx,dy] values.
+// rc are structures representing a rectangle in the x-y plane. 
+// They contain a size vector [dx, dy] and a shift vector [x, y].
+// They have nice arithmetical attributes for layout, with a centered rectangle being the default. 
 //
-function rc(x=0, y=0, dx=0, dy=0) =
-    assert(dx >= 0 && dy >= 0)
-    [x, y, dx, dy];
+RC_SIZE = "size";
+RC_SHIFT = "shift";
 
-function centered_rc(dx, dy) =
-    assert(dx >= 0 && dy >= 0)
-    [-dx/2, -dy/2, dx, dy];
-
-function shifted_rc(dx, dy, shift_x=0, shift_y=0) =
-    rc(-dx/2 + shift_x, -dy/2 + shift_y, dx, dy);
+function rc(size, shift=[0,0]) =
+    assert(size.x >= 0 && size.y >= 0)
+    struct_set([], [RC_SIZE, size, RC_SHIFT, shift]);
 
 function rc_from_edges(right, left, top, bottom) =
-    rc(left, bottom, right-left, top-bottom);
+    rc(size = [right-left, top-bottom], shift = [(right+left)/2, (top+bottom)/2]);
 
 function is_rc(r) =
-    is_list(r) && len(r) == 4 && is_num(r[0]);
+    let(keys = struct_keys(r))
+    is_struct(r) && in_list(RC_SIZE, keys) && in_list(RC_SHIFT, keys);
 
-function rc_x(r) = 
-    assert(is_rc(r))
-    r[0];
-
-function rc_y(r) = 
-    assert(is_rc(r))
-    r[1];
-
-function rc_dx(r) = 
-    assert(is_rc(r))
-    r[2];
-
-function rc_dy(r) =
-    assert(is_rc(r))
-    r[3];    
-
-function rc_left(r) = 
-    rc_x(r);
-
-function rc_bottom(r) = 
-    rc_y(r);
-
-function rc_right(r) = 
-    rc_x(r) + rc_dx(r);
-
-function rc_top(r) =
-    rc_y(r) + rc_dy(r);
+function rc_size(r) = 
+    struct_val(r, RC_SIZE);
 
 function rc_shift(r) = 
-    [rc_x(r) + rc_dx(r)/2, rc_y(r) + rc_dy(r)/2];
+    struct_val(r, RC_SHIFT);
 
-function rc_size(r) =
-    [rc_dx(r), rc_dy(r)];
+function rc_left(r) = 
+    -rc_size(r).x/2 + rc_shift(r).x;
 
-function rc_from_size(s) =
-    centered_rc(s.x, s.y);
+function rc_bottom(r) = 
+    -rc_size(r).y/2 + rc_shift(r).y;
+
+function rc_right(r) = 
+    rc_left(r) + rc_size(r).x;
+
+function rc_top(r) =
+    rc_bottom(r) + rc_size(r).y;
+
+function rc_union(r1, r2) = 
+    assert(is_rc(r1) && is_rc(r2))
+    rc_from_edges(
+        right = max(rc_right(r1), rc_right(r2)),
+        left = min(rc_left(r1), rc_left(r2)),
+        top = max(rc_top(r1), rc_top(r2)),
+        bottom = min(rc_bottom(r1), rc_bottom(r2))
+    );
 
 function rc_divided_horizontally(r, by) = 
     let(
-        dx = rc_dx(r), 
-        sub_section_dx = dx/by
+        division_dx = rc_size(r).x/by,
+        even = by % 2 == 0,
+        end = even ? floor(by/2) - 0.5 : floor(by/2),
+        start = -end
+
     )[
-        for(i = [0:1:by-1])
-            let(x = rc_x(r) + i*sub_section_dx)
-            rc(x, y=rc_y(r), dx=sub_section_dx, dy=rc_dy(r))
+        for(i = [start:1.0:end])
+            rc([division_dx, rc_size(r).y], [rc_shift(r).x + i*division_dx, rc_shift(r).y])
     ];
 
+// Grow a rectangle in opposite direction of the offset by the amount needed to 
+// to center a rect. 
+function grow_to_center(r) = 
+    assert(is_rc(r))
+    let(
+        shift = rc_shift(r),
+        rc_mirror = rc(size = rc_size(r), shift = [-shift.x, -shift.y]),
+    )
+    rc_union(r, rc_mirror);
+
 // 
-// Cubiods are sometimes called rectangular parallelpideds or rectangular cubiods in analytical geometry.
-// They have 3 pairs of rectangles as faces. They defined by an [x, y, z, dx, dy, dz] vector. 
+// cu are structures representing a cuboid in the 3d space. 
+// They contain a size vector [dx, dy, dz] and a shift vector [x, y, z].
+// They have nice arithmetical attributes for layout, with a centered cuboid being the default. 
 // 
 
-function cu(x=0, y=0, z=0, dx=0, dy=0, dz=0) = 
-    assert(dx >= 0 && dy >= 0 && dz >= 0)
-    [x, y, z, dx, dy, dz];
+CU_SIZE = "cu_size";
+CU_SHIFT = "cu_shift";
 
-function centered_cu(dx, dy, dz) =
-    cu(-dx/2, -dy/2, -dz/2, dx, dy, dz);
-
-function shifted_cu(dx, dy, dz, shift_x=0, shift_y=0, shift_z=0) = 
-    cu(-dx/2 + shift_x, -dy/2 + shift_y, -dz/2 + shift_z, dx, dy, dz);
+function cu(size, shift=[0,0,0]) = 
+    assert(size.x >= 0 && size.y >= 0 && size.z >= 0)
+    struct_set([], [CU_SIZE, size, CU_SHIFT, shift]);
 
 function is_cu(c) =
-    is_list(c) && len(c) == 6 && is_num(c[0]);
+    let(keys = struct_keys(c))
+    is_struct(c) && in_list(CU_SIZE, keys) && in_list(CU_SHIFT, keys);
 
-function cu_x(c) = 
-    assert(is_cu(c))
-    c[0];
 
-function cu_y(c) = 
-    assert(is_cu(c))
-    c[1];
-
-function cu_z(c) = 
-    assert(is_cu(c))
-    c[2];
-
-function cu_dx(c) = 
-    assert(is_cu(c))
-    c[3];
-
-function cu_dy(c) =
-    assert(is_cu(c))
-    c[4];    
-
-function cu_dz(c) =
-    assert(is_cu(c))
-    c[5];   
-
-function cu_from_rc(r, z=0, dz=0) = 
-    cu(rc_x(r), rc_y(r), z, rc_dx(r), rc_dy(r), dz);
-
-function cu_center(c) = 
-    [cu_x(c) + cu_dx(c)/2, cu_y(c) + cu_dy(c)/2, cu_z(c) + cu_dz(c)/2];
+function cu_shift(c) = 
+    struct_val(c, CU_SHIFT);
 
 function cu_size(c) =
-    [cu_dx(c), cu_dy(c), cu_dz(c)];
-
-function cu_from_size(s) =
-    centered_cu(s.x, s.y, s.z);
+    struct_val(c, CU_SIZE);
 
 function rc_from_cu(c) =
-    rc(cu_x(c), cu_y(c), cu_dx(c), cu_dy(c));
+    rc(size = [cu_size(c).x, cu_size(c).y], shift = [cu_shift(c).x, cu_shift(c).y]);
 
+function cu_from_rc(r, z=0, dz=0) = 
+    cu(size = [rc_size(r).x, rc_size(r).y, dz], shift = [rc_shift(r).x, rc_shift(r).y, z]);
 
 //
 // A padding has multiple forms
@@ -178,18 +151,4 @@ function apply_padding(r, padding) =
         top = rc_top(r) + b[2],
         bottom = rc_bottom(r) - b[3] 
     );
-
-
-// Grow a rectangle in opposite direction of the offset by the amount needed to 
-// to center a rect. 
-function grow_to_center(r) = 
-    assert(is_rc(r))
-    let(
-        shift = rc_shift(r),
-        left    = shift.x >= 0 ? rc_left(r) - 2*shift.x     : rc_left(r),
-        right   = shift.x >= 0 ? rc_right(r)                : rc_right(r) - 2*shift.x, 
-        bottom  = shift.y >= 0 ? rc_bottom(r) - 2*shift.y   : rc_bottom(r),
-        top     = shift.y >= 0 ? rc_top(r)                  : rc_top(r) - 2*shift.y 
-    )
-    rc_from_edges(right,left,top,bottom);
 
