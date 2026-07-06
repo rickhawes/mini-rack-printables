@@ -157,10 +157,10 @@ function apply_padding(r, padding) =
     assert(is_rc(r) && is_padding(padding))
     let(b = normalize_padding(padding))
     rc_from_edges(
-        right = rc_right(r) + b[0], 
-        left = rc_left(r) - b[1], 
-        top = rc_top(r) + b[2],
-        bottom = rc_bottom(r) - b[3] 
+        right   = rc_right(r)   + b[0], 
+        left    = rc_left(r)    - b[1], 
+        top     = rc_top(r)     + b[2],
+        bottom  = rc_bottom(r)  - b[3] 
     );
 
 // Shift by alignment. Given a bounding rectangle, another rectangle's size and an alignment, return a shift amount to align.

@@ -1,0 +1,49 @@
+[config]
+
+
+[[test]]
+name = "test cutout builder"
+script = '''
+include <../models/cutout.scad>
+
+size = [4,6];
+co = cutout(rect_size=size);
+
+assert(is_cutout(co));
+assert(co_rect_size(co) == size);
+'''
+
+[[test]]
+name = "test cutout builder with radius"
+script = '''
+include <../models/cutout.scad>
+co = cutout(radius=4);
+assert(is_cutout(co));
+assert(co_radius(co) == 4);
+assert(part_layout_size(co) == [8,8]);
+'''
+
+[[test]]
+name = "test cutout builder with slot"
+script = '''
+include <../models/cutout.scad>
+partBottom = cutout(
+    rect_size = [0,10],
+    radius = 3.0,
+    align = FRONT,
+    //rib_size = rib_size
+);
+assert(is_cutout(partBottom));
+assert(part_layout_size(partBottom) == [6,16]);
+'''
+
+[[test]]
+name = "test render_cutout"
+script = '''
+include <../models/cutout.scad>
+include <test_assembly.scad>
+
+size = [4,6];;
+rc1 = cutout(rect_size=size);
+test_render_part(rc1, section_size = [100,100,5]);
+'''

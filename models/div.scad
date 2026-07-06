@@ -52,14 +52,9 @@ function div(
         DIV_PARTS, parts
     ]);
 
-function is_div(part) =
-    is_struct(part) && get_subtype(part) == DIV_TYPE;
-
-function div_parts(part) =
-    struct_val(part, DIV_PARTS);
-
-function div_dir(part) =
-    struct_val(part, DIV_DIR);
+function is_div(part)       = is_struct(part) && get_subtype(part) == DIV_TYPE;
+function div_parts(part)    = struct_val(part, DIV_PARTS);
+function div_dir(part)      = struct_val(part, DIV_DIR);
 
 
 function divide_section(sub_parts, section_size, dir = HORIZONTAL) = 
@@ -74,7 +69,7 @@ function divide_section(sub_parts, section_size, dir = HORIZONTAL) =
             sub_part = sub_parts[i],
             sub_section_rc = sub_sections_rc[i],
             layout_size = part_layout_size(sub_part),
-            layout_with_padding = apply_padding(rc(size = layout_size), part_padding(sub_part)),
+            layout_with_padding = apply_padding(rc(layout_size), part_padding(sub_part)),
             shift = alignment_shift(
                 bounding_rc = sub_section_rc, 
                 align = part_align(sub_part), 
@@ -88,26 +83,15 @@ function divide_section(sub_parts, section_size, dir = HORIZONTAL) =
         ])
     ];
 
-function division_part(division) = 
-    struct_val(division, DIVISION_PART);
-
-function division_size(division) = 
-    struct_val(division, DIVISION_SIZE);
-
-function division_shift(division) = 
-    struct_val(division, DIVISION_SHIFT);
+function division_part(division)    = struct_val(division, DIVISION_PART);
+function division_size(division)    = struct_val(division, DIVISION_SIZE);
+function division_shift(division)   = struct_val(division, DIVISION_SHIFT);
 
 module _render_div(part, section_size) {
-    dir = div_dir(part);
-    sub_parts = div_parts(part);
-    divisions = divide_section(sub_parts, section_size, dir);
-
+    divisions = divide_section(div_parts(part), section_size, div_dir(part));
     for(division = divisions) {
-        sub_section_size = struct_val(division, DIVISION_SIZE);
-        shift = struct_val(division, DIVISION_SHIFT);
-        sub_part = struct_val(division, DIVISION_PART);
-        translate(shift) {
-            render_part(sub_part, sub_section_size);
+        translate(division_shift(division)) {
+            render_part(division_part(division), division_size(division));
         }
     }
 }

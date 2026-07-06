@@ -4,23 +4,22 @@ $fn = 20;
 // Common rib size 
 rib_size = [2.0, 1.0];
 
-partTop = rect_cutout(
-    size = [10,10],
-    rounding = 2.0,
+partTop = cutout(
+    radius = 5.0,
     align = BACK,
     padding = 1.0,
     rib_size = rib_size
 );
 
-partCenter = rect_cutout(
-    size = [10,10],
-    rounding = 2.0,
+partCenter = cutout(
+    rect_size = [10,10],
+    radius = 2.0,
     align = CENTER
 );
 
-partBottom = rect_cutout(
-    size = [10,10],
-    rounding = 2.0,
+partBottom = cutout(
+    rect_size = [0,8],
+    radius = 3.0,
     align = FRONT,
     rib_size = rib_size
 );
