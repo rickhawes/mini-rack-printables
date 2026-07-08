@@ -3,12 +3,7 @@ include <../models/render_part.scad>
 
 // An simple assembly to test rendering of parts
 module test_render_part(part, section_size) {
-    diff(remove=REMOVE_TAG) {
-        cube(section_size) {
-            // Parts
-            if (!is_undef(part)) {
-                render_part(part, section_size);
-            }
-        }
+    with_part_rendering(part, section_size) {
+        cube(section_size, center=true);
     }
 }

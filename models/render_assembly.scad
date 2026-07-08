@@ -11,6 +11,6 @@ module render_assembly(assembly) {
     if (get_subtype(assembly) == FACE_PLATE_TYPE) {
         _render_face_plate(assembly);
     } else {
-        assert(false, "unknown assembly kind");
+        assert(false, "render_assembly: unknown assembly kind");
     }
 }

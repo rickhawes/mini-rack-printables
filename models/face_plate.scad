@@ -141,29 +141,35 @@ module _render_face_plate(fp) {
             prismoid(size2=[part_size.x, rib_size.x], h=rib_size.y, xang=30, yang=90);
     }
 
-    // Layout calculations
-    height = rack_units * rack_1u_height;
-    plate_size = [rack_width_10inch, height, thickness];
-    part_area_width = plate_size.x - 2*shelf_tab_width_tecmojo - 2*rib_size.x;
-    part_area_height = plate_size.y - 2*rib_size.x;
-    part_area_size = [part_area_width, part_area_height, thickness];
-
-    diff(remove=REMOVE_TAG) {
+    module plain_plate(plate_size, rib_size) {
         extruded_roundrect(plate_size, r = face_plate_rounding, anchor=TOP) {
             // Ribs on top and bottoms 
-            if (!is_undef(rib_size) && rib_size.y > 0) {
+            if (rib_size.y > 0) {
                 face_plate_ribs(plate_size, part_area_size, rib_size);
             }
  
             // Rack Screw
-            tag(REMOVE_TAG) align(BOTTOM) {
+            align(BOTTOM) {
                 rack_screw_holes(rack_units, thickness, middle_holes, half_alignment);
             }
-
-            // Parts
-            if (!is_undef(part)) {
-                render_part(part = part, section_size = part_area_size);
-            }
         }
+    }
+
+    // Layout calculations
+    plate_size = [
+        rack_width_10inch, 
+        rack_units * rack_1u_height, 
+        thickness
+    ];
+    part_area_size = [
+        plate_size.x - 2*shelf_tab_width_tecmojo - 2*rib_size.x, 
+        plate_size.y - 2*rib_size.x, 
+        thickness
+    ];
+
+    // Render the face plate with passed in parts
+    with_part_rendering(part, part_area_size) {
+        // Render the plate
+        plain_plate(plate_size, rib_size);
     }
 }

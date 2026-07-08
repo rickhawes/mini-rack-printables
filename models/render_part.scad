@@ -8,18 +8,34 @@ include <base.scad>
 include <cutout.scad>
 include <div.scad>
 
-// Tag for subtraction 
-REMOVE_TAG = "remove_tag";
-
 // Render a part based on its type
-module render_part(part, section_size) {
+module render_part(part, plate_size, subtraction = false) {
     assert(is_part(part));
     if (get_subtype(part) == CUTOUT_TYPE) { 
-        _render_cutout(part, section_size);
+        _render_cutout(part, plate_size, subtraction);
     } else if (get_subtype(part) == DIV_TYPE) {
-        _render_div(part, section_size);    
+        _render_div(part, plate_size, subtraction);    
     } else {
-        assert(false, "unknown part type");
+        assert(false, "render_part: unknown part type");
     }
 }
 
+// with_part_rendering is a helper module that renders a part and then executes the given code block
+module with_part_rendering(part, part_area_size) {
+    difference() {
+        union() {
+            // Render the plate
+            children();
+
+            // Render the part additions 
+            if (!is_undef(part)) {
+                render_part(part = part, plate_size = part_area_size, subtraction = false);
+            }
+        }
+
+        // Render the part subtractions 
+        if (!is_undef(part)) {
+            render_part(part = part, plate_size = part_area_size, subtraction = true);
+        }
+    }
+}

@@ -63,7 +63,8 @@ function co_rib_size(co)    = struct_val(co, CO_RIB_SIZE);
 
 
 // Render the part in the context of an assembly
-module _render_cutout(part, section_size) {
+module _render_cutout(part, section_size, subtraction) {
+    assert(is_cutout(part), "part is not a cutout");
     rect_size       = co_rect_size(part);
     radius          = co_radius(part);
     rib_size        = co_rib_size(part);
@@ -85,15 +86,16 @@ module _render_cutout(part, section_size) {
     }
     
     // Cutout
-    tag(REMOVE_TAG)
-    position(BOTTOM)
-    linear_extrude(height=section_size.z) {
-        outline_cutout(rect_size=rect_size, radius=radius);    
-    }    
+    if(subtraction) {
+        translate([0,0,-section_size.z]) {
+            linear_extrude(height=section_size.z) {
+                outline_cutout(rect_size=rect_size, radius=radius);    
+            }    
+        }
+    }
 
     // Rib around the cutout
-    if (!is_undef(rib_size)) {
-        position(TOP)
+    if (!subtraction && rib_size.x > 0 && rib_size.y > 0) {
         extrude_rib(rib_size) {
             outline_cutout(rect_size=rect_size, radius=radius);
         }
