@@ -88,11 +88,11 @@ function division_part(division)    = struct_val(division, DIVISION_PART);
 function division_size(division)    = struct_val(division, DIVISION_SIZE);
 function division_shift(division)   = struct_val(division, DIVISION_SHIFT);
 
-module _render_div(part, section_size, subtraction) {
+module _render_div(part, section_size) {
     divisions = divide_section(div_parts(part), section_size, div_dir(part));
     for(division = divisions) {
         translate(division_shift(division)) {
-            render_part(division_part(division), division_size(division), subtraction);
+            render_part(division_part(division), division_size(division));
         }
     }
 }

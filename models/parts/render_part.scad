@@ -7,35 +7,20 @@
 include <part_base.scad>
 include <cutout.scad>
 include <div.scad>
+include <stl.scad>
 
 // Render a part based on its type
-module render_part(part, plate_size, subtraction = false) {
+module render_part(part, plate_size) {
     assert(is_part(part));
     if (part_type(part) == CUTOUT_TYPE) { 
-        _render_cutout(part, plate_size, subtraction);
+        _render_cutout(part, plate_size);
     } else if (part_type(part) == DIV_TYPE) {
-        _render_div(part, plate_size, subtraction);    
+        _render_div(part, plate_size);    
+    } else if (part_type(part) == STL_TYPE) {
+        _render_stl(part, plate_size);
     } else {
         assert(false, "render_part: unknown part type");
     }
 }
 
-// with_part_rendering is a helper module that renders a part and then executes the given code block
-module with_part_rendering(part, part_area_size) {
-    difference() {
-        union() {
-            // Render the plate
-            children();
 
-            // Render the part additions 
-            if (!is_undef(part)) {
-                render_part(part = part, plate_size = part_area_size, subtraction = false);
-            }
-        }
-
-        // Render the part subtractions 
-        if (!is_undef(part)) {
-            render_part(part = part, plate_size = part_area_size, subtraction = true);
-        }
-    }
-}

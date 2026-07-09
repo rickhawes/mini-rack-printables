@@ -146,6 +146,7 @@ module _render_face_plate(fp) {
             extruded_roundrect(plate_size, r = face_plate_rounding, anchor=TOP) {
                 // Ribs on top and bottoms 
                 if (rib_size.y > 0) {
+                    tag("keep")
                     face_plate_ribs(plate_size, part_area_size, rib_size);
                 }
     
@@ -154,6 +155,8 @@ module _render_face_plate(fp) {
                 align(BOTTOM) {
                     rack_screw_holes(rack_units, thickness, middle_holes, half_alignment);
                 }
+
+                children();
             }
         }
     }
@@ -170,9 +173,10 @@ module _render_face_plate(fp) {
         thickness
     ];
 
-    // Render the face plate with passed in parts
-    with_part_rendering(part, part_area_size) {
-        // Render the plate
-        plain_plate(plate_size, rib_size);
+    // Render the plate
+    plain_plate(plate_size, rib_size) {
+        if (!is_undef(part)) {
+            render_part(part, part_area_size);
+        }
     }
 }
