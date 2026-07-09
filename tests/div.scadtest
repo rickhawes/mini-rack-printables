@@ -4,7 +4,7 @@
 [[test]]
 name = "Test divide_section"
 script = '''
-include <../models/div.scad>
+include <../models/parts/div.scad>
 
 part1 = part_base(kind="test1");
 sections = divide_section(sub_parts=[part1], section_size=[10,10,1]);
@@ -18,7 +18,7 @@ assert(division_shift(sections[0]) == [0,0]);
 [[test]]
 name = "Test divide_section with shift"
 script = '''
-include <../models/div.scad>
+include <../models/parts/div.scad>
 
 part1 = part_base(kind="test1", shift=[1,1]);
 sections = divide_section(sub_parts=[part1], section_size=[10,10,1]);
@@ -31,7 +31,7 @@ assert(division_shift(sections[0]) == [1,1]);
 [[test]]
 name = "Test divide_section into 3"
 script = '''
-include <../models/div.scad>
+include <../models/parts/div.scad>
 
 part1 = part_base(kind="test1", shift=[1,1]);
 sections = divide_section(sub_parts=[part1, part1, part1], section_size=[30,10,1]);
@@ -47,7 +47,7 @@ assert(division_shift(sections[2]) == [11,1]);
 [[test]]
 name = "Test divide_section vertically"
 script = '''
-include <../models/div.scad>
+include <../models/parts/div.scad>
 
 part1 = part_base(kind="test1", shift=[1,1]);
 sections = divide_section(sub_parts=[part1, part1, part1], section_size=[10,30,1], dir=VERTICAL);

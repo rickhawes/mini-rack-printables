@@ -6,8 +6,9 @@
 //
 //------------------------------------------------------------------------------------------------
 include <BOSL2/std.scad>
-include <base.scad>
-include <geometry.scad>
+include <../geometry.scad>
+include <part_base.scad>
+
 
 //------------------------------------------------
 // Part Constants
@@ -52,7 +53,7 @@ function div(
         DIV_PARTS, parts
     ]);
 
-function is_div(part)       = is_struct(part) && get_subtype(part) == DIV_TYPE;
+function is_div(part)       = is_struct(part) && part_type(part) == DIV_TYPE;
 function div_parts(part)    = struct_val(part, DIV_PARTS);
 function div_dir(part)      = struct_val(part, DIV_DIR);
 

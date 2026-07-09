@@ -4,16 +4,16 @@
 // Polymorphic functions and modules that all parts can do
 //
 //------------------------------------------------------------------------------------------------
-include <base.scad>
+include <part_base.scad>
 include <cutout.scad>
 include <div.scad>
 
 // Render a part based on its type
 module render_part(part, plate_size, subtraction = false) {
     assert(is_part(part));
-    if (get_subtype(part) == CUTOUT_TYPE) { 
+    if (part_type(part) == CUTOUT_TYPE) { 
         _render_cutout(part, plate_size, subtraction);
-    } else if (get_subtype(part) == DIV_TYPE) {
+    } else if (part_type(part) == DIV_TYPE) {
         _render_div(part, plate_size, subtraction);    
     } else {
         assert(false, "render_part: unknown part type");

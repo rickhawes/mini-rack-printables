@@ -1,5 +1,5 @@
 include <BOSL2/std.scad>
-include <../models/render_part.scad>
+include <../models/parts/render_part.scad>
 
 // An simple assembly to test rendering of parts
 module test_render_part(part, section_size) {

@@ -4,7 +4,7 @@
 [[test]]
 name = "test cutout builder"
 script = '''
-include <../models/cutout.scad>
+include <../models/parts/cutout.scad>
 
 size = [4,6];
 co = cutout(rect_size=size);
@@ -16,7 +16,7 @@ assert(co_rect_size(co) == size);
 [[test]]
 name = "test cutout builder with radius"
 script = '''
-include <../models/cutout.scad>
+include <../models/parts/cutout.scad>
 co = cutout(radius=4);
 assert(is_cutout(co));
 assert(co_radius(co) == 4);
@@ -26,7 +26,7 @@ assert(part_layout_size(co) == [8,8]);
 [[test]]
 name = "test cutout builder with slot"
 script = '''
-include <../models/cutout.scad>
+include <../models/parts/cutout.scad>
 partBottom = cutout(
     rect_size = [0,10],
     radius = 3.0,
@@ -40,7 +40,7 @@ assert(part_layout_size(partBottom) == [6,16]);
 [[test]]
 name = "test render_cutout"
 script = '''
-include <../models/cutout.scad>
+include <../models/parts/cutout.scad>
 include <test_assembly.scad>
 
 size = [4,6];;

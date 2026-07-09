@@ -1,7 +1,8 @@
 include <BOSL2/std.scad>
-include <dimensions.scad>
-include <shapes.scad>
-include <render_part.scad>
+include <../dimensions.scad>
+include <../shapes.scad>
+include <../parts/render_part.scad>
+include <assembly_base.scad>
 
 //------------------------------------------------------------------------------------------------
 // Face Plate 
@@ -43,8 +44,7 @@ function face_plate(
 ]);
 
 // Is the passed struct a face plate?
-function is_face_plate(plate) = 
-    get_subtype(plate) == FACE_PLATE_TYPE;
+function is_face_plate(plate)   = assembly_type(plate) == FACE_PLATE_TYPE;
 
 function fp_rack_units(fp)      = struct_val(fp, FP_RACK_UNITS  );
 function fp_thickness(fp)       = struct_val(fp, FP_THICKNESS   );
@@ -142,15 +142,18 @@ module _render_face_plate(fp) {
     }
 
     module plain_plate(plate_size, rib_size) {
-        extruded_roundrect(plate_size, r = face_plate_rounding, anchor=TOP) {
-            // Ribs on top and bottoms 
-            if (rib_size.y > 0) {
-                face_plate_ribs(plate_size, part_area_size, rib_size);
-            }
- 
-            // Rack Screw
-            align(BOTTOM) {
-                rack_screw_holes(rack_units, thickness, middle_holes, half_alignment);
+        diff() {
+            extruded_roundrect(plate_size, r = face_plate_rounding, anchor=TOP) {
+                // Ribs on top and bottoms 
+                if (rib_size.y > 0) {
+                    face_plate_ribs(plate_size, part_area_size, rib_size);
+                }
+    
+                // Rack Screw
+                tag("remove")
+                align(BOTTOM) {
+                    rack_screw_holes(rack_units, thickness, middle_holes, half_alignment);
+                }
             }
         }
     }

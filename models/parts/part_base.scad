@@ -11,18 +11,8 @@ include <BOSL2/std.scad>;
 //------------------------------------------------
 /* [Hidden] */
 
-
 // Key for TYPE
-TYPE_KEY = "type";
-
-// Key for subtype
-SUBTYPE_KEY = "subtype";
-
-// Type for assemblies
-ASSEMBLY_TYPE = "assembly";
-
-// Type for parts
-PART_TYPE = "part";
+PART_TYPE_KEY = "part_type";
 
 // Key for _padding_
 PADDING_KEY = "padding";
@@ -41,35 +31,6 @@ LAYOUT_SIZE_KEY = "layout_size";
 // Functions
 //------------------------------------------------
 
-// Get the type from the base of the struct
-function get_type(s) = 
-    struct_val(s, TYPE_KEY);
-
-// Get the subtype from the base of the struct
-function get_subtype(s) =
-    struct_val(s, SUBTYPE_KEY);
-
-
-// 
-// Assembly Base
-//
-
-// Create an assembly base structure
-function assembly_base(kind) = 
-    struct_set([], [
-        TYPE_KEY, ASSEMBLY_TYPE,
-        SUBTYPE_KEY, kind
-    ]);
-
-// Is this structure an assembly type
-function is_assembly(assembly) =
-    is_struct(assembly) && struct_val(assembly, TYPE_KEY) == ASSEMBLY_TYPE;
-
-
-//
-// Part Base
-//
-
 // Create an part base structure
 function part_base(
     kind, 
@@ -79,17 +40,18 @@ function part_base(
     layout_size=[0,0]
 ) = 
     struct_set([], [
-        TYPE_KEY, PART_TYPE,
-        SUBTYPE_KEY, kind,
+        PART_TYPE_KEY, kind,
         ALIGN_KEY, align,
         PADDING_KEY, padding,
         SHIFT_KEY, shift,
         LAYOUT_SIZE_KEY, layout_size
     ]);
 
+// Get the type from the base of the struct
+function part_type(s) = struct_val(s, PART_TYPE_KEY);
+
 // Is this structure an assembly type
-function is_part(part) =
-    is_struct(part) && struct_val(part, TYPE_KEY) == PART_TYPE;
+function is_part(part) = is_struct(part) && in_list(PART_TYPE_KEY, struct_keys(part));
 
 // How to align the part (uses BOLS2 values)
 function part_align(part) = 

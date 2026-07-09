@@ -7,9 +7,9 @@
 //
 //------------------------------------------------------------------------------------------------
 include <BOSL2/std.scad>
-include <base.scad>
-include <geometry.scad>
-include <shapes.scad>
+include <../geometry.scad>
+include <../shapes.scad>
+include <part_base.scad>
 
 //------------------------------------------------
 // Part Constants
@@ -55,7 +55,7 @@ function cutout(
         CO_RIB_SIZE, rib_size
     ]);
 
-function is_cutout(part)    = get_subtype(part) == CUTOUT_TYPE;
+function is_cutout(part)    = part_type(part) == CUTOUT_TYPE;
 
 function co_rect_size(co)   = struct_val(co, CO_RECT_SIZE);
 function co_radius(co)      = struct_val(co, CO_RADIUS);
