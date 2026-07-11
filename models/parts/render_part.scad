@@ -8,6 +8,7 @@ include <part_base.scad>
 include <cutout.scad>
 include <div.scad>
 include <stl.scad>
+include <keystone.scad>
 
 // Render a part based on its type
 module render_part(part, plate_size) {
@@ -18,6 +19,8 @@ module render_part(part, plate_size) {
         _render_div(part, plate_size);    
     } else if (part_type(part) == STL_TYPE) {
         _render_stl(part, plate_size);
+    } else if (part_type(part) == KEYSTONE_TYPE) {
+        _render_keystone(part, plate_size);
     } else {
         assert(false, "render_part: unknown part type");
     }

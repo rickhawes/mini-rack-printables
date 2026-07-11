@@ -20,7 +20,6 @@ include <part_base.scad>
 CUTOUT_TYPE     = "cutout";
 
 CO_RECT_SIZE    = "rect_size";
-CO_PADDING      = "padding";
 CO_RADIUS       = "radius";
 CO_RIB_SIZE     = "rib_size";
 

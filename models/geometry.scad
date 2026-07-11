@@ -17,7 +17,7 @@ RC_SHIFT = "shift";
 
 function rc(size, shift=[0,0]) =
     assert(size.x >= 0 && size.y >= 0)
-    struct_set([], [RC_SIZE, size, RC_SHIFT, shift]);
+    struct_set([], [RC_SIZE, [size.x, size.y], RC_SHIFT, [shift.x, shift.y]]);
 
 function rc_from_edges(right, left, top, bottom) =
     rc(size = [right-left, top-bottom], shift = [(right+left)/2, (top+bottom)/2]);
