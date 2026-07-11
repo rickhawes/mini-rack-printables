@@ -1,58 +1,171 @@
 [config]
 
+[[test]]
+name = "Test extend_sizes"
+script = '''
+include <../models/parts/div.scad>
+sizes1 = extend_sizes([10, "*"], 4);
+assert(sizes1 == [10, "*", "*", "*"]);
+
+sizes2 = extend_sizes([10, 20], 2);
+assert(sizes2 == [10,20]);
+'''
+
 
 [[test]]
-name = "Test divide_section"
+name = "test is_sizes_valid"
+script = '''
+include <../models/parts/div.scad>
+
+assert(is_sizes_valid(["*", 3, 4, 9]));
+assert(!is_sizes_valid([3.0, 0, -1]));
+assert(!is_sizes_valid(["-"]));
+'''
+
+
+[[test]]
+name = "test couting and suming sizes"
+script = '''
+include <../models/parts/div.scad>
+
+sizes1 = ["*"];
+assert(count_auto(sizes1) == 1);
+assert(sum_static(sizes1) == 0);
+
+sizes2 = ["*", "*"];
+assert(count_auto(sizes2) == 2);
+assert(sum_static(sizes2) == 0);
+
+sizes3 = ["*", 100, "*"];
+assert(count_auto(sizes3) == 2);
+assert(sum_static(sizes3) == 100);
+
+sizes4 = ["*", 100, 50, "*"];
+assert(count_auto(sizes4) == 2);
+assert(sum_static(sizes4) == 150);
+'''
+
+[[test]]
+name = "test divide equally horizontally"
+script = '''
+include <../models/parts/div.scad>
+
+r1 = rc([2,2]);
+divisions1 = divide_rc(r=r1, sizes=["*"]);
+assert(divisions1[0] == r1);
+
+r2 = rc([4,2]);
+divisions2 = divide_rc(r=r2, sizes=["*", "*"]);
+assert(len(divisions2)== 2)
+assert(divisions2[0] == rc([2,2], [-1,0]));
+assert(divisions2[1] == rc([2,2], [1,0]));
+
+r3 = rc([6,1]);
+divisions3 = divide_rc(r=r3, sizes=["*", "*", "*"]);
+assert(len(divisions3) == 3);
+assert(divisions3[0] == rc([2,1], [-2,0]));
+assert(divisions3[1] == rc([2,1], [0,0]));
+assert(divisions3[2] == rc([2,1], [2,0]));
+'''
+
+[[test]]
+name = "test divide horizontally"
+script = '''
+include <../models/parts/div.scad>
+
+r1 = rc([2,2]);
+divisions1 = divide_rc(r=r1, sizes=[1]);
+assert(divisions1[0] == r1);
+
+r2 = rc([4,2]);
+divisions2 = divide_rc(r=r2, sizes=[1, "*"]);
+assert(len(divisions2)== 2)
+assert(divisions2[0] == rc([1,2], [-1.5,0]));
+assert(divisions2[1] == rc([3,2], [0.5,0]));
+
+r3 = rc([6,1]);
+divisions3 = divide_rc(r=r3, sizes=[1, "*", 1]);
+assert(len(divisions3) == 3);
+assert(divisions3[0] == rc([1,1], [-2.5,0]));
+assert(divisions3[1] == rc([4,1], [0,0]));
+assert(divisions3[2] == rc([1,1], [2.5,0]));
+'''
+
+
+[[test]]
+name = "test divide vertically"
+script = '''
+include <../models/parts/div.scad>
+
+r2 = rc([2,4]);
+divisions2 = divide_rc(r=r2, sizes=[1, "*"], dir=VERTICAL);
+assert(len(divisions2)== 2)
+assert(divisions2[0] == rc([2,1], [0,-1.5]));
+assert(divisions2[1] == rc([2,3], [0,0.5]));
+
+r3 = rc([1,6]);
+divisions3 = divide_rc(r=r3, sizes=[1, "*", 1], dir=VERTICAL);
+assert(len(divisions3) == 3);
+assert(divisions3[0] == rc([1,1], [0,-2.5]));
+assert(divisions3[1] == rc([1,4], [0,0]));
+assert(divisions3[2] == rc([1,1], [0,2.5]));
+'''
+
+[[test]]
+name = "Test divide_plate"
 script = '''
 include <../models/parts/div.scad>
 
 part1 = part_base(kind="test1");
-sections = divide_section(sub_parts=[part1], section_size=[10,10,1]);
+sections = divide_plate(sub_parts=[part1], plate_size=[10,10,1], dir=HORIZONTAL);
 
 assert(len(sections) == 1);
-assert(division_part(sections[0]) == part1);
-assert(division_size(sections[0]) == [10,10,1]);
-assert(division_shift(sections[0]) == [0,0]);
+assert(section_part(sections[0]) == part1);
+assert(section_size(sections[0]) == [10,10,1]);
+assert(section_shift(sections[0]) == [0,0]);
 '''
 
 [[test]]
-name = "Test divide_section with shift"
+name = "Test divide_plate with shift"
 script = '''
 include <../models/parts/div.scad>
 
 part1 = part_base(kind="test1", shift=[1,1]);
-sections = divide_section(sub_parts=[part1], section_size=[10,10,1]);
+sections = divide_plate(sub_parts=[part1], plate_size=[10,10,1], dir=HORIZONTAL);
 
-assert(division_part(sections[0]) == part1);
-assert(division_size(sections[0]) == [10,10,1]);
-assert(division_shift(sections[0]) == [1,1]);
+assert(section_part(sections[0]) == part1);
+assert(section_size(sections[0]) == [10,10,1]);
+assert(section_shift(sections[0]) == [1,1]);
 '''
 
 [[test]]
-name = "Test divide_section into 3"
+name = "Test divide_plate into 3"
 script = '''
 include <../models/parts/div.scad>
 
 part1 = part_base(kind="test1", shift=[1,1]);
-sections = divide_section(sub_parts=[part1, part1, part1], section_size=[30,10,1]);
+sections = divide_plate(sub_parts=[part1, part1, part1], plate_size=[30,10,1], dir=HORIZONTAL);
 
-assert(division_part(sections[1]) == part1);
-assert(division_size(sections[1]) == [10,10,1]);
+assert(len(sections) == 3);
+assert(section_part(sections[1]) == part1);
+assert(section_size(sections[1]) == [10,10,1]);
 
-assert(division_shift(sections[0]) == [-9,1]);
-assert(division_shift(sections[1]) == [1,1]);
-assert(division_shift(sections[2]) == [11,1]);
+assert(section_shift(sections[0]) == [-9,1]);
+assert(section_shift(sections[1]) == [1,1]);
+assert(section_shift(sections[2]) == [11,1]);
 '''
 
 [[test]]
-name = "Test divide_section vertically"
+name = "Test divide_plate vertically"
 script = '''
 include <../models/parts/div.scad>
 
 part1 = part_base(kind="test1", shift=[1,1]);
-sections = divide_section(sub_parts=[part1, part1, part1], section_size=[10,30,1], dir=VERTICAL);
+sections = divide_plate(sub_parts=[part1, part1, part1], plate_size=[10,30,1], dir=VERTICAL);
 
-assert(division_shift(sections[0]) == [1,-9]);
-assert(division_shift(sections[1]) == [1,1]);
-assert(division_shift(sections[2]) == [1,11]);
+assert(section_shift(sections[0]) == [1,-9]);
+assert(section_shift(sections[1]) == [1,1]);
+assert(section_shift(sections[2]) == [1,11]);
 '''
+
+

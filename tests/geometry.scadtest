@@ -27,8 +27,8 @@ rc1 = rc(size=[4,6], shift=[1,1]);
 rc2 = rc_from_edges(
     left = rc_left(rc1),
     right = rc_right(rc1),
-    top = rc_top(rc1),
-    bottom = rc_bottom(rc1)
+    bottom = rc_bottom(rc1),
+    top = rc_top(rc1)
 );
 assert(rc1 == rc2);
 '''
@@ -153,4 +153,29 @@ shiftBack2 = alignment_shift(bounding_rc2, BACK, [2,2]);
 assert(shiftBack2 == [20,24]);    
 shiftFrontRight2 = alignment_shift(bounding_rc2, FRONT+RIGHT, [2,2]);  
 assert(shiftFrontRight2 == [24,16]);
+'''
+
+[[test]]
+name = "test split"
+script = '''
+include <../models/geometry.scad>
+
+r = rc([8,8], [4,4]);
+split1 = rc_split(r, dx=1);
+assert(len(split1) == 2);
+assert(split1[0] == rc([1,8], [0.5, 4]));
+assert(split1[1] == rc([7,8], [4.5, 4]));
+
+split2 = rc_split(r, dx=-2);
+assert(len(split1) == 2);
+assert(split2[0] == rc([6,8], [3, 4]));
+assert(split2[1] == rc([2,8], [7, 4]));
+
+split3 = rc_split(r, dy=1);
+assert(split3[0] == rc([8,1], [4, 0.5]));
+assert(split3[1] == rc([8,7], [4, 4.5]));
+
+split4 = rc_split(r, dy=-2);
+assert(split4[0] == rc([8,6], [4, 3]));
+assert(split4[1] == rc([8,2], [4, 7]));
 '''

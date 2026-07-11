@@ -19,7 +19,7 @@ function rc(size, shift=[0,0]) =
     assert(size.x >= 0 && size.y >= 0)
     struct_set([], [RC_SIZE, [size.x, size.y], RC_SHIFT, [shift.x, shift.y]]);
 
-function rc_from_edges(right, left, top, bottom) =
+function rc_from_edges(left, right, bottom, top) =
     rc(size = [right-left, top-bottom], shift = [(right+left)/2, (top+bottom)/2]);
 
 function is_rc(r) =
@@ -128,6 +128,30 @@ function union_padding(padding1, padding2) =
 // RC functions for layout
 //
 
+function rc_split(r, dx=0, dy=0) = 
+    assert(!(dx != 0 && dy != 0), "must only have one of dx or dy")
+    assert(!(dx == 0 && dy == 0), "must specify either dx or dy")
+    dx > 0 ?
+        [
+            rc_from_edges(left=rc_left(r),      right=rc_left(r)+dx,    bottom=rc_bottom(r), top=rc_top(r)),
+            rc_from_edges(left=rc_left(r)+dx,   right=rc_right(r),      bottom=rc_bottom(r), top=rc_top(r))
+        ]:
+    dx < 0 ?
+        [
+            rc_from_edges(left=rc_left(r),      right=rc_right(r)+dx,   bottom=rc_bottom(r), top=rc_top(r)),
+            rc_from_edges(left=rc_right(r)+dx,  right=rc_right(r),      bottom=rc_bottom(r), top=rc_top(r))
+        ]:
+    dy > 0 ?
+        [
+            rc_from_edges(left=rc_left(r), right=rc_right(r), bottom=rc_bottom(r),      top=rc_bottom(r)+dy),
+            rc_from_edges(left=rc_left(r), right=rc_right(r), bottom=rc_bottom(r)+dy,   top=rc_top(r))
+        ]:  
+        assert(dy < 0)
+        [
+            rc_from_edges(left=rc_left(r), right=rc_right(r), bottom=rc_bottom(r),      top=rc_top(r)+dy),
+            rc_from_edges(left=rc_left(r), right=rc_right(r), bottom=rc_top(r)+dy,      top=rc_top(r))
+        ];
+
 function rc_divided_horizontally(r, by) = 
     let(
         division_dx = rc_size(r).x/by,
@@ -146,7 +170,6 @@ function rc_divided_vertically(r, by) =
         even = by % 2 == 0,
         end = even ? floor(by/2) - 0.5 : floor(by/2),
         start = -end
-
     )[
         for(i = [start:1.0:end])
             rc([rc_size(r).x, division_dy], [rc_shift(r).x, rc_shift(r).y + i*division_dy])

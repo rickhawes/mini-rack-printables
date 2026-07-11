@@ -5,7 +5,11 @@ $fn = 20;
 // Common rib size 
 rib_size = [2.0, 1.0];
 
-part = keystone();
+
+// Create an area with 5 identical keystones
+part = div(
+    parts = repeat(keystone(), 5)
+);
 
 fp = face_plate(
     rack_units = 1.0,
