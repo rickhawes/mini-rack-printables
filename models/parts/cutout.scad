@@ -91,7 +91,6 @@ module _render_cutout(part, section_size) {
         outline_cutout(rect_size=rect_size, radius=radius);    
     }    
     
-
     // Rib around the cutout
     if (rib_size.x > 0 && rib_size.y > 0) {
         tag("keep")

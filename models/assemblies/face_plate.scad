@@ -34,11 +34,15 @@ function face_plate(
     half_alignment = false, 
     rib_size = [0,0],
     part = undef
-) = struct_set(assembly_base(FACE_PLATE_TYPE), [
+) = 
+assert(is_num(rack_units) && rack_units > 0)
+assert(is_num(thickness) && thickness > 0)
+assert(is_undef(part) || is_part(part))
+struct_set(assembly_base(FACE_PLATE_TYPE), [
     FP_RACK_UNITS,      rack_units,
     FP_THICKNESS,       thickness,
     FP_MIDDLE_HOLES,    middle_holes,
-    FP_HALF_ALIGNMENT,     half_alignment,
+    FP_HALF_ALIGNMENT,  half_alignment,
     FP_RIB_SIZE,        rib_size,
     FP_PART,            part
 ]);
