@@ -19,13 +19,13 @@ HOLDER_TYPE     = "hold";
 HOLD_SIZE       = "size";
 HOLD_ROUNDING   = "rounding";
 HOLD_THICKNESS  = "thickness";
-HOLD_LIP        = "lip";
+HOLD_STYLE      = "style";
 
-FRONT_LIP           = "front_lip";
-BACK_LIP            = "back_lip";
-NO_LIP              = "no_lip";
+STYLE_FRONT_LIP     = "front_lip";
+STYLE_BACK_LIP      = "back_lip";
+SYTLE_PLAIN         = "no_lip";
 
-function has_lip(lip) = lip != NO_LIP;
+function has_lip(style) = style == STYLE_FRONT_LIP || style == STYLE_BACK_LIP;
 
 // lip dimensions
 lip_radius      = 1.0;
@@ -39,7 +39,7 @@ function holder(
     size = [0,0,0],
     rounding = 0.5,
     thickness = 3.0,
-    lip = FRONT_LIP,
+    style = STYLE_PLAIN,
     align = CENTER,
     padding = 0,
     shift = [0,0]
@@ -58,14 +58,14 @@ function holder(
         HOLD_SIZE, size,
         HOLD_ROUNDING, rounding,
         HOLD_THICKNESS, thickness,
-        HOLD_LIP, lip
+        HOLD_STYLE, style
     ]);
 
 function is_holder(s)       = is_struct(s) && part_type(s) == HOLDER_TYPE;
 function hold_size(s)       = struct_val(s, HOLD_SIZE);
 function hold_rounding(s)   = struct_val(s, HOLD_ROUNDING);
 function hold_thickness(s)  = struct_val(s, HOLD_THICKNESS);
-function hold_lip(s)        = struct_val(s, HOLD_LIP);
+function hold_sytle(s)      = struct_val(s, HOLD_STYLE);
 
 
 module _render_holder(part, plate_size) {
@@ -73,7 +73,7 @@ module _render_holder(part, plate_size) {
     size = hold_size(part);
     rounding = hold_rounding(part);
     thickness = hold_thickness(part);
-    lip = hold_lip(part);
+    style = hold_sytle(part);
 
     //
     // Each sub-module stacks, position's on the top of the previous module.
@@ -111,21 +111,22 @@ module _render_holder(part, plate_size) {
             [
                 size.x + 2*thickness, 
                 size.y + 2*thickness, 
-                size.z + (has_lip(lip) ? lip_dz : 0)
+                size.z + (has_lip(style) ? lip_dz : 0)
             ], 
             anchor=BOTTOM,
             rounding = rounding,
             edges = [TOP, FRONT, RIGHT, BACK, LEFT]
         );
-        // remove 
-        if (lip == FRONT_LIP) {
+
+        // remove parts
+        if (style == STYLE_FRONT_LIP) {
             render_lip()
             main_holder();
-        } else if (lip == BACK_LIP) {
+        } else if (style == STYLE_BACK_LIP) {
             main_holder()
             render_lip();
         } else {
-            assert(lip == NO_LIP);
+            assert(lip == STYLE_PLAIN);
             main_holder();
         }
     }

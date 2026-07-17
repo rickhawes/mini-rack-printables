@@ -6,7 +6,7 @@ $fn = 20;
 // Create a holder
 part = div(
     parts = [
-        holder([212.8, 33.1, 10], rounding = 1.5, lip = BACK_LIP)
+        holder([212.8, 33.1, 10], rounding = 1.5, style = STYLE_BACK_LIP)
     ]
 );
 
