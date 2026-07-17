@@ -23,7 +23,8 @@ HOLD_STYLE      = "style";
 
 STYLE_FRONT_LIP     = "front_lip";
 STYLE_BACK_LIP      = "back_lip";
-SYTLE_PLAIN         = "no_lip";
+STYLE_PUCK          = "puck";
+SYTLE_PLAIN         = "plain";
 
 function has_lip(style) = style == STYLE_FRONT_LIP || style == STYLE_BACK_LIP;
 
@@ -79,7 +80,7 @@ module _render_holder(part, plate_size) {
     // Each sub-module stacks, position's on the top of the previous module.
     //
 
-    module main_holder() {
+    module tube_holder() {
         tag("remove")
         cuboid(
             size, 
@@ -121,13 +122,13 @@ module _render_holder(part, plate_size) {
         // remove parts
         if (style == STYLE_FRONT_LIP) {
             render_lip()
-            main_holder();
+            tube_holder();
         } else if (style == STYLE_BACK_LIP) {
-            main_holder()
+            tube_holder()
             render_lip();
         } else {
             assert(lip == STYLE_PLAIN);
-            main_holder();
+            tube_holder();
         }
     }
 }
