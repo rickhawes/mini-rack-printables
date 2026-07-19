@@ -4,6 +4,7 @@ include <../shapes.scad>
 include <../parts/render_part.scad>
 include <assembly_base.scad>
 
+
 //------------------------------------------------------------------------------------------------
 // Face Plate 
 //
@@ -17,14 +18,7 @@ shelf_tab_hole_width_tecmojo = 9.28;
 // Rounding applied to corners of a face_plate
 face_plate_rounding = 3.0;
 
-FACE_PLATE_TYPE = "face_plate";
-
-FP_RACK_UNITS       = "rack_units";
-FP_THICKNESS        = "thickness";
-FP_MIDDLE_HOLES     = "middle_holes";
-FP_HALF_ALIGNMENT   = "half_alignment";
-FP_RIB_SIZE         = "rib_size";
-FP_PART             = "part";
+FACE_PLATE_TYPE     = "face_plate";
 
 // Describe a face plate assembly
 function face_plate(
@@ -38,24 +32,18 @@ function face_plate(
 assert(is_num(rack_units) && rack_units > 0)
 assert(is_num(thickness) && thickness > 0)
 assert(is_undef(part) || is_part(part))
-struct_set(assembly_base(FACE_PLATE_TYPE), [
-    FP_RACK_UNITS,      rack_units,
-    FP_THICKNESS,       thickness,
-    FP_MIDDLE_HOLES,    middle_holes,
-    FP_HALF_ALIGNMENT,  half_alignment,
-    FP_RIB_SIZE,        rib_size,
-    FP_PART,            part
-]);
+object(
+    assembly_base(FACE_PLATE_TYPE), 
+    rack_units = rack_units,
+    thickness = thickness,
+    middle_holes = middle_holes,
+    half_alignment = half_alignment,
+    rib_size = rib_size,
+    part = part
+);
 
 // Is the passed struct a face plate?
-function is_face_plate(plate)   = assembly_type(plate) == FACE_PLATE_TYPE;
-
-function fp_rack_units(fp)      = struct_val(fp, FP_RACK_UNITS  );
-function fp_thickness(fp)       = struct_val(fp, FP_THICKNESS   );
-function fp_middle_holes(fp)    = struct_val(fp, FP_MIDDLE_HOLES);
-function fp_half_alignment(fp)  = struct_val(fp, FP_HALF_ALIGNMENT);
-function fp_rib_size(fp)        = struct_val(fp, FP_RIB_SIZE    );
-function fp_part(fp)            = struct_val(fp, FP_PART        );
+function is_face_plate(plate)   = plate.assembly_type == FACE_PLATE_TYPE;
 
 // Layout the screw holes
 function layout_rack_screw_holes(
@@ -100,12 +88,12 @@ function layout_rack_screw_holes(
 // Render the face plate defined by fp
 module _render_face_plate(fp) {
     assert(is_face_plate(fp));
-    rack_units              = fp_rack_units(fp);
-    thickness               = fp_thickness(fp);
-    middle_holes            = fp_middle_holes(fp);
-    half_alignment          = fp_half_alignment(fp);
-    rib_size                = fp_rib_size(fp);
-    part                    = fp_part(fp); 
+    rack_units              = fp.rack_units;
+    thickness               = fp.thickness;
+    middle_holes            = fp.middle_holes;
+    half_alignment          = fp.half_alignment;
+    rib_size                = fp.rib_size;
+    part                    = fp.part; 
 
     module rack_screw_holes(
         rack_units,

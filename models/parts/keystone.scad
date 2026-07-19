@@ -67,11 +67,10 @@ function keystone(
         layout_size=rc_size(outset_rc)
     );
 
+function is_keystone(part)    = part.part_type == KEYSTONE_TYPE;
 
-function is_keystone(part)    = part_type(part) == KEYSTONE_TYPE;
 
-
-cross_section_preview=true;
+cross_section_preview=false;
 module _render_keystone(part, plate_size) {
     module keystone_geometry() {
         union(){

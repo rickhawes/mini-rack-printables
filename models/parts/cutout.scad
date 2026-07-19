@@ -19,10 +19,6 @@ include <part_base.scad>
 // value for the type of a part
 CUTOUT_TYPE     = "cutout";
 
-CO_RECT_SIZE    = "rect_size";
-CO_RADIUS       = "radius";
-CO_RIB_SIZE     = "rib_size";
-
 //------------------------------------------------
 // Functions and modules
 //------------------------------------------------
@@ -48,25 +44,20 @@ function cutout(
             layout_size=rc_size(layout_rc)
         )   
     )
-    struct_set(base, [
-        CO_RECT_SIZE, rect_size,
-        CO_RADIUS, radius,
-        CO_RIB_SIZE, rib_size
-    ]);
+    object(base, 
+        rect_size = rect_size,
+        radius = radius,
+        rib_size = rib_size
+    );
 
-function is_cutout(part)    = part_type(part) == CUTOUT_TYPE;
-
-function co_rect_size(co)   = struct_val(co, CO_RECT_SIZE);
-function co_radius(co)      = struct_val(co, CO_RADIUS);
-function co_rib_size(co)    = struct_val(co, CO_RIB_SIZE);
-
+function is_cutout(part)    = part.part_type == CUTOUT_TYPE;
 
 // Render the part in the context of an assembly
 module _render_cutout(part, section_size) {
     assert(is_cutout(part), "part is not a cutout");
-    rect_size       = co_rect_size(part);
-    radius          = co_radius(part);
-    rib_size        = co_rib_size(part);
+    rect_size       = part.rect_size;
+    radius          = part.radius;
+    rib_size        = part.rib_size;
 
     module outline_cutout(rect_size, radius) {
         if (radius == 0) {

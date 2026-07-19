@@ -21,20 +21,12 @@ VERTICAL = "vertical";
 // Horizontal direction
 HORIZONTAL = "horizontal";
 
-// value for the type of a part
+
+//------------------------------------------------
+// Div Object
+//------------------------------------------------
+
 DIV_TYPE        = "div";
-DIV_PARTS       = "parts";
-DIV_DIR         = "dir";
-DIV_SIZES       = "sizes";
-
-// A section is an internal struct representing a particular section of a plate. 
-SECTION_PART   = "section_part";
-SECTION_SIZE   = "section_size";
-SECTION_SHIFT  = "section_shift";
-
-//------------------------------------------------
-// Div Structure
-//------------------------------------------------
 
 // Create a div part
 function div(
@@ -46,22 +38,19 @@ function div(
     parts = []
 ) = 
     assert(len(sizes) <= len(parts), "Must have less sizes than parts")
-    struct_set(
+    object(
         part_base(
-            DIV_TYPE, 
+            DIV_TYPE,
             align, 
             padding, 
             shift
-        ), [
-        DIV_DIR, dir,
-        DIV_PARTS, parts,
-        DIV_SIZES, sizes
-    ]);
+        ), 
+        dir = dir,
+        parts = parts,
+        sizes = sizes
+    );
 
-function is_div(part)       = is_struct(part) && part_type(part) == DIV_TYPE;
-function div_parts(part)    = struct_val(part, DIV_PARTS);
-function div_dir(part)      = struct_val(part, DIV_DIR);
-function div_sizes(part)    = struct_val(part, DIV_SIZES);
+function is_div(part)       = part.part_type == DIV_TYPE;
 
 
 //------------------------------------------------
@@ -145,41 +134,34 @@ function divide_plate(sub_parts, plate_size, section_sizes=["*"], dir=HORIZONTAL
         let(
             sub_part = sub_parts[i],
             sub_section_rc = sub_sections_rc[i],
-            layout_size = part_layout_size(sub_part),
-            layout_with_padding = apply_padding(rc(layout_size), part_padding(sub_part)),
+            layout_with_padding = apply_padding(rc(sub_part.layout_size), sub_part.padding),
             shift = alignment_shift(
                 bounding_rc = sub_section_rc, 
-                align = part_align(sub_part), 
+                align = sub_part.align,
                 size = rc_size(layout_with_padding)
-            ) + part_shift(sub_part)
+            ) + sub_part.shift
         )
-        struct_set([], [
-            SECTION_PART, sub_part,
-            SECTION_SIZE, [rc_size(sub_section_rc).x, rc_size(sub_section_rc).y, plate_size.z],
-            SECTION_SHIFT, shift
-        ])
+        object(
+            part = sub_part,
+            size = [rc_size(sub_section_rc).x, rc_size(sub_section_rc).y, plate_size.z],
+            shift = shift
+        )
     ];
-
-function section_part(section)    = struct_val(section, SECTION_PART);
-function section_size(section)    = struct_val(section, SECTION_SIZE);
-function section_shift(section)   = struct_val(section, SECTION_SHIFT);
-
 
 //------------------------------------------------
 // Rendering functions
 //------------------------------------------------
 
-
 module _render_div(part, plate_size) {
     sections = divide_plate(
-        div_parts(part), 
+        part.parts, 
         plate_size,
-        section_sizes=div_sizes(part),
-        dir=div_dir(part)
+        section_sizes=part.sizes,
+        dir=part.dir
     );
     for(section = sections) {
-        translate(section_shift(section)) {
-            render_part(section_part(section), section_size(section));
+        translate(section.shift) {
+            render_part(section.part, section.size);
         }
     }
 }

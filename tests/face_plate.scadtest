@@ -1,5 +1,5 @@
 [config]
-
+enabled_features = ["object-function"]
 
 [[test]]
 name = "test layout_rack_screw_holes 1u" 

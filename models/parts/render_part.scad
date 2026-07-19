@@ -14,15 +14,15 @@ include <holder.scad>
 // Render a part based on its type
 module render_part(part, plate_size) {
     assert(is_part(part));
-    if (part_type(part) == CUTOUT_TYPE) { 
+    if (part.part_type == CUTOUT_TYPE) { 
         _render_cutout(part, plate_size);
-    } else if (part_type(part) == DIV_TYPE) {
+    } else if (part.part_type == DIV_TYPE) {
         _render_div(part, plate_size);    
-    } else if (part_type(part) == STL_TYPE) {
+    } else if (part.part_type == STL_TYPE) {
         _render_stl(part, plate_size);
-    } else if (part_type(part) == KEYSTONE_TYPE) {
+    } else if (part.part_type == KEYSTONE_TYPE) {
         _render_keystone(part, plate_size);
-    } else if (part_type(part) == HOLDER_TYPE) {
+    } else if (part.part_type == HOLDER_TYPE) {
         _render_holder(part, plate_size);
     } else {
         assert(false, "render_part: unknown part type");

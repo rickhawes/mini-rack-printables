@@ -15,12 +15,9 @@ include <part_base.scad>
 /* [Hidden] */
 
 // value for the type of a part
-HOLDER_TYPE     = "hold";
-HOLD_SIZE       = "size";
-HOLD_ROUNDING   = "rounding";
-HOLD_THICKNESS  = "thickness";
-HOLD_STYLE      = "style";
+HOLDER_TYPE         = "holder";
 
+// Holder styles
 STYLE_FRONT_LIP     = "front_lip";
 STYLE_BACK_LIP      = "back_lip";
 STYLE_PUCK          = "puck";
@@ -48,33 +45,28 @@ function holder(
     assert(size.x >= 0 && size.y >= 0 && size.z, "holder: size must be non-negative")
     // TODO: Think about non-semmetrical padding and shifting on the layout size calculation
     let(layout_size = rc_size(apply_padding(rc(size), padding)))
-    struct_set(
+    object(
         part_base(
             HOLDER_TYPE, 
             align, 
             padding, 
             shift, 
             layout_size=layout_size
-        ), [
-        HOLD_SIZE, size,
-        HOLD_ROUNDING, rounding,
-        HOLD_THICKNESS, thickness,
-        HOLD_STYLE, style
-    ]);
+        ),
+        size = size,
+        rounding = rounding,
+        thickness = thickness,
+        style = style
+    );
 
-function is_holder(s)       = is_struct(s) && part_type(s) == HOLDER_TYPE;
-function hold_size(s)       = struct_val(s, HOLD_SIZE);
-function hold_rounding(s)   = struct_val(s, HOLD_ROUNDING);
-function hold_thickness(s)  = struct_val(s, HOLD_THICKNESS);
-function hold_sytle(s)      = struct_val(s, HOLD_STYLE);
-
+function is_holder(s)       = s.part_type == HOLDER_TYPE;
 
 module _render_holder(part, plate_size) {
     assert(is_holder(part));
-    size = hold_size(part);
-    rounding = hold_rounding(part);
-    thickness = hold_thickness(part);
-    style = hold_sytle(part);
+    size = part.size;
+    rounding = part.rounding;
+    thickness = part.thickness;
+    style = part.style;
 
     //
     // Each sub-module stacks, position's on the top of the previous module.
