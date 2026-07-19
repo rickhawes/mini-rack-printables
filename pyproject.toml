@@ -6,6 +6,9 @@ dependencies = []
 
 [dependency-groups]
 dev = [
-    "openscad-test>=1.2.4",
+    "openscad-test",
     "scadm>=0.8.0",
 ]
+
+[tool.uv.sources]
+openscad-test = { path = "../openscad_test", editable = true }
