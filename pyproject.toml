@@ -11,4 +11,4 @@ dev = [
 ]
 
 [tool.uv.sources]
-openscad-test = { path = "../openscad_test", editable = true }
+openscad-test = { path = "../openscad-test", editable = true }
