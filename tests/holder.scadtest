@@ -1,0 +1,13 @@
+[config]
+enabled_features = ["object-function"]
+
+
+[[test]]
+name = "test render_holder"
+script = '''
+include <../models/parts/holder.scad>
+include <test_assembly.scad>
+
+hold = holder(device_size=[20,20,20]);
+test_render_part(hold, section_size = [100,100,5]);
+'''

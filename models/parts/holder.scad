@@ -21,7 +21,7 @@ HOLDER_TYPE         = "holder";
 STYLE_FRONT_LIP     = "front_lip";
 STYLE_BACK_LIP      = "back_lip";
 STYLE_PUCK          = "puck";
-SYTLE_PLAIN         = "plain";
+STYLE_PLAIN         = "plain";
 
 function has_lip(style) = style == STYLE_FRONT_LIP || style == STYLE_BACK_LIP;
 
@@ -29,22 +29,28 @@ function has_lip(style) = style == STYLE_FRONT_LIP || style == STYLE_BACK_LIP;
 lip_radius      = 1.0;
 lip_dz          = 1.0;
 
-
 //------------------------------------------------
 // Functions and modules
 //------------------------------------------------
 function holder(
-    size = [0,0,0],
-    rounding = 0.5,
-    thickness = 3.0,
+    // Holder style
     style = STYLE_PLAIN,
+    // Component size
+    device_size = [0,0,0], 
+    // Wall thickness
+    wall_thickness = 3.0,
+    // Wall rounding 
+    wall_rounding = 0.5,
+    // radius for puck styles
+    puck_radius = 1.0,
+    // part
     align = CENTER,
     padding = 0,
     shift = [0,0]
 ) = 
-    assert(size.x >= 0 && size.y >= 0 && size.z, "holder: size must be non-negative")
+    assert(device_size.x >= 0 && device_size.y >= 0 && device_size.z, "holder: size must be non-negative")
     // TODO: Think about non-semmetrical padding and shifting on the layout size calculation
-    let(layout_size = rc_size(apply_padding(rc(size), padding)))
+    let(layout_size = rc_size(apply_padding(rc(device_size), padding)))
     object(
         part_base(
             HOLDER_TYPE, 
@@ -53,19 +59,21 @@ function holder(
             shift, 
             layout_size=layout_size
         ),
-        size = size,
-        rounding = rounding,
-        thickness = thickness,
-        style = style
+        style = style,
+        device_size = device_size,
+        wall_thickness = wall_thickness,
+        wall_rounding = wall_rounding,
+        puck_radius = puck_radius
     );
 
-function is_holder(s)       = s.part_type == HOLDER_TYPE;
+function is_holder(s) = s.part_type == HOLDER_TYPE;
 
 module _render_holder(part, plate_size) {
     assert(is_holder(part));
-    size = part.size;
-    rounding = part.rounding;
-    thickness = part.thickness;
+    device_size = part.device_size;
+    wall_thickness = part.wall_thickness;
+    wall_rounding = part.wall_rounding;
+    puck_radius = part.puck_radius;
     style = part.style;
 
     //
@@ -75,9 +83,9 @@ module _render_holder(part, plate_size) {
     module tube_holder() {
         tag("remove")
         cuboid(
-            size, 
+            device_size, 
             anchor = BOTTOM,
-            rounding = rounding,
+            rounding = wall_rounding,
             edges = "Z"
         ) {
             position(TOP)
@@ -88,9 +96,9 @@ module _render_holder(part, plate_size) {
     module render_lip() {
         tag("remove")
         cuboid(
-            [size.x-2*lip_radius, size.y-2*lip_radius, lip_dz], 
+            [device_size.x-2*lip_radius, device_size.y-2*lip_radius, lip_dz], 
             anchor = BOTTOM,
-            rounding = rounding,
+            rounding = wall_rounding,
             edges = "Z"
         ) {
             position(TOP)
@@ -102,12 +110,12 @@ module _render_holder(part, plate_size) {
         // Shell
         cuboid(
             [
-                size.x + 2*thickness, 
-                size.y + 2*thickness, 
-                size.z + (has_lip(style) ? lip_dz : 0)
+                device_size.x + 2*wall_thickness, 
+                device_size.y + 2*wall_thickness, 
+                device_size.z + (has_lip(style) ? lip_dz : 0)
             ], 
             anchor=BOTTOM,
-            rounding = rounding,
+            rounding = wall_rounding,
             edges = [TOP, FRONT, RIGHT, BACK, LEFT]
         );
 

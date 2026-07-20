@@ -29,18 +29,18 @@ function face_plate(
     rib_size = [0,0],
     part = undef
 ) = 
-assert(is_num(rack_units) && rack_units > 0)
-assert(is_num(thickness) && thickness > 0)
-assert(is_undef(part) || is_part(part))
-object(
-    assembly_base(FACE_PLATE_TYPE), 
-    rack_units = rack_units,
-    thickness = thickness,
-    middle_holes = middle_holes,
-    half_alignment = half_alignment,
-    rib_size = rib_size,
-    part = part
-);
+    assert(is_num(rack_units) && rack_units > 0)
+    assert(is_num(thickness) && thickness > 0)
+    assert(is_undef(part) || is_part(part))
+    object(
+        assembly_base(FACE_PLATE_TYPE), 
+        rack_units = rack_units,
+        thickness = thickness,
+        middle_holes = middle_holes,
+        half_alignment = half_alignment,
+        rib_size = rib_size,
+        part = part
+    );
 
 // Is the passed struct a face plate?
 function is_face_plate(plate)   = plate.assembly_type == FACE_PLATE_TYPE;

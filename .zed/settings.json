@@ -1,0 +1,16 @@
+{// Folder-specific settings
+//
+// For a full list of overridable settings, and general information on folder-specific settings,//zed.dev/docs/configuring-zed#settings-files
+  "hard_tabs": true,
+  "document_symbols": "on",
+  "semantic_tokens": "combined",
+  "languages": {
+    "OpenSCAD": {
+      "prettier": {
+        "allowed": true
+      },
+      "document_folding_ranges": "on",
+      "preferred_line_length": 88
+    }
+  }
+}
