@@ -1,14 +1,48 @@
 [project]
 name = "mini-rack-printables"
+readme = "README.md"
+description = "A library for generating 3d-printer models for a 10-inch server rack"
+authors = [
+    { name = "Rick Hawes", email = "rickhawes@gmail.com" }
+]
 version = "0.1.0"
 requires-python = ">=3.14"
-dependencies = []
+dependencies = [
+    "solidpython2>=2.1.3",
+]
 
 [dependency-groups]
 dev = [
     "openscad-test",
+    "pytest>=9.1.1",
+    "ruff",
     "scadm>=0.8.0",
 ]
 
 [tool.uv.sources]
 openscad-test = { path = "../openscad-test", editable = true }
+
+[build-system]
+requires = ["uv_build>=0.11.28,<0.12.0"]
+build-backend = "uv_build"
+
+[tool.ruff]
+# Set the line length to match your Black configuration (usually 88)
+line-length = 88
+
+[tool.ruff.format]
+# Use double quotes for strings
+quote-style = "double"
+
+# Indent with spaces
+indent-style = "space"
+
+# Respect magic trailing commas
+skip-magic-trailing-comma = false
+
+# Automatically detect line endings
+line-ending = "auto"
+
+# Enable auto-formatting of code examples inside docstrings
+docstring-code-format = true
+

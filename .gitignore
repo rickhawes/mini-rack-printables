@@ -4,6 +4,9 @@ bin/
 # Python
 .venv
 .uv_cache
+*/**/__pycache__
+*.pyc
+.pytest_cache/
 
 # Direnv
 .direnv
