@@ -1,9 +1,10 @@
 # Mini-Rack Printables
 
 This project creates 3d printable models for mini server racks based on the 10-inch standard.
-As many good models already exist, this project provides more customizilibilty through a extensible set of cutouts and holders with a flexible layout system.
-The envisioned system for features include:
+As many good models already exist, this project provides more customizilibilty through a library of cutouts and holders with a flexible layout system.
+The envisioned composible system include:
 
+- Shelves, face plates, and holders
 - Rectangular and circular cutouts as well as arbritary shapes described an SVG file
 - Component holders for common shapes as well as arbritary shapes described in an SVG or STL file
 - Honeycomb and slats holes for venting
