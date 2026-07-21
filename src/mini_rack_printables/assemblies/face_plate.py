@@ -35,7 +35,7 @@ def layout_rack_screw_holes(
     offsets: list[float] = []
 
     # Construct the y values for the holes from 0 to height
-    #
+
     # bottom half units
     if bottom_half_units:
         if middle_holes:
