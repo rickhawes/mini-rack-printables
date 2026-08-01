@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 from build123d.topology.composite import Compound
 
 
-
 class Model(ABC):
     """
     Base class for all 3d printable models.

@@ -1,5 +1,20 @@
 import math
-import build123d as bd
+from build123d import (
+    Vector,
+    BuildSketch,
+    BuildPart,
+    Plane,
+    Compound,
+    RectangleRounded,
+    Trapezoid,
+    Location,
+    Locations,
+    mirror,
+    extrude,
+    Mode,
+    Axis,
+    SlotOverall,
+)
 
 from ..dimensions import RackDims, RackScrewDims, Screw1032Dims, ShelfTabDims
 from .model import Model
@@ -21,7 +36,7 @@ class FacePlate(Model):
         thickness: float,
         middle_holes: bool = True,
         half_alignment: bool = False,
-        rib_size: bd.Vector = bd.Vector(0, 0),
+        rib_size: Vector = Vector(0, 0),
         part=None,
     ):
         """
@@ -115,169 +130,60 @@ class FacePlate(Model):
 
         return offsets
 
-    def render(self) -> bd.Compound:
+    def render(self) -> Compound:
         """
         Render the face plate
 
         Returns:
             A Shape
         """
-        plate_size = bd.Vector(
+        plate_size = Vector(
             RackDims.WIDTH_10INCH, self.rack_units * RackDims.HEIGHT_1U, self.thickness
         )
-        part_area_size = bd.Vector(
+        part_area_size = Vector(
             plate_size.X - 2 * ShelfTabDims.WIDTH_TECMOJO - 2 * self.rib_size.X,
             plate_size.Y - 2 * self.rib_size.X,
             self.thickness,
         )
 
-        def make_plate() -> bd.Solid:
-            y_values = FacePlate.layout_rack_screw_holes(
-                rack_units=self.rack_units,
-                middle_holes=self.middle_holes,
-                bottom_is_half_height=self.half_alignment,
-            )
-            hole_pts = [
-                (RackScrewDims.DX / 2, y - plate_size.Y / 2) for y in y_values
-            ] + [(-RackScrewDims.DX / 2, y - plate_size.Y / 2) for y in y_values]
+        with BuildPart() as plate:
+            # base plate
+            with BuildSketch():
+                # plate
+                RectangleRounded(plate_size.X, plate_size.Y, FacePlate.CORNER_ROUNDING)
 
-            with bd.BuildPart() as plate:
-                with bd.BuildSketch():
-                    bd.RectangleRounded(plate_size.X, plate_size.Y, FacePlate.CORNER_ROUNDING)
-                    with bd.Locations(hole_pts):
-                        bd.SlotOverall(ShelfTabDims.HOLE_WIDTH_TECMOJO, Screw1032Dims.HOLE, mode=bd.Mode.SUBTRACT )
-                bd.extrude(amount=plate_size.Z)
-            return plate.solid()
+                # screw holes
+                y_values = FacePlate.layout_rack_screw_holes(
+                    rack_units=self.rack_units,
+                    middle_holes=self.middle_holes,
+                    bottom_is_half_height=self.half_alignment,
+                )
+                hole_pts = [
+                    (x, y - plate_size.Y / 2)
+                    for y in y_values
+                    for x in [-RackScrewDims.DX / 2, RackScrewDims.DX / 2]
+                ]
+                with Locations(hole_pts):
+                    # holes are made with slots
+                    SlotOverall(
+                        ShelfTabDims.HOLE_WIDTH_TECMOJO,
+                        Screw1032Dims.HOLE,
+                        mode=Mode.SUBTRACT,
+                    )
+            extrude(amount=plate_size.Z)
 
-        return bd.Compound(label="face_plate", children=[make_plate()])
+            # ribs
+            if self.rib_size.X > 0:
+                with BuildPart() as rib:
+                    # orient the extrusion to point in the Y-Axis
+                    plane = (
+                        Plane(plate.faces().sort_by(Axis.Y)[0])
+                        .rotated((180, 180, 0))
+                        .moved(Location((0, (plate_size.Z + self.rib_size.Y) / 2, 0)))
+                    )
+                    with BuildSketch(plane):
+                        Trapezoid(part_area_size.X, self.rib_size.Y, 30)
+                    extrude(amount=self.rib_size.X)
+                mirror(rib.solid(), Plane.XZ)  # place on both sides
 
-
-scad = """
-=
-def face_plate(
-    rack_units,
-    thickness,
-    middle_holes = True,
-    half_alignment = False,
-    rib_size = [0,0],
-    part = None
-)
-    Draw a face plate assembly.
-
-    Args:
-        amount: The total cash amount to deduct from the balance.
-
-    Returns:
-        the model object for a face plate
-
-    Raises:
-        ValueError: If the amount is negative or exceeds the balance.
-
-
-    assert(is_num(rack_units) && rack_units > 0)
-    assert(is_num(thickness) && thickness > 0)
-    assert(is_undef(part) || is_part(part))
-    object(
-        assembly_base(FACE_PLATE_TYPE),
-        rack_units = rack_units,
-        thickness = thickness,
-        middle_holes = middle_holes,
-        half_alignment = half_alignment,
-        rib_size = rib_size,
-        part = part
-    );
-
-// Is the passed struct a face plate?
-function is_face_plate(plate)   = plate.assembly_type == FACE_PLATE_TYPE;
-
-// Layout the screw holes
-
-
-// Render the face plate defined by fp
-module _render_face_plate(fp) {
-    assert(is_face_plate(fp));
-    rack_units              = fp.rack_units;
-    thickness               = fp.thickness;
-    middle_holes            = fp.middle_holes;
-    half_alignment          = fp.half_alignment;
-    rib_size                = fp.rib_size;
-    part                    = fp.part;
-
-    module rack_screw_holes(
-        rack_units,
-        face_plate_thickness,
-        middle_holes = true,
-        bottom_is_half_height = false
-    ) {
-        assert(!is_undef(rack_units), "rack_units is undefined");
-        height = rack_units * RackDims.HEIGHT_1U;
-
-        module one_hole(face_plate_thickness) {
-            attachable() {
-                linear_extrude(height = face_plate_thickness)
-                    slot_xaxis(shelf_tab_hole_width_tecmojo, screw_hole_10_32/2);
-                children();
-            }
-        }
-
-        module right_tab() {
-            translate([rack_screw_dx/2, -height/2, 0]) {
-                y_values = layout_rack_screw_holes(rack_units, middle_holes, bottom_is_half_height);
-                for (y = y_values) {
-                    translate([0, y])
-                        one_hole(face_plate_thickness);
-                }
-            }
-        }
-
-        right_tab();
-        xflip()
-            right_tab();
-    }
-
-    module face_plate_ribs(plate_size, part_size, rib_size) {
-        tag("rib")
-        align(TOP, [FRONT, BACK])
-            prismoid(size2=[part_size.x, rib_size.x], h=rib_size.y, xang=30, yang=90);
-    }
-
-    module plain_plate(plate_size, rib_size) {
-        diff() {
-            extruded_roundrect(plate_size, r = face_plate_rounding, anchor=TOP) {
-                // Ribs on top and bottoms
-                if (rib_size.y > 0) {
-                    tag("keep")
-                    face_plate_ribs(plate_size, part_area_size, rib_size);
-                }
-
-                // Rack Screw
-                tag("remove")
-                align(BOTTOM) {
-                    rack_screw_holes(rack_units, thickness, middle_holes, half_alignment);
-                }
-
-                children();
-            }
-        }
-    }
-
-    // Layout calculations
-    plate_size = [
-        rack_width_10inch,
-        rack_units * RackDims.HEIGHT_1U,
-        thickness
-    ];
-    part_area_size = [
-        plate_size.x - 2*shelf_tab_width_tecmojo - 2*rib_size.x,
-        plate_size.y - 2*rib_size.x,
-        thickness
-    ];
-
-    // Render the plate
-    plain_plate(plate_size, rib_size) {
-        if (!is_undef(part)) {
-            render_part(part, part_area_size);
-        }
-    }
-}
-"""
+        return Compound(label="face_plate", children=[plate.solid()])
