@@ -1,8 +1,8 @@
 import math
 from build123d import (
-    Vector,
     BuildSketch,
     BuildPart,
+    Vector,
     Plane,
     Compound,
     RectangleRounded,
@@ -11,6 +11,7 @@ from build123d import (
     Locations,
     mirror,
     extrude,
+    add,
     Mode,
     Axis,
     SlotOverall,
@@ -18,6 +19,7 @@ from build123d import (
 
 from ..dimensions import RackDims, RackScrewDims, Screw1032Dims, ShelfTabDims
 from .model import Model
+from ..features.model_feature import ModelFeature
 
 
 class FacePlate(Model):
@@ -37,7 +39,7 @@ class FacePlate(Model):
         middle_holes: bool = True,
         half_alignment: bool = False,
         rib_size: Vector = Vector(0, 0),
-        part=None,
+        feature: ModelFeature = None,
     ):
         """
         Initialize a face plate
@@ -48,14 +50,14 @@ class FacePlate(Model):
             middle_holes: draw middle screw holes
             half_alignment: start the bottom with a half unit.
             rib_size: Size of the rib. Use Vector(0, 0) for no rib.
-            part: The part to use for the plate. Defaults to None.
+            feature: The feature to use for the plate. Defaults to None.
         """
         self.rack_units = rack_units
         self.thickness = thickness
         self.middle_holes = middle_holes
         self.half_alignment = half_alignment
         self.rib_size = rib_size
-        self.part = part
+        self.feature = feature
 
     @staticmethod
     def layout_rack_screw_holes(
@@ -145,6 +147,8 @@ class FacePlate(Model):
             plate_size.Y - 2 * self.rib_size.X,
             self.thickness,
         )
+        if self.feature:
+            feature_parts = self.feature.render(part_area_size)
 
         with BuildPart() as plate:
             # base plate
@@ -171,19 +175,28 @@ class FacePlate(Model):
                         mode=Mode.SUBTRACT,
                     )
             extrude(amount=plate_size.Z)
+            top_plane = Plane(plate.faces().sort_by(Axis.Z)[-1])
 
             # ribs
             if self.rib_size.X > 0:
                 with BuildPart() as rib:
                     # orient the extrusion to point in the Y-Axis
-                    plane = (
+                    side_plane = (
                         Plane(plate.faces().sort_by(Axis.Y)[0])
                         .rotated((180, 180, 0))
                         .moved(Location((0, (plate_size.Z + self.rib_size.Y) / 2, 0)))
                     )
-                    with BuildSketch(plane):
+                    with BuildSketch(side_plane):
                         Trapezoid(part_area_size.X, self.rib_size.Y, 30)
                     extrude(amount=self.rib_size.X)
                 mirror(rib.solid(), Plane.XZ)  # place on both sides
+
+            # part
+            if self.feature:
+                assert feature_parts
+                if feature_parts.addition:
+                    add(top_plane * feature_parts.addition.solid(), mode=Mode.ADD)
+                if feature_parts.subtraction:
+                    add(feature_parts.subtraction.solid(), mode=Mode.SUBTRACT)
 
         return Compound(label="face_plate", children=[plate.solid()])
