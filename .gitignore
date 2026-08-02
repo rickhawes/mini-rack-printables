@@ -17,3 +17,6 @@ bin/
 
 # Outputs
 outputs/
+
+# Task
+.task

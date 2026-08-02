@@ -2,7 +2,6 @@ from build123d import Vector, VectorLike
 from dataclasses import dataclass
 import numpy as np
 from enum import Enum
-from math import floor
 
 
 class AlignmentVector(Vector, Enum):
@@ -143,23 +142,29 @@ class Rc:
             ]
 
     def divide_horizontally(self, by: int) -> list[Rc]:
-        division_dx = self.size.X / by
+        """
+        Divide the rectangle horizontally into `by` equal rectangles.
+        """
+        dx = self.size.X / by
         return [
             Rc(
-                size=Vector(division_dx, self.size.Y),
+                size=Vector(dx, self.size.Y),
                 shift=Vector(self.shift.X + x, self.shift.Y),
             )
-            for x in np.linspace((-self.size.X+division_dx)/2, (self.size.X-division_dx)/2, by)
+            for x in np.linspace((-self.size.X + dx) / 2, (self.size.X - dx) / 2, by)
         ]
 
     def divide_vertically(self, by: int) -> list[Rc]:
-        division_dy = self.size.Y / by
+        """
+        Divide the rectangle vertically into `by` equal rectangles.
+        """
+        dy = self.size.Y / by
         return [
             Rc(
-                size=Vector(self.size.X, division_dy),
+                size=Vector(self.size.X, dy),
                 shift=Vector(self.shift.X, self.shift.Y + y),
             )
-            for y in np.linspace((-self.size.Y+division_dy)/2, (self.size.Y-division_dy)/2, by)
+            for y in np.linspace((-self.size.Y + dy) / 2, (self.size.Y - dy) / 2, by)
         ]
 
     def alignment_shift(self, bounds: Rc, align: Vector) -> Vector:

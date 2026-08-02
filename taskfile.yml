@@ -1,0 +1,73 @@
+version: '3'
+# 
+# Taskfile for the mini-rack-printables project
+# 
+# Install task: https://taskfile.dev/#/installation
+# brew install go-task  
+# 
+vars:
+  PYTHON_VERSION: "3.14"
+
+tasks:
+  default:
+    desc: "List all available tasks"
+    cmds:
+      - task --list
+
+  init:
+    desc: "Initialize environment and lockfile"
+    sources:
+      - pyproject.toml
+    generates:
+      - uv.lock
+    cmds:
+      - uv sync --python {{.PYTHON_VERSION}}
+
+  test:
+    desc: "Run pytest test suite (pass flags using --)"
+    summary: |
+      Runs the test suite using pytest via uv run.
+      Example: task test -- test_face_plate.py
+    deps: [init]
+    cmds:
+      - uv run pytest {{.CLI_ARGS}}
+
+  lint:
+    desc: "Check linting and formatting with ruff"
+    deps: [init]
+    cmds:
+      - uv run ruff check .
+      - uv run ruff format --check .
+
+  format:
+    desc: "Fix linting issues and auto-format code with ruff"
+    deps: [init]
+    cmds:
+      - uv run ruff format .  
+
+  viewer:
+    desc: "Run the viewer application"
+    deps: [init]
+    if: '! lsof -Pi :3939 -sTCP:LISTEN -t >/dev/null;' # check if port is not in use
+    cmds:
+      - python -m ocp_vscode &
+      - sleep 5
+      - open http://localhost:3939
+
+  run:
+    desc: "Run example program"
+    summary: |
+      Runs the example program using uv run
+      Example: task run -- examples/face_plate_with_cutout.py
+    deps: [viewer]
+    cmds:
+      - uv run {{.CLI_ARGS}}
+
+  ci:
+    desc: "Run all checks required for CI (linting and tests)"
+    deps: [lint, test]
+
+  clean:
+    desc: "Remove virtual environment, build artifacts, and tool caches"
+    cmds:
+      - rm -rf .venv .pytest_cache .ruff_cache .uv __pycache__ dist build *.egg-info
