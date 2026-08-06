@@ -3,14 +3,14 @@ from ocp_vscode import show
 
 from mini_rack_printables import FacePlate
 
-part = FacePlate(
-    rack_units=1.0,
-    thickness=3.5,
-    middle_holes=True,
-    half_alignment=False,
-    rib_size=bd.Vector(2.0, 1.0),
-).render()
+#
+# This example demonstrates a blank face plate with a rib.
+#
 
-show(part)
+plate = FacePlate(rack_units=1.0, rib_size=FacePlate.STD_RIB).render()
 
-bd.export_step(part, "outputs/blank_face_plate.step")
+# Show the plate in the viewer. Run 'task viewer' before.
+show(plate)
+
+# Export the plate to a STEP file
+bd.export_step(plate, "outputs/blank_face_plate.step")

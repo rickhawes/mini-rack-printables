@@ -24,25 +24,30 @@ from ..parts.model_part import ModelPart
 
 class FacePlate(Model):
     """
-    The face plate class
+    A face plate model
     """
 
     SHELF_TAB_HOLE_WIDTH_TECMOJO = 9.28
     """Width of the tab hole found  (use 10-24 screw hole diameter for height) """
     CORNER_ROUNDING = 3.0
     """Rounding applied to corners of a face_plate"""
+    STD_RIB = Vector(2.0, 1.0)
+    """Default rib size for the face plate"""
+    NO_RIB = Vector(0, 0)
+    """Default thickness for a face plate"""
+    THICKNESS = 3.5
 
     def __init__(
         self,
         rack_units: float,
-        thickness: float,
+        thickness: float = THICKNESS,
         middle_holes: bool = True,
         half_alignment: bool = False,
-        rib_size: Vector = Vector(0, 0),
+        rib_size: Vector = NO_RIB,
         part: ModelPart | None = None,
     ):
         """
-        Initialize a face plate
+        Create a face plate model
 
         Args:
             rack_units: Number of rack units of the plate with half units being acceptable
