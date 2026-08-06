@@ -63,7 +63,7 @@ class FacePlate(Model):
     def layout_rack_screw_holes(
         rack_units: float,
         middle_holes: bool = True,
-        bottom_is_half_height: bool = False,
+        half_height_bottom: bool = False,
     ) -> list[float]:
         """
         Layout the faceplate
@@ -76,9 +76,9 @@ class FacePlate(Model):
         Returns:
                 A list of offsets
         """
-        bottom_half_units = 1 if bottom_is_half_height else 0
+        bottom_half_units = 1 if half_height_bottom else 0
         full_units = (
-            math.floor(rack_units - 0.5) if bottom_is_half_height else math.floor(rack_units)
+            math.floor(rack_units - 0.5) if half_height_bottom else math.floor(rack_units)
         )
         top_half_units = 1 if (rack_units - bottom_half_units * 0.5 - full_units > 0) else 0
         offsets: list[float] = []
@@ -149,7 +149,7 @@ class FacePlate(Model):
                 y_values = FacePlate.layout_rack_screw_holes(
                     rack_units=self.rack_units,
                     middle_holes=self.middle_holes,
-                    bottom_is_half_height=self.half_alignment,
+                    half_height_bottom=self.half_alignment,
                 )
                 hole_pts = [
                     (x, y - plate_size.Y / 2)

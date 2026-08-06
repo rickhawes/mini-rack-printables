@@ -17,6 +17,10 @@ The envisioned composible system include:
 
 The project is a Python library and a set of example scripts for creating 3d printable models for mini server racks. A model consists of in single instance of a Model class plus a set of Parts instances that enhance the model's geometry. Parts can subtract holes from the model's geometry and add shapes to the model's geometry. 
 
+## Coordinates
+
+Models are created to be placed on 3d printer. They are centered in the XY plane and with solids extruded in the positive Z direction. This is the default of build123d library. Parts are centered in the local coordinate in the XY plane as well.  
+
 ## Directory Structure
 
 The project directory structure is as follows:
