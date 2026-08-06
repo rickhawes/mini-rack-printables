@@ -1,4 +1,4 @@
-from mini_rack_printables import Rc, AlignmentVector
+from mini_rack_printables import Rc, RcAlignment, Dir
 from build123d import Vector
 
 
@@ -19,16 +19,16 @@ def test_from_edges():
 
 def test_divide_horizontally():
     rc1 = Rc((4, 6))
-    div1 = rc1.divide_horizontally(2)
+    div1 = rc1.divide(2)
     assert div1[0] == Rc((2, 6), (-1, 0))
     assert div1[1] == Rc(size=(2, 6), shift=(1, 0))
 
     rc2 = Rc((4, 6))
-    div2 = rc2.divide_horizontally(1)
+    div2 = rc2.divide(1)
     assert div2[0] == rc2
 
     rc3 = Rc((6, 6))
-    div3 = rc3.divide_horizontally(3)
+    div3 = rc3.divide(3)
     assert div3[0] == Rc((2, 6), (-2, 0))
     assert div3[1] == Rc(size=(2, 6), shift=(0, 0))
     assert div3[2] == Rc(size=(2, 6), shift=(2, 0))
@@ -73,20 +73,18 @@ def test_alignment_shift():
     bounding_rc = Rc((10, 10))
     rc = Rc((2, 2))
 
-    shift_left = rc.alignment_shift(bounding_rc, AlignmentVector.LEFT)
+    shift_left = rc.alignment_shift(bounding_rc, RcAlignment.LEFT)
     assert shift_left == Vector(-4, 0)
-    shift_top = rc.alignment_shift(bounding_rc, AlignmentVector.TOP)
+    shift_top = rc.alignment_shift(bounding_rc, RcAlignment.TOP)
     assert shift_top == Vector(0, 4)
-    shift_top_left = rc.alignment_shift(
-        bounding_rc, AlignmentVector.TOP + AlignmentVector.LEFT
-    )
+    shift_top_left = rc.alignment_shift(bounding_rc, RcAlignment.TOP + RcAlignment.LEFT)
     assert shift_top_left == Vector(-4, 4)
 
     bounding_rc2 = Rc((10, 10), (20, 20))
-    shift_left2 = rc.alignment_shift(bounding_rc2, AlignmentVector.LEFT)
+    shift_left2 = rc.alignment_shift(bounding_rc2, RcAlignment.LEFT)
     assert shift_left2 == Vector(16, 20)
     shift_top_left2 = rc.alignment_shift(
-        bounding_rc2, AlignmentVector.TOP + AlignmentVector.LEFT
+        bounding_rc2, RcAlignment.TOP + RcAlignment.LEFT
     )
     assert shift_top_left2 == Vector(16, 24)
 
@@ -94,14 +92,14 @@ def test_alignment_shift():
 def test_split():
     rc = Rc((8, 8), (4, 4))
 
-    split1 = rc.split(dx=1)
+    split1 = rc.split(amount=1, dir=Dir.HORIZONTAL)
     assert split1 == [Rc((1, 8), (0.5, 4)), Rc((7, 8), (4.5, 4))]
 
-    split2 = rc.split(dx=-2)
+    split2 = rc.split(amount=-2, dir=Dir.HORIZONTAL)
     assert split2 == [Rc((6, 8), (3, 4)), Rc((2, 8), (7, 4))]
 
-    split3 = rc.split(dy=1)
+    split3 = rc.split(amount=1, dir=Dir.VERTICAL)
     assert split3 == [Rc((8, 1), (4, 0.5)), Rc((8, 7), (4, 4.5))]
 
-    split4 = rc.split(dy=-2)
+    split4 = rc.split(amount=-2, dir=Dir.VERTICAL)
     assert split4 == [Rc((8, 6), (4, 3)), Rc((8, 2), (4, 7))]

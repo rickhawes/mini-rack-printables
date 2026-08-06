@@ -1,10 +1,10 @@
 from build123d import Vector, VectorLike
 from dataclasses import dataclass
 import numpy as np
-from enum import Enum
+from enum import Enum, auto
 
 
-class AlignmentVector(Vector, Enum):
+class RcAlignment(Vector, Enum):
     """
     Enum for aligning an Rc
     """
@@ -24,6 +24,15 @@ class AlignmentVector(Vector, Enum):
             and (vec.Y == 1.0 or vec.Y == 0 or vec.Y == -1.0)
             and (vec.Z == 1.0 or vec.Z == 0 or vec.Z == -1.0)
         )
+
+
+class Dir(Enum):
+    """
+    Enum for horizontal or vertical direction arguments.
+    """
+
+    HORIZONTAL = auto()
+    VERTICAL = auto()
 
 
 @dataclass
@@ -72,106 +81,55 @@ class Rc:
         return self.size.Y / 2 + self.shift.Y
 
     def apply_padding(self, padding: float) -> Rc:
-        return Rc.from_edges(
-            right=self.right + padding,
-            left=self.left - padding,
-            top=self.top + padding,
-            bottom=self.bottom - padding,
-        )
+        """
+        Apply padding to the Rc, expanding its size by `padding` amount but not shifting its center.
+        """
+        return Rc(size=self.size + Vector(2 * padding, 2 * padding), shift=self.shift)
 
-    def split(self, dx: float = 0, dy: float = 0.0) -> list[Rc]:
-        assert not (dx != 0 and dy != 0), "must only have one of dx or dy"
-        assert not (dx == 0 and dy == 0), "must specify either dx or dy"
-        if dx > 0:
+    def split(self, amount: float, dir: Dir = Dir.HORIZONTAL) -> list[Rc]:
+        if dir == Dir.HORIZONTAL:
+            mid = self.left + amount if amount > 0 else self.right + amount
             return [
-                Rc.from_edges(
-                    left=self.left,
-                    right=self.left + dx,
-                    bottom=self.bottom,
-                    top=self.top,
-                ),
-                Rc.from_edges(
-                    left=self.left + dx,
-                    right=self.right,
-                    bottom=self.bottom,
-                    top=self.top,
-                ),
-            ]
-        elif dx < 0:
-            return [
-                Rc.from_edges(
-                    left=self.left,
-                    right=self.right + dx,
-                    bottom=self.bottom,
-                    top=self.top,
-                ),
-                Rc.from_edges(
-                    left=self.right + dx,
-                    right=self.right,
-                    bottom=self.bottom,
-                    top=self.top,
-                ),
-            ]
-        elif dy > 0:
-            return [
-                Rc.from_edges(
-                    left=self.left,
-                    right=self.right,
-                    bottom=self.bottom,
-                    top=self.bottom + dy,
-                ),
-                Rc.from_edges(
-                    left=self.left,
-                    right=self.right,
-                    bottom=self.bottom + dy,
-                    top=self.top,
-                ),
+                Rc.from_edges(self.left, mid, self.bottom, self.top),
+                Rc.from_edges(mid, self.right, self.bottom, self.top),
             ]
         else:
-            assert dy < 0
+            mid = self.bottom + amount if amount > 0 else self.top + amount
             return [
-                Rc.from_edges(
-                    left=self.left,
-                    right=self.right,
-                    bottom=self.bottom,
-                    top=self.top + dy,
-                ),
-                Rc.from_edges(
-                    left=self.left, right=self.right, bottom=self.top + dy, top=self.top
-                ),
+                Rc.from_edges(self.left, self.right, self.bottom, mid),
+                Rc.from_edges(self.left, self.right, mid, self.top),
             ]
 
-    def divide_horizontally(self, by: int) -> list[Rc]:
+    def divide(self, by: int, dir: Dir = Dir.HORIZONTAL) -> list[Rc]:
         """
-        Divide the rectangle horizontally into `by` equal rectangles.
+        Divide the rectangle into `by` equal rectangles in `dir` direction.
         """
-        dx = self.size.X / by
-        return [
-            Rc(
-                size=Vector(dx, self.size.Y),
-                shift=Vector(self.shift.X + x, self.shift.Y),
-            )
-            for x in np.linspace((-self.size.X + dx) / 2, (self.size.X - dx) / 2, by)
-        ]
-
-    def divide_vertically(self, by: int) -> list[Rc]:
-        """
-        Divide the rectangle vertically into `by` equal rectangles.
-        """
-        dy = self.size.Y / by
-        return [
-            Rc(
-                size=Vector(self.size.X, dy),
-                shift=Vector(self.shift.X, self.shift.Y + y),
-            )
-            for y in np.linspace((-self.size.Y + dy) / 2, (self.size.Y - dy) / 2, by)
-        ]
+        if dir == Dir.HORIZONTAL:
+            dx = self.size.X / by
+            size_x = self.size.X
+            return [
+                Rc(
+                    size=Vector(dx, self.size.Y),
+                    shift=Vector(self.shift.X + x, self.shift.Y),
+                )
+                for x in np.linspace((-size_x + dx) / 2, (size_x - dx) / 2, by)
+            ]
+        else:
+            dy = self.size.Y / by
+            size_y = self.size.Y
+            return [
+                Rc(
+                    size=Vector(self.size.X, dy),
+                    shift=Vector(self.shift.X, self.shift.Y + y),
+                )
+                for y in np.linspace((-size_y + dy) / 2, (size_y - dy) / 2, by)
+            ]
 
     def alignment_shift(self, bounds: Rc, align: Vector) -> Vector:
         """
         return the amount of shift to align within the bounds according the alignment vector
         """
-        assert AlignmentVector.is_valid(align), "must be an alignment vector value"
+        assert RcAlignment.is_valid(align), "must be an alignment vector value"
         return Vector(
             (bounds.size.X - self.size.X) * align.X / 2 + bounds.shift.X,
             (bounds.size.Y - self.size.Y) * align.Y / 2 + bounds.shift.Y,
@@ -189,3 +147,10 @@ class Rc:
         """
         mirror = Rc(self.size, Vector(-self.shift.X, -self.shift.Y))
         return Rc.union(self, mirror)
+
+
+def convert_to_3d(vector2d: Vector, z: float = 0) -> Vector:
+    """
+    Convert a 2D vector to a 3D vector with Z=0
+    """
+    return Vector(vector2d.X, vector2d.Y, z)

@@ -19,7 +19,7 @@ from build123d import (
 
 from ..dimensions import RackDims, RackScrewDims, Screw1032Dims, ShelfTabDims
 from .model import Model
-from ..features.model_feature import ModelFeature
+from ..parts.model_part import ModelPart
 
 
 class FacePlate(Model):
@@ -39,7 +39,7 @@ class FacePlate(Model):
         middle_holes: bool = True,
         half_alignment: bool = False,
         rib_size: Vector = Vector(0, 0),
-        feature: ModelFeature = None,
+        part: ModelPart | None = None,
     ):
         """
         Initialize a face plate
@@ -57,7 +57,7 @@ class FacePlate(Model):
         self.middle_holes = middle_holes
         self.half_alignment = half_alignment
         self.rib_size = rib_size
-        self.feature = feature
+        self.part = part
 
     @staticmethod
     def layout_rack_screw_holes(
@@ -147,8 +147,8 @@ class FacePlate(Model):
             plate_size.Y - 2 * self.rib_size.X,
             self.thickness,
         )
-        if self.feature:
-            feature_parts = self.feature.render(part_area_size)
+        if self.part:
+            part_nodes = self.part.render(part_area_size)
 
         with BuildPart() as plate:
             # base plate
@@ -189,14 +189,16 @@ class FacePlate(Model):
                     with BuildSketch(side_plane):
                         Trapezoid(part_area_size.X, self.rib_size.Y, 30)
                     extrude(amount=self.rib_size.X)
-                mirror(rib.solid(), Plane.XZ)  # place on both sides
+                mirror(rib.part, Plane.XZ)  # place on both sides
 
             # part
-            if self.feature:
-                assert feature_parts
-                if feature_parts.addition:
-                    add(top_plane * feature_parts.addition.solid(), mode=Mode.ADD)
-                if feature_parts.subtraction:
-                    add(feature_parts.subtraction.solid(), mode=Mode.SUBTRACT)
+            if self.part:
+                for node in part_nodes:
+                    if node.mode == Mode.ADD:
+                        add(top_plane * node.loc * node.part, mode=Mode.ADD)
+                    elif node.mode == Mode.SUBTRACT:
+                        add(node.loc * node.part, mode=Mode.SUBTRACT)
+                    else:
+                        assert False, "unhandled rendering mode"
 
         return Compound(label="face_plate", children=[plate.solid()])
