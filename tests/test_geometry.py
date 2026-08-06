@@ -83,9 +83,7 @@ def test_alignment_shift():
     bounding_rc2 = Rc((10, 10), (20, 20))
     shift_left2 = rc.alignment_shift(bounding_rc2, RcAlignment.LEFT)
     assert shift_left2 == Vector(16, 20)
-    shift_top_left2 = rc.alignment_shift(
-        bounding_rc2, RcAlignment.TOP + RcAlignment.LEFT
-    )
+    shift_top_left2 = rc.alignment_shift(bounding_rc2, RcAlignment.TOP + RcAlignment.LEFT)
     assert shift_top_left2 == Vector(16, 24)
 
 

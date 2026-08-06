@@ -64,9 +64,7 @@ class Div(ModelPart):
         nodes = []
         for i in range(len(self.parts)):
             shift = Div.layout_part(self.parts[i], sections_rc[i])
-            part_nodes = self.parts[i].render(
-                convert_to_3d(sections_rc[i].size, plate_size.Z)
-            )
+            part_nodes = self.parts[i].render(convert_to_3d(sections_rc[i].size, plate_size.Z))
             nodes += [
                 PartTreeNode(
                     name=node.name,
@@ -118,9 +116,7 @@ class Div(ModelPart):
         return sum([1 for s in sizes if s == Div.AUTO])
 
     @staticmethod
-    def fill_in_sizes(
-        sizes: DivSizes, bounding_size: Vector, dir=Dir.HORIZONTAL
-    ) -> list[float]:
+    def fill_in_sizes(sizes: DivSizes, bounding_size: Vector, dir=Dir.HORIZONTAL) -> list[float]:
         """
         Replace "str sizes with their float values,
         filling in auto sizes ("*") with the calculated size based on the bounding size.
@@ -137,9 +133,7 @@ class Div(ModelPart):
             return [auto_size if s == Div.AUTO else float(s) for s in sizes]
 
     @staticmethod
-    def divide_by_sizes(
-        r: Rc, sizes: DivSizes = [AUTO], dir=Dir.HORIZONTAL
-    ) -> list[Rc]:
+    def divide_by_sizes(r: Rc, sizes: DivSizes = [AUTO], dir=Dir.HORIZONTAL) -> list[Rc]:
         """
         Divide a RC based on the given sizes and direction.
         """

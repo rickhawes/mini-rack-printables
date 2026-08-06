@@ -20,9 +20,7 @@ class PartTreeNode:
     loc: Location
     mode: Mode
 
-    def __init__(
-        self, name: str, part: Solid, loc: Location = Location(), mode: Mode = Mode.ADD
-    ):
+    def __init__(self, name: str, part: Solid, loc: Location = Location(), mode: Mode = Mode.ADD):
         self.name = name
         self.part = part
         self.loc = loc

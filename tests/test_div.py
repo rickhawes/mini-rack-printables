@@ -119,9 +119,7 @@ def test_layout_part():
     leftAligned = DummyPart(align=RcAlignment.LEFT, layout_size=Vector(10, 10))
     assert Div.layout_part(leftAligned, Rc((100, 100))) == Vector(-45, 0)
 
-    leftAlignedPadded = DummyPart(
-        align=RcAlignment.LEFT, padding=1, layout_size=Vector(10, 10)
-    )
+    leftAlignedPadded = DummyPart(align=RcAlignment.LEFT, padding=1, layout_size=Vector(10, 10))
     assert Div.layout_part(leftAlignedPadded, Rc((100, 100))) == Vector(-44, 0)
 
     leftAlignedShifted = DummyPart(

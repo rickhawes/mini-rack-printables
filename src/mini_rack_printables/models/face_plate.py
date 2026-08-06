@@ -78,13 +78,9 @@ class FacePlate(Model):
         """
         bottom_half_units = 1 if bottom_is_half_height else 0
         full_units = (
-            math.floor(rack_units - 0.5)
-            if bottom_is_half_height
-            else math.floor(rack_units)
+            math.floor(rack_units - 0.5) if bottom_is_half_height else math.floor(rack_units)
         )
-        top_half_units = (
-            1 if (rack_units - bottom_half_units * 0.5 - full_units > 0) else 0
-        )
+        top_half_units = 1 if (rack_units - bottom_half_units * 0.5 - full_units > 0) else 0
         offsets: list[float] = []
 
         # Construct the y values for the holes from 0 to height
@@ -113,20 +109,13 @@ class FacePlate(Model):
                     ]
                 )
             else:
-                offsets.extend(
-                    [RackScrewDims.BOTTOM + y_slot, RackScrewDims.TOP + y_slot]
-                )
+                offsets.extend([RackScrewDims.BOTTOM + y_slot, RackScrewDims.TOP + y_slot])
 
         # top half units
         if top_half_units:
-            y_slot = (
-                RackDims.HEIGHT_1U * full_units
-                + bottom_half_units * RackDims.HEIGHT_1U / 2
-            )
+            y_slot = RackDims.HEIGHT_1U * full_units + bottom_half_units * RackDims.HEIGHT_1U / 2
             if middle_holes:
-                offsets.extend(
-                    [RackScrewDims.BOTTOM + y_slot, RackScrewDims.MIDDLE + y_slot]
-                )
+                offsets.extend([RackScrewDims.BOTTOM + y_slot, RackScrewDims.MIDDLE + y_slot])
             else:
                 offsets.extend([RackScrewDims.BOTTOM + y_slot])
 

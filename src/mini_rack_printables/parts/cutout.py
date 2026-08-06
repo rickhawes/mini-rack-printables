@@ -21,9 +21,7 @@ class Cutout(ModelPart):
         self.rib_size = rib_size
 
     def layout_size(self, plate_size: Vector) -> Vector:
-        return Vector(
-            (self.radius + self.rib_size.X) * 2, (self.radius + self.rib_size.X) * 2
-        )
+        return Vector((self.radius + self.rib_size.X) * 2, (self.radius + self.rib_size.X) * 2)
 
     def render(self, plate_size: Vector) -> list[PartTreeNode]:
         cir = Circle(self.radius)
