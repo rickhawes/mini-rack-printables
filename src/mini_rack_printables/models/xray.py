@@ -1,14 +1,14 @@
 from build123d import (
-    Vector,
-    Plane,
-    Compound,
-    Mode,
     Color,
+    Compound,
     Location,
+    Mode,
+    Plane,
+    Vector,
 )
 
-from .model import Model
 from ..parts.model_part import ModelPart, Plate
+from .model import Model
 
 
 class XRayModel(Model):
@@ -17,7 +17,7 @@ class XRayModel(Model):
     This model is useful for visualizing the structure of a ModelPart.
     """
 
-    def __init__(self, part: ModelPart, size=Vector(100, 100, 5), only_adds=True):
+    def __init__(self, part: ModelPart, size=Vector(100, 100, 3.5), only_adds=True):
         self.part = part
         self.size = size
         self.only_adds = only_adds
