@@ -1,21 +1,20 @@
-from importlib.resources import as_file, files
 import build123d as bd
 from ocp_vscode import show
 
-from mini_rack_printables import ImportPart, Div, FacePlate
+from mini_rack_printables import Keystone, Div, FacePlate
 
 #
 # This example demonstrates a face plate with a keystone cutout.
 #
 
 # A basic Div with horizontal layout and evenly divided sections for 3 keystones
-with as_file(files("mini_rack_printables.assets") / "keystone.brep") as keystone_path:
-    keystone_part = ImportPart(keystone_path, size=bd.Vector(17.7, 25, 9.75))
-    div = Div(parts=[keystone_part for _ in range(3)])
-    plate = FacePlate(
-        rack_units=1.0,
-        part=div,
-    ).render()
+keystone_part = Keystone()
+div = Div(parts=[keystone_part for _ in range(3)])
+plate = FacePlate(
+    rack_units=1.0,
+    rib_size=FacePlate.STD_RIB,
+    part=div,
+).render()
 
 # Show the plate in the OCP viewer
 show(plate)

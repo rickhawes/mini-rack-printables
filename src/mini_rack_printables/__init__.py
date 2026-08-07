@@ -4,6 +4,7 @@ from .parts.model_part import ModelPart, PartPiece, Plate
 from .parts.cutout import Cutout, CutoutType
 from .parts.div import Div
 from .parts.import_part import ImportPart
+from .parts.keystone import Keystone
 from .dimensions import RackDims, RackScrewDims, Screw1032Dims
 from .geometry import Rc, RcAlignment, Dir
 
@@ -24,4 +25,5 @@ __all__ = [
     "Plate",
     "ImportPart",
     "XRayModel",
+    "Keystone",
 ]
