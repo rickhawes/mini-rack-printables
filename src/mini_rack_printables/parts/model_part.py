@@ -1,29 +1,48 @@
-from build123d import Solid, Location, Mode, Vector
+from build123d import Solid, Mode, Vector, Plane
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 
 @dataclass
-class PartTreeNode:
+class Plate:
     """
-    Represents a node in the part tree for a ModelPart.
+    Represents a plate on which parts are placed.
+
+    Attributes:
+        size: Size of the plate.
+        top_plane: The top plane of the plate.
+        bottom_plane: The bottom plane of the plate.
+    """
+
+    size: Vector
+    top_plane: Plane
+    bottom_plane: Plane
+
+    def __init__(self, size: Vector, top_plane: Plane, bottom_plane: Plane):
+        self.size = size
+        self.top_plane = top_plane
+        self.bottom_plane = bottom_plane
+
+
+@dataclass
+class PartPiece:
+    """
+    Represents the output of rendering a ModelPart. It contains the 3d (ie. solid) and
+    how to add the solid to the plate (ie. location and combination mode).
 
     Attributes:
         name: Name of the part.
-        part: The solid for the part.
-        loc: Location of the solid.
+        part: The solid for the part located by the part
         mode: Mode of the solid's addition (i.e. SUBTRACT, ADD)
     """
 
     name: str
     part: Solid
-    loc: Location
     mode: Mode
 
-    def __init__(self, name: str, part: Solid, loc: Location = Location(), mode: Mode = Mode.ADD):
+    def __init__(self, name: str, part: Solid, mode: Mode = Mode.ADD):
         self.name = name
         self.part = part
-        self.loc = loc
         self.mode = mode
 
 
@@ -52,11 +71,11 @@ class ModelPart(ABC):
         pass
 
     @abstractmethod
-    def render(self, plate_size: Vector) -> list[PartTreeNode]:
+    def render(self, plate: Plate) -> list[PartPiece]:
         """
         Render the feature
 
         Returns:
-            A list of PartTreeNode objects representing the solids to be added to the plate.
+            A list of PartOutput objects representing the solids to be added to the plate.
         """
         pass

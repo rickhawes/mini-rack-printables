@@ -1,5 +1,5 @@
 from typing import TypeAlias, Sequence
-from .model_part import ModelPart, PartTreeNode
+from .model_part import ModelPart, PartPiece, Plate
 from ..geometry import RcAlignment, Dir, Rc, convert_to_3d
 from build123d import Vector, Location
 
@@ -55,21 +55,25 @@ class Div(ModelPart):
     def layout_size(self, plate_size: Vector) -> Vector:
         return Vector(plate_size.X, plate_size.Y)
 
-    def render(self, plate_size: Vector) -> list[PartTreeNode]:
+    def render(self, plate: Plate) -> list[PartPiece]:
         """
         Render the div feature by dividing the plate into sections and rendering each feature.
         """
         extended_sizes = Div.extend_sizes(self.sizes, len(self.parts))
-        sections_rc = Div.divide_by_sizes(Rc(plate_size), extended_sizes, self.dir)
+        sections_rc = Div.divide_by_sizes(Rc(plate.size), extended_sizes, self.dir)
         nodes = []
         for i in range(len(self.parts)):
             shift = Div.layout_part(self.parts[i], sections_rc[i])
-            part_nodes = self.parts[i].render(convert_to_3d(sections_rc[i].size, plate_size.Z))
+            plate = Plate(
+                convert_to_3d(sections_rc[i].size, plate.size.Z),
+                plate.top_plane,
+                plate.bottom_plane,
+            )
+            part_nodes = self.parts[i].render(plate)
             nodes += [
-                PartTreeNode(
+                PartPiece(
                     name=node.name,
-                    part=node.part,
-                    loc=Location(shift) * node.loc,
+                    part=Location(shift) * node.part,
                     mode=node.mode,
                 )
                 for node in part_nodes

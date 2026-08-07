@@ -1,7 +1,9 @@
 from .models.face_plate import FacePlate
-from .parts.model_part import ModelPart, PartTreeNode
+from .models.xray import XRayModel
+from .parts.model_part import ModelPart, PartPiece, Plate
 from .parts.cutout import Cutout, CutoutType
 from .parts.div import Div
+from .parts.import_part import ImportPart
 from .dimensions import RackDims, RackScrewDims, Screw1032Dims
 from .geometry import Rc, RcAlignment, Dir
 
@@ -18,5 +20,8 @@ __all__ = [
     "RcAlignment",
     "Dir",
     "ModelPart",
-    "PartTreeNode",
+    "PartPiece",
+    "Plate",
+    "ImportPart",
+    "XRayModel",
 ]

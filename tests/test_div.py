@@ -1,4 +1,4 @@
-from mini_rack_printables import Div, Rc, Dir, ModelPart, PartTreeNode, RcAlignment
+from mini_rack_printables import Div, Rc, Dir, ModelPart, PartPiece, RcAlignment, Plate
 from build123d import Vector
 
 
@@ -108,7 +108,7 @@ class DummyPart(ModelPart):
     def layout_size(self, plate_size: Vector) -> Vector:
         return self._layout_size
 
-    def render(self, plate_size: Vector) -> list[PartTreeNode]:
+    def render(self, plate: Plate) -> list[PartPiece]:
         return []
 
 

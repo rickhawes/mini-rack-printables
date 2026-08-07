@@ -1,5 +1,5 @@
 from ..geometry import RcAlignment
-from .model_part import ModelPart, PartTreeNode
+from .model_part import ModelPart, PartPiece, Plate
 from build123d import (
     Vector,
     extrude,
@@ -95,20 +95,20 @@ class Cutout(ModelPart):
                     SlotOverall(width=self.size.X, height=self.size.Y)
         return sk.sketch
 
-    def render(self, plate_size: Vector) -> list[PartTreeNode]:
-        """Returns a list of PartTreeNodes representing the cutout"""
+    def render(self, plate: Plate) -> list[PartPiece]:
+        """Returns a list of PartOutput structures representing the cutout"""
         # the same rendering formula is used for all types of cutouts
         outline = self.sketch_outline()
-        hole = extrude(outline, amount=plate_size.Z)
+        hole = extrude(plate.bottom_plane * outline, amount=plate.size.Z)
         hole.label = self.label
-        result = [PartTreeNode(self.label, hole.solid(), mode=Mode.SUBTRACT)]
+        result = [PartPiece(self.label, hole.solid(), mode=Mode.SUBTRACT)]
 
         if self.rib_size.X > 0:
             with BuildSketch() as sk:
                 add(offset(outline, amount=self.rib_size.X), mode=Mode.ADD)
                 add(outline, mode=Mode.SUBTRACT)
-            rib = extrude(sk.sketch, amount=self.rib_size.Y)
+            rib = extrude(plate.top_plane * sk.sketch, amount=self.rib_size.Y)
             rib.label = self.label
-            result += [PartTreeNode(self.label, rib.solid())]
+            result += [PartPiece(self.label, rib.solid())]
 
         return result

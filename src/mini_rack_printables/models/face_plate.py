@@ -19,7 +19,7 @@ from build123d import (
 
 from ..dimensions import RackDims, RackScrewDims, Screw1032Dims, ShelfTabDims
 from .model import Model
-from ..parts.model_part import ModelPart
+from ..parts.model_part import ModelPart, Plate
 
 
 class FacePlate(Model):
@@ -141,8 +141,14 @@ class FacePlate(Model):
             plate_size.Y - 2 * self.rib_size.X,
             self.thickness,
         )
+        plate = Plate(
+            part_area_size,
+            Plane(origin=Vector(0, 0, plate_size.Z)),
+            Plane(origin=Vector(0, 0, 0)),
+        )
+
         if self.part:
-            part_nodes = self.part.render(part_area_size)
+            part_nodes = self.part.render(plate)
 
         with BuildPart() as plate:
             # base plate
@@ -169,7 +175,6 @@ class FacePlate(Model):
                         mode=Mode.SUBTRACT,
                     )
             extrude(amount=plate_size.Z)
-            top_plane = Plane(plate.faces().sort_by(Axis.Z)[-1])
 
             # ribs
             if self.rib_size.X > 0:
@@ -189,10 +194,10 @@ class FacePlate(Model):
             if self.part:
                 for node in part_nodes:
                     if node.mode == Mode.ADD:
-                        add(top_plane * node.loc * node.part, mode=Mode.ADD)
+                        add(node.part, mode=Mode.ADD)
                     elif node.mode == Mode.SUBTRACT:
-                        add(node.loc * node.part, mode=Mode.SUBTRACT)
+                        add(node.part, mode=Mode.SUBTRACT)
                     else:
                         assert False, "unhandled rendering mode"
 
-        return Compound(label="face_plate", children=[plate.solid()])
+        return Compound(label="face_plate", children=plate.solids())
