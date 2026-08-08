@@ -1,7 +1,7 @@
 import build123d as bd
 from ocp_vscode import show
 
-from mini_rack_printables import FacePlate, Cutout, CutoutType
+from mini_rack_printables import FacePlate, Cutout, PrimativeCircle
 
 #
 # Minimal example of a face plate with a part
@@ -9,7 +9,7 @@ from mini_rack_printables import FacePlate, Cutout, CutoutType
 
 plate = FacePlate(
     rack_units=1.0,
-    part=Cutout(CutoutType.CIRCLE, radius=10.0),
+    part=Cutout(PrimativeCircle(10.0)),
 ).render()
 
 show(plate)

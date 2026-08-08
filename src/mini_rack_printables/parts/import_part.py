@@ -15,7 +15,7 @@ class ImportPart(ModelPart):
     Make a part from a BREP file or a STL file.
     BREP files are imported rapidly, while STL files are converted to a BREP model using the `Mesher` library which may take some time.
     STL files can be converted to a BREP model using the `import_stl.py` script.
-    Imported shapes should have a rectangular outline, if `cutout` is True. 
+    Imported shapes should have a rectangular outline, if `cutout` is True.
     """
 
     BREP_SUFFIX = ".brep"

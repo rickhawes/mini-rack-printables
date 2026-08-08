@@ -32,9 +32,11 @@ class XRayModel(Model):
         for node in part_nodes:
             if node.mode == Mode.ADD:
                 node.part.color = Color("blue")
+                node.part.label = "add"
                 children.append(node.part)
             elif node.mode == Mode.SUBTRACT and not self.only_adds:
                 node.part.color = Color("red")
+                node.part.label = "subtract"
                 children.append(node.part)
             else:
                 assert node.mode == Mode.SUBTRACT, "unhandled rendering mode"
