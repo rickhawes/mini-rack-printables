@@ -1,6 +1,6 @@
 from typing import TypeAlias, Sequence
 from .model_part import ModelPart, PartPiece, Plate
-from ..geometry import RcAlignment, Dir, Rc, convert_to_3d
+from ..geometry import RcAlignment, Dir, Rc, convert_to_3d, AlignmentVector
 from build123d import Vector, Location
 
 
@@ -31,7 +31,7 @@ class Div(ModelPart):
         dir: Dir = Dir.HORIZONTAL,
         name: str = "Div",
         sizes: list[DivSize] = [AUTO],
-        align: Vector = RcAlignment.CENTER,
+        align: AlignmentVector = RcAlignment.CENTER,
         shift: Vector = Vector(0, 0),
         padding: float = 0,
     ):
@@ -110,7 +110,7 @@ class Div(ModelPart):
         """
         Sum the static sizes (non-AUTO values) in the given list.
         """
-        return sum([s for s in sizes if s != Div.AUTO])
+        return sum([float(s) for s in sizes if s != Div.AUTO])
 
     @staticmethod
     def count_auto(sizes: DivSizes) -> int:

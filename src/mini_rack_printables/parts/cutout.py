@@ -1,4 +1,4 @@
-from ..geometry import RcAlignment
+from ..geometry import RcAlignment, AlignmentVector
 from .model_part import ModelPart, PartPiece, Plate
 from build123d import (
     Vector,
@@ -43,7 +43,7 @@ class Cutout(ModelPart):
         radius: float = 0,
         rib_size: Vector = Vector(0, 0),
         label: str = "Cutout",
-        align: Vector = RcAlignment.CENTER,
+        align: AlignmentVector = RcAlignment.CENTER,
         shift: Vector = Vector(0, 0),
         padding: float = 0,
     ):

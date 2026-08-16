@@ -1,29 +1,36 @@
-from build123d import Vector, VectorLike
 from dataclasses import dataclass
-import numpy as np
 from enum import Enum, auto
 
+import numpy as np
+from build123d import Vector, VectorLike
 
-class RcAlignment(Vector, Enum):
+
+@dataclass(frozen=True)
+class AlignmentVector:
+    """
+    Represents how to align a Rc within another Rc.
+    """
+
+    x: int
+    y: int
+    z: int
+
+    def __add__(self, other: AlignmentVector) -> AlignmentVector:
+        return AlignmentVector(self.x + other.x, self.y + other.y, self.z + other.z)
+
+
+class RcAlignment(AlignmentVector, Enum):
     """
     Enum for aligning an Rc
     """
 
-    CENTER = Vector(0, 0, 0)
-    LEFT = Vector(-1, 0, 0)
-    RIGHT = Vector(1, 0, 0)
-    TOP = Vector(0, 1, 0)
-    BOTTOM = Vector(0, -1, 0)
-    FRONT = Vector(0, 0, 1)
-    BACK = Vector(0, 0, -1)
-
-    @classmethod
-    def is_valid(cls, vec: Vector) -> bool:
-        return (
-            (vec.X == 1.0 or vec.X == 0 or vec.X == -1.0)
-            and (vec.Y == 1.0 or vec.Y == 0 or vec.Y == -1.0)
-            and (vec.Z == 1.0 or vec.Z == 0 or vec.Z == -1.0)
-        )
+    CENTER = (0, 0, 0)
+    LEFT = (-1, 0, 0)
+    RIGHT = (1, 0, 0)
+    TOP = (0, 1, 0)
+    BOTTOM = (0, -1, 0)
+    FRONT = (0, 0, 1)
+    BACK = (0, 0, -1)
 
 
 class Dir(Enum):
@@ -125,17 +132,16 @@ class Rc:
                 for y in np.linspace((-size_y + dy) / 2, (size_y - dy) / 2, by)
             ]
 
-    def alignment_shift(self, bounds: Rc, align: Vector) -> Vector:
+    def alignment_shift(self, bounds: Rc, align: AlignmentVector) -> Vector:
         """
         return the amount of shift to align within the bounds according the alignment vector
         """
-        assert RcAlignment.is_valid(align), "must be an alignment vector value"
         return Vector(
-            (bounds.size.X - self.size.X) * align.X / 2 + bounds.shift.X,
-            (bounds.size.Y - self.size.Y) * align.Y / 2 + bounds.shift.Y,
+            (bounds.size.X - self.size.X) * align.x / 2 + bounds.shift.X,
+            (bounds.size.Y - self.size.Y) * align.y / 2 + bounds.shift.Y,
         )
 
-    def align(self, bounds: Rc, align: Vector) -> Rc:
+    def align(self, bounds: Rc, align: AlignmentVector) -> Rc:
         """
         Return an Rc that has been shifted to match alignment the bounds and alignment vector
         """

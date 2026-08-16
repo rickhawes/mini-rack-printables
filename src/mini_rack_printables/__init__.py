@@ -7,7 +7,7 @@ from .parts.import_part import ImportPart
 from .parts.keystone import Keystone
 from .parts.jetkvm import JetKVM
 from .dimensions import RackDims, RackScrewDims, Screw1032Dims
-from .geometry import Rc, RcAlignment, Dir
+from .geometry import Rc, RcAlignment, Dir, AlignmentVector
 
 __all__ = [
     "FacePlate",
@@ -28,4 +28,6 @@ __all__ = [
     "XRayModel",
     "Keystone",
     "JetKVM",
+    "Holder",
+    "AlignmentVector",
 ]

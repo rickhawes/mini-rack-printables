@@ -1,4 +1,13 @@
-from mini_rack_printables import Div, Rc, Dir, ModelPart, PartPiece, RcAlignment, Plate
+from mini_rack_printables import (
+    Div,
+    Rc,
+    Dir,
+    ModelPart,
+    PartPiece,
+    RcAlignment,
+    Plate,
+    AlignmentVector,
+)
 from build123d import Vector
 
 
@@ -97,7 +106,7 @@ class DummyPart(ModelPart):
 
     def __init__(
         self,
-        align: Vector = RcAlignment.CENTER,
+        align: AlignmentVector = RcAlignment.CENTER,
         shift: Vector = Vector(0, 0),
         padding: float = 0.0,
         layout_size: Vector = Vector(0, 0),
