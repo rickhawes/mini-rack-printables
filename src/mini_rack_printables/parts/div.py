@@ -29,7 +29,6 @@ class Div(ModelPart):
         self,
         parts: list[ModelPart],
         dir: Dir = Dir.HORIZONTAL,
-        name: str = "Div",
         sizes: list[DivSize] = [AUTO],
         align: AlignmentVector = RcAlignment.CENTER,
         shift: Vector = Vector(0, 0),
@@ -47,7 +46,7 @@ class Div(ModelPart):
             shift: Shift within a parent div section.
             padding: Padding within a parent div section.
         """
-        super().__init__(name, align, shift, padding)
+        super().__init__(align, shift, padding)
         self.dir = dir
         self.sizes = sizes
         self.parts = parts
@@ -72,7 +71,6 @@ class Div(ModelPart):
             part_nodes = self.parts[i].render(plate)
             nodes += [
                 PartPiece(
-                    name=node.name,
                     part=Location(shift) * node.part,
                     mode=node.mode,
                 )

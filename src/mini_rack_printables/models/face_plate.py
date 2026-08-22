@@ -193,7 +193,6 @@ class FacePlate(Model):
             # part
             if self.part:
                 for node in part_nodes:
-                    node.part.label = node.name  
                     if node.mode == Mode.ADD:
                         add(node.part, mode=Mode.ADD)
                     elif node.mode == Mode.SUBTRACT:

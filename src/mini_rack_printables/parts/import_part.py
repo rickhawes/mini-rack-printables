@@ -1,7 +1,17 @@
 from pathlib import Path
 from importlib.resources import as_file, files
 from functools import cached_property
-from build123d import Vector, import_brep, Box, Mode, Location, Shape, Mesher, CenterOf, Unit
+from build123d import (
+    Vector,
+    import_brep,
+    Box,
+    Mode,
+    Location,
+    Shape,
+    Mesher,
+    CenterOf,
+    Unit,
+)
 
 from .model_part import ModelPart, PartPiece, Plate
 from ..geometry import RcAlignment
@@ -51,7 +61,7 @@ class ImportPart(ModelPart):
             )
         else:
             assert asset, "Either path or asset must be provided"
-        super().__init__(label, align, shift, padding)
+        super().__init__(align, shift, padding)
         self.path = path
         self.asset = asset
         self.cutout = cutout
@@ -105,14 +115,12 @@ class ImportPart(ModelPart):
             # Cutout: Cutout the bottom plane and place the imported part in the cutout
             return [
                 PartPiece(
-                    name=self.label,
                     part=plate.bottom_plane
                     * Location((0, 0, plate.size.Z / 2))
                     * Box(self.size.X - E, self.size.Y - E, plate.size.Z + E).solid(),
                     mode=Mode.SUBTRACT,
                 ),
                 PartPiece(
-                    name=self.label,
                     part=plate.bottom_plane
                     * Location((0, 0, self.size.Z / 2))
                     * self.shape.solid(),
@@ -123,7 +131,6 @@ class ImportPart(ModelPart):
             # No cutout, render directly on the top plane
             return [
                 PartPiece(
-                    name=self.label,
                     part=plate.top_plane * Location((0, 0, self.size.Z / 2)) * self.shape.solid(),
                     mode=Mode.ADD,
                 ),

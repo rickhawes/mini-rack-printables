@@ -10,7 +10,6 @@ class JetKVM(ImportPart):
 
     def __init__(
         self,
-        label: str = "jetkvm",
         align: RcAlignment = RcAlignment.CENTER,
         shift: Vector = Vector(0, 0),
         padding: float = 0.0,
@@ -18,7 +17,6 @@ class JetKVM(ImportPart):
         super().__init__(
             asset="jetkvm_trimmed.brep",
             cutout=True,
-            label=label,
             align=align,
             shift=shift,
             padding=padding,

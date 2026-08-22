@@ -1,24 +1,17 @@
 from enum import Enum, auto
-from build123d import (
-    Vector,
-    VectorLike,
-    Part,
-    Box,
-    Pos,
-    Line,
-    Plane,
-    RadiusArc,
-    extrude,
-    make_face,
-    mirror,
-    Mode,
-)
+from build123d import Vector, VectorLike, Part, Box, Pos, extrude, Mode, Sketch
 
 from ..geometry import RcAlignment, AlignmentVector
 from .model_part import ModelPart, PartPiece, Plate
 from ..plates import make_plate, PlatePattern
 from ..face_selector import FaceSelector, select_locations
-from ..primative_shapes import make_primative_prism, PrimativeRectangle, make_primative_tube
+from ..primatives import (
+    extrude_prism,
+    PrimativeRectangle,
+    extrude_tube,
+    PrimativeCross,
+    sketch_ring,
+)
 
 
 class HolderStyle(Enum):
@@ -26,6 +19,10 @@ class HolderStyle(Enum):
     Holder style without front or back lip.
     """
 
+    PLAIN = auto()
+    """
+    Plain holder style without front or back lip.
+    """
     FRONT_LIP = auto()
     """
     Front lip holder style.
@@ -59,12 +56,11 @@ class Holder(ModelPart):
 
     def __init__(
         self,
-        style: HolderStyle = HolderStyle.FRONT_LIP,
+        style: HolderStyle = HolderStyle.PLAIN,
         device_size: VectorLike = (0, 0, 0),
         device_rounding: float = 1.0,
         wall_thickness: float = 2.5,
         puck_radius: float = 5.0,
-        label: str = "holder",
         align: AlignmentVector = RcAlignment.CENTER,
         shift: Vector = Vector(0, 0),
         padding: float = 0.0,
@@ -84,7 +80,7 @@ class Holder(ModelPart):
         assert wall_thickness > 0, "wall_thickness must be positive"
         assert puck_radius >= 0, "puck_radius must be non-negative"
         assert style != HolderStyle.PUCK, "PUCK style is not implemented"
-        super().__init__(label, align, shift, padding)
+        super().__init__(align, shift, padding)
         self.style = style
         self.device_size = Vector(device_size)
         self.device_rounding = device_rounding
@@ -111,26 +107,13 @@ class Holder(ModelPart):
 
         def make_corners() -> Part:
             """
-            Make the 4 corners of the holder
+            Make the corners of the holder by sketching a ring and subtracting a cross where walls will go.
             """
-            outline = (
-                Line((r, 0), (r + e, 0))
-                + Line((r + e, 0), (r + e, -w))
-                + Line((r + e, -w), (r, -w))
-                + RadiusArc((r, -w), (-w, r), radius=r + w)
-                + Line((-w, r), (-w, r + e))
-                + Line((-w, r + e), (0, r + e))
-                + Line((0, r + e), (0, r))
+            sk = Sketch(
+                sketch_ring(PrimativeRectangle(dx, dy, r), w)
+                - PrimativeCross(dx + 2 * w, dy + 2 * w, w + e + r, w + e + r).sketch()
             )
-            # do not the inner corner unless the device has rounded corners
-            if r > 0:
-                outline += RadiusArc((r, 0), (0, r), radius=r)
-            corner_face = make_face(Pos(-dx / 2, -dy / 2) * outline)
-            corner = extrude(corner_face, amount=holder_depth)
-            # use reflection to get the 3 other corners
-            corner_y = mirror(corner, Plane.YZ)
-            corner_xy = corner + corner_y
-            return Part(corner_xy + mirror(corner_xy, Plane.XZ))
+            return extrude(sk, amount=holder_depth)
 
         def make_walls() -> Part:
             """
@@ -151,16 +134,16 @@ class Holder(ModelPart):
             Make the cutout for the holder.
             """
             if self.style.has_front_lip():
-                cutout = make_primative_prism(
+                cutout = extrude_prism(
                     PrimativeRectangle(dx - 2 * self.LIP_WIDTH, dy - 2 * self.LIP_WIDTH, r),
                     self.LIP_DZ,
                 )
-                cutout += make_primative_prism(
+                cutout += extrude_prism(
                     PrimativeRectangle(dx, dy, r), plate.size.Z - self.LIP_DZ, over=cutout
                 )
                 return cutout
             else:
-                return make_primative_prism(PrimativeRectangle(dx, dy, r), plate.size.Z)
+                return extrude_prism(PrimativeRectangle(dx, dy, r), plate.size.Z)
 
         # basic holder shape
         holder = make_corners()
@@ -169,11 +152,9 @@ class Holder(ModelPart):
         if self.style.has_back_lip():
             lip = PrimativeRectangle(dx - 2 * self.LIP_WIDTH, dy - 2 * self.LIP_WIDTH, r)
             lip_width = self.wall_thickness + self.LIP_WIDTH
-            holder += make_primative_tube(lip, lip_width, self.LIP_DZ, under=holder)
+            holder += extrude_tube(lip, lip_width, self.LIP_DZ, under=holder)
 
         return [
-            PartPiece(self.label, (plate.top_plane * holder).solid()),
-            PartPiece(
-                self.label, (plate.bottom_plane * make_cutout()).solid(), mode=Mode.SUBTRACT
-            ),
+            PartPiece((plate.top_plane * holder).solid()),
+            PartPiece((plate.bottom_plane * make_cutout()).solid(), Mode.SUBTRACT),
         ]

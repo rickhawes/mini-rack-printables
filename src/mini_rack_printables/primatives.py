@@ -14,6 +14,11 @@ from build123d import (
     Face,
     Plane,
     Location,
+    Polyline,
+    BuildLine,
+    mirror,
+    make_face,
+    BuildSketch,
 )
 
 
@@ -32,7 +37,7 @@ class PrimativeShape(ABC):
         pass
 
     @abstractmethod
-    def draw(self) -> Sketch:
+    def sketch(self) -> Sketch:
         """Draw the outline of the shape."""
         pass
 
@@ -46,7 +51,7 @@ class PrimativeCircle(PrimativeShape):
     def size(self) -> Vector:
         return Vector(2 * self.radius, 2 * self.radius)
 
-    def draw(self) -> Sketch:
+    def sketch(self) -> Sketch:
         return Circle(self.radius)
 
 
@@ -61,7 +66,7 @@ class PrimativeRectangle(PrimativeShape):
     def size(self) -> Vector:
         return Vector(self.width, self.height)
 
-    def draw(self) -> Sketch:
+    def sketch(self) -> Sketch:
         if self.radius > 0:
             return RectangleRounded(self.width, self.height, self.radius)
         else:
@@ -78,8 +83,37 @@ class PrimativeSlot(PrimativeShape):
     def size(self) -> Vector:
         return Vector(self.width, self.height)
 
-    def draw(self) -> Sketch:
+    def sketch(self) -> Sketch:
         return SlotOverall(self.width, self.height)
+
+
+class PrimativeCross(PrimativeShape):
+    """A cross shape."""
+
+    def __init__(self, width: float, height: float, corner_width: float, corner_height: float):
+        self.width = width
+        self.height = height
+        self.corner_width = corner_width
+        self.corner_height = corner_height
+
+    def size(self) -> Vector:
+        return Vector(self.width, self.height)
+
+    def sketch(self) -> Sketch:
+        dx = self.width / 2 - self.corner_width
+        dy = self.height / 2 - self.corner_height
+        cw = self.corner_width
+        ch = self.corner_height
+
+        with BuildSketch() as sk:
+            with BuildLine():
+                # Draw one quadrant of the outline using Polyline
+                Polyline((0, dy + ch), (dx, dy + ch), (dx, dy), (dx + cw, dy), (dx + cw, 0))
+                # Mirror the outline
+                mirror(about=Plane.YZ)
+                mirror(about=Plane.XZ)
+            make_face()
+        return sk.sketch
 
 
 def _plane_from_over_under(
@@ -100,7 +134,7 @@ def _plane_from_over_under(
         assert False, "Invalid over and under combination"
 
 
-def make_primative_prism(
+def extrude_prism(
     shape: PrimativeShape,
     amount: float,
     over: Part | Face | None = None,
@@ -118,10 +152,10 @@ def make_primative_prism(
     Returns:
         Part: The extruded prism of the basic shape.
     """
-    return _plane_from_over_under(over, under, amount) * extrude(shape.draw(), amount)
+    return _plane_from_over_under(over, under, amount) * extrude(shape.sketch(), amount)
 
 
-def make_primative_ring(shape: PrimativeShape, wall_thickness: float) -> Sketch:
+def sketch_ring(shape: PrimativeShape, wall_thickness: float) -> Sketch:
     """
     Make a 2d ring from the primative shape.
 
@@ -133,12 +167,12 @@ def make_primative_ring(shape: PrimativeShape, wall_thickness: float) -> Sketch:
     Returns:
         Part: The extruded ring of the basic shape.
     """
-    inner = shape.draw()
+    inner = shape.sketch()
     outer = offset(inner, wall_thickness)
     return Sketch(outer - inner)
 
 
-def make_primative_tube(
+def extrude_tube(
     shape: PrimativeShape,
     wall_thickness: float,
     amount: float,
@@ -158,5 +192,5 @@ def make_primative_tube(
         Part: The extruded tube of the basic shape.
     """
     plane = _plane_from_over_under(over, under, amount)
-    sketch = make_primative_ring(shape, wall_thickness)
+    sketch = sketch_ring(shape, wall_thickness)
     return plane * extrude(sketch, amount)

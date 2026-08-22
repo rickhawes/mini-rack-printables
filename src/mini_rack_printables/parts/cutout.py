@@ -1,6 +1,6 @@
 from ..geometry import RcAlignment, AlignmentVector
 from .model_part import ModelPart, PartPiece, Plate
-from ..primative_shapes import PrimativeShape, make_primative_prism, make_primative_tube
+from ..primatives import PrimativeShape, extrude_prism, extrude_tube
 from build123d import Vector, Mode, VectorLike
 
 
@@ -18,12 +18,11 @@ class Cutout(ModelPart):
         self,
         shape: PrimativeShape,
         rib_size: VectorLike = (0, 0),
-        label: str = "Cutout",
         align: AlignmentVector = RcAlignment.CENTER,
         shift: Vector = Vector(0, 0),
         padding: float = 0,
     ):
-        super().__init__(label, align, shift, padding)
+        super().__init__(align, shift, padding)
         self.shape = shape
         self.rib_size = Vector(rib_size)
 
@@ -37,11 +36,11 @@ class Cutout(ModelPart):
     def render(self, plate: Plate) -> list[PartPiece]:
         """Returns a list of PartOutput structures representing the cutout"""
         # the same rendering formula is used for all types of cutouts
-        hole = plate.bottom_plane * make_primative_prism(self.shape, plate.size.Z)
-        result = [PartPiece(self.label, hole.solid(), mode=Mode.SUBTRACT)]
+        hole = plate.bottom_plane * extrude_prism(self.shape, plate.size.Z)
+        result = [PartPiece(hole.solid(), mode=Mode.SUBTRACT)]
 
         if self.rib_size.X > 0:
-            rib = plate.top_plane * make_primative_tube(self.shape, self.rib_size.X, self.rib_size.Y)
-            result += [PartPiece(self.label, rib.solid())]
+            rib = plate.top_plane * extrude_tube(self.shape, self.rib_size.X, self.rib_size.Y)
+            result += [PartPiece(rib.solid())]
 
         return result

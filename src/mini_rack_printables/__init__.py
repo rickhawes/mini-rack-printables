@@ -9,7 +9,7 @@ from .parts.jetkvm import JetKVM
 from .parts.holder import Holder, HolderStyle
 from .dimensions import RackDims, RackScrewDims, Screw1032Dims
 from .geometry import Rc, RcAlignment, Dir, AlignmentVector
-from .primative_shapes import PrimativeShape, PrimativeCircle, PrimativeRectangle, PrimativeSlot
+from .primatives import PrimativeShape, PrimativeCircle, PrimativeRectangle, PrimativeSlot
 
 __all__ = [
     "FacePlate",
