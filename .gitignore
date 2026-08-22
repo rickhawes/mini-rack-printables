@@ -8,9 +8,11 @@ bin/
 *.pyc
 .pytest_cache/
 .cache
+.ruff_cache
 
 # Direnv
 .direnv
+.claude
 
 # Mac
 .DS_Store

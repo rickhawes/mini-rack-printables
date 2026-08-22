@@ -5,12 +5,5 @@
   "document_symbols": "on",
   "semantic_tokens": "combined",
   "languages": {
-    "OpenSCAD": {
-      "prettier": {
-        "allowed": true
-      },
-      "document_folding_ranges": "on",
-      "preferred_line_length": 88
-    }
   }
 }
