@@ -4,9 +4,21 @@ bin/
 # Python
 .venv
 .uv_cache
+*/**/__pycache__
+*.pyc
+.pytest_cache/
+.cache
+.ruff_cache
 
 # Direnv
 .direnv
+.claude
 
 # Mac
 .DS_Store
+
+# Outputs
+outputs/
+
+# Task
+.task
