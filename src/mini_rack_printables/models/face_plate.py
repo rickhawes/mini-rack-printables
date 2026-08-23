@@ -11,7 +11,6 @@ from build123d import (
     Locations,
     mirror,
     extrude,
-    add,
     Mode,
     Axis,
     SlotOverall,
@@ -147,10 +146,7 @@ class FacePlate(Model):
             Plane(origin=Vector(0, 0, 0)),
         )
 
-        if self.part:
-            part_nodes = self.part.render(plate)
-
-        with BuildPart() as plate:
+        with BuildPart() as face_plate:
             # base plate
             with BuildSketch():
                 # plate
@@ -181,7 +177,7 @@ class FacePlate(Model):
                 with BuildPart() as rib:
                     # orient the extrusion to point in the Y-Axis
                     side_plane = (
-                        Plane(plate.faces().sort_by(Axis.Y)[0])
+                        Plane(face_plate.faces().sort_by(Axis.Y)[0])
                         .rotated((180, 180, 0))
                         .moved(Location((0, (plate_size.Z + self.rib_size.Y) / 2, 0)))
                     )
@@ -190,14 +186,10 @@ class FacePlate(Model):
                     extrude(amount=self.rib_size.X)
                 mirror(rib.part, Plane.XZ)  # place on both sides
 
-            # part
-            if self.part:
-                for node in part_nodes:
-                    if node.mode == Mode.ADD:
-                        add(node.part, mode=Mode.ADD)
-                    elif node.mode == Mode.SUBTRACT:
-                        add(node.part, mode=Mode.SUBTRACT)
-                    else:
-                        assert False, "unhandled rendering mode"
+        # Add/subtract parts
+        result = face_plate.part
+        assert result is not None
+        if self.part:
+            result = self.part.intersect_with(result, plate)
 
-        return Compound(label="face_plate", children=plate.solids())
+        return Compound(label="face_plate", children=[result])

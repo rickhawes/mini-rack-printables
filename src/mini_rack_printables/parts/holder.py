@@ -155,6 +155,6 @@ class Holder(ModelPart):
             holder += extrude_tube(lip, lip_width, self.LIP_DZ, under=holder)
 
         return [
-            PartPiece((plate.top_plane * holder).solid()),
-            PartPiece((plate.bottom_plane * make_cutout()).solid(), Mode.SUBTRACT),
+            PartPiece(plate.top_plane * holder),
+            PartPiece(plate.bottom_plane * make_cutout(), Mode.SUBTRACT),
         ]

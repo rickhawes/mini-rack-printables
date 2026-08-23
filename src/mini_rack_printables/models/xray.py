@@ -14,7 +14,7 @@ from .model import Model
 class XRayModel(Model):
     """
     A X-ray model will show the nodes from a ModelPart without the plate.
-    This model is useful for visualizing the structure of a ModelPart.
+    This model is useful for visualizing and debugging the structure of a ModelPart.
     """
 
     def __init__(self, part: ModelPart, size=Vector(100, 100, 3.5), only_adds=True):

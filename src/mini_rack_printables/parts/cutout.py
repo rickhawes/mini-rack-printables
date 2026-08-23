@@ -37,10 +37,10 @@ class Cutout(ModelPart):
         """Returns a list of PartOutput structures representing the cutout"""
         # the same rendering formula is used for all types of cutouts
         hole = plate.bottom_plane * extrude_prism(self.shape, plate.size.Z)
-        result = [PartPiece(hole.solid(), mode=Mode.SUBTRACT)]
+        result = [PartPiece(hole, Mode.SUBTRACT)]
 
         if self.rib_size.X > 0:
             rib = plate.top_plane * extrude_tube(self.shape, self.rib_size.X, self.rib_size.Y)
-            result += [PartPiece(rib.solid())]
+            result += [PartPiece(rib)]
 
         return result

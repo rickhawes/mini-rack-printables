@@ -1,6 +1,6 @@
 from ocp_vscode import show
 from mini_rack_printables import XRayModel, Holder, HolderStyle
-from build123d import Vector, export_step
+from build123d import Vector
 
 
 #
@@ -12,5 +12,3 @@ plate = XRayModel(holder, only_adds=False).render()
 # Show the plate in the OCP viewer
 show(plate)
 
-# Export the plate to a STEP file
-export_step(plate, "outputs/holder.step")

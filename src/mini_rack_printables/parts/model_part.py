@@ -1,5 +1,5 @@
 from mini_rack_printables.geometry import AlignmentVector
-from build123d import Mode, Vector, Plane, Solid
+from build123d import Mode, Vector, Plane, Solid, Part, Compound
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
@@ -32,15 +32,14 @@ class PartPiece:
     how to add the solid to the plate (ie. location and combination mode).
 
     Attributes:
-        name: Name of the part.
         part: The solid for the part located by the part
         mode: Mode of the solid's addition (i.e. SUBTRACT, ADD)
     """
 
-    part: Solid
+    part: Solid | Part
     mode: Mode
 
-    def __init__(self, part: Solid, mode: Mode = Mode.ADD):
+    def __init__(self, part: Solid | Part, mode: Mode = Mode.ADD):
         self.part = part
         self.mode = mode
 
@@ -76,3 +75,18 @@ class ModelPart(ABC):
             A list of PartOutput objects representing the solids to be added to the plate.
         """
         pass
+
+    def intersect_with(self, other: Part, plate: Plate) -> Compound:
+        """
+        Intersect this part with another part.
+        """
+        part_nodes = self.render(plate)
+        result = other
+        for node in part_nodes:
+            if node.mode == Mode.ADD:
+                result = result + node.part
+            elif node.mode == Mode.SUBTRACT:
+                result = result - node.part
+            else:
+                assert False, "unhandled rendering mode"
+        return Compound(result)

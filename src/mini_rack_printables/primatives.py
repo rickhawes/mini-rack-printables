@@ -23,10 +23,11 @@ from build123d import (
 
 
 #
-# A system of 2d  that are used in the parts in the rack.
+# A system of 2d that are used in the parts in the rack.
 #
-# Dev Note: Create this subset of the features of the build123d library's as a
-# set of primatives for the part library that is supported by the package
+# Dev Note: 
+# Q: Why not use the build123d shapes directly? 
+# A: Primatives define a limited subset of the all build123d shapes and their operations that work. 
 #
 class PrimativeShape(ABC):
     """ABC for the primative shapes that are used for parts in the rack."""
