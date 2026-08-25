@@ -1,10 +1,9 @@
 from enum import Enum, auto
 from build123d import Vector, VectorLike, Part, Box, Pos, extrude, Mode, Sketch
 
-from ..geometry import RcAlignment, AlignmentVector
 from .model_part import ModelPart, PartPiece, Plate
 from ..plates import make_plate, PlatePattern
-from ..face_selector import FaceSelector, select_locations
+from ..selector import Selector, select_locations
 from ..primatives import (
     extrude_prism,
     PrimativeRectangle,
@@ -21,15 +20,15 @@ class HolderStyle(Enum):
 
     PLAIN = auto()
     """
-    Plain holder style without front or back lip.
+    Plain rectangular holder style without front or back lip.
     """
     FRONT_LIP = auto()
     """
-    Front lip holder style.
+    Rectangular holder style with front lip.
     """
     BACK_LIP = auto()
     """
-    Back lip holder style.
+    Rectangular holder style with back lip.
     """
     PUCK = auto()
     """
@@ -61,7 +60,7 @@ class Holder(ModelPart):
         device_rounding: float = 1.0,
         wall_thickness: float = 2.5,
         puck_radius: float = 5.0,
-        align: AlignmentVector = RcAlignment.CENTER,
+        align: Selector = Selector.CENTER,
         shift: Vector = Vector(0, 0),
         padding: float = 0.0,
     ):
@@ -123,8 +122,8 @@ class Holder(ModelPart):
             side = make_plate(Vector(holder_depth, dy - 2 * dc, w), PlatePattern.HEX)
             # place around a box the size of the device
             device_box = Pos(0, 0, holder_depth / 2) * Box(dx, dy, holder_depth)
-            side_locs = select_locations(device_box, [FaceSelector.MAX_X, FaceSelector.MIN_X])
-            top_locs = select_locations(device_box, [FaceSelector.MAX_Y, FaceSelector.MIN_Y])
+            side_locs = select_locations(device_box, [Selector.RIGHT, Selector.LEFT])
+            top_locs = select_locations(device_box, [Selector.TOP, Selector.BOTTOM])
             return Part(
                 top_locs[0] * top + side_locs[0] * side + top_locs[1] * top + side_locs[1] * side
             )

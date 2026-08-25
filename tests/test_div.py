@@ -1,14 +1,12 @@
 from mini_rack_printables import (
     Div,
     Rc,
-    Dir,
     ModelPart,
     PartPiece,
-    RcAlignment,
+    Selector,
     Plate,
-    AlignmentVector,
 )
-from build123d import Vector
+from build123d import Vector, Axis
 
 
 def test_extend_sizes():
@@ -45,7 +43,7 @@ def test_fill_in_sizes():
     result1 = Div.fill_in_sizes(sizes1, Vector(200, 200))
     assert result1 == [50, 100, 50]
 
-    result2 = Div.fill_in_sizes(sizes1, Vector(200, 200), Dir.VERTICAL)
+    result2 = Div.fill_in_sizes(sizes1, Vector(200, 200), Axis.Y)
     assert result2 == [50, 100, 50]
 
     sizes4 = ["*", 100, 40.0, "*"]
@@ -88,13 +86,13 @@ def test_divide_horizontally():
 
 def test_divide_vertically():
     r2 = Rc([2, 4])
-    divisions2 = Div.divide_by_sizes(r=r2, sizes=[1, "*"], dir=Dir.VERTICAL)
+    divisions2 = Div.divide_by_sizes(r=r2, sizes=[1, "*"], axis=Axis.Y)
     assert len(divisions2) == 2
     assert divisions2[0] == Rc([2, 1], [0, -1.5])
     assert divisions2[1] == Rc([2, 3], [0, 0.5])
 
     r3 = Rc([1, 6])
-    divisions3 = Div.divide_by_sizes(r=r3, sizes=[1, "*", 1], dir=Dir.VERTICAL)
+    divisions3 = Div.divide_by_sizes(r=r3, sizes=[1, "*", 1], axis=Axis.Y)
     assert len(divisions3) == 3
     assert divisions3[0] == Rc([1, 1], [0, -2.5])
     assert divisions3[1] == Rc([1, 4], [0, 0])
@@ -106,12 +104,12 @@ class DummyPart(ModelPart):
 
     def __init__(
         self,
-        align: AlignmentVector = RcAlignment.CENTER,
+        align: Selector = Selector.CENTER,
         shift: Vector = Vector(0, 0),
         padding: float = 0.0,
         layout_size: Vector = Vector(0, 0),
     ):
-        super().__init__("test", align, shift, padding)
+        super().__init__(align, shift, padding)
         self._layout_size = layout_size
 
     def layout_size(self, plate_size: Vector) -> Vector:
@@ -122,21 +120,21 @@ class DummyPart(ModelPart):
 
 
 def test_layout_part():
-    centerAligned = DummyPart(align=RcAlignment.CENTER, layout_size=Vector(10, 10))
+    centerAligned = DummyPart(align=Selector.CENTER, layout_size=Vector(10, 10))
     assert Div.layout_part(centerAligned, Rc((100, 100))) == Vector(0, 0)
 
-    leftAligned = DummyPart(align=RcAlignment.LEFT, layout_size=Vector(10, 10))
+    leftAligned = DummyPart(align=Selector.LEFT, layout_size=Vector(10, 10))
     assert Div.layout_part(leftAligned, Rc((100, 100))) == Vector(-45, 0)
 
-    leftAlignedPadded = DummyPart(align=RcAlignment.LEFT, padding=1, layout_size=Vector(10, 10))
+    leftAlignedPadded = DummyPart(align=Selector.LEFT, padding=1, layout_size=Vector(10, 10))
     assert Div.layout_part(leftAlignedPadded, Rc((100, 100))) == Vector(-44, 0)
 
     leftAlignedShifted = DummyPart(
-        align=RcAlignment.LEFT, shift=Vector(10, 0), layout_size=Vector(10, 10)
+        align=Selector.LEFT, shift=Vector(10, 0), layout_size=Vector(10, 10)
     )
     assert Div.layout_part(leftAlignedShifted, Rc((100, 100))) == Vector(-35, 0)
 
     leftBottom = DummyPart(
-        align=RcAlignment.LEFT + RcAlignment.BOTTOM, layout_size=Vector(10, 10)
+        align=Selector.BOTTOM_LEFT, layout_size=Vector(10, 10)
     )
     assert Div.layout_part(leftBottom, Rc((100, 100), (10, 10))) == Vector(-35, -35)

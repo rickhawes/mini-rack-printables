@@ -14,7 +14,7 @@ from build123d import (
 )
 
 from .model_part import ModelPart, PartPiece, Plate
-from ..geometry import RcAlignment
+from ..selector import Selector
 
 E = 0.02
 "Small tolerance to make the imported part join with its cutout"
@@ -38,7 +38,7 @@ class ImportPart(ModelPart):
         asset: str | None = None,
         cutout: bool = True,
         label: str = "import",
-        align: RcAlignment = RcAlignment.CENTER,
+        align: Selector = Selector.CENTER,
         shift: Vector = Vector(0, 0),
         padding: float = 0.0,
     ):

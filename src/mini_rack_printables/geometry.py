@@ -1,45 +1,8 @@
 from dataclasses import dataclass
-from enum import Enum, auto
-
 import numpy as np
-from build123d import Vector, VectorLike
+from build123d import Vector, VectorLike, Axis
 
-
-@dataclass(frozen=True)
-class AlignmentVector:
-    """
-    Represents how to align a Rc within another Rc.
-    """
-
-    x: int
-    y: int
-    z: int
-
-    def __add__(self, other: AlignmentVector) -> AlignmentVector:
-        return AlignmentVector(self.x + other.x, self.y + other.y, self.z + other.z)
-
-
-class RcAlignment(AlignmentVector, Enum):
-    """
-    Enum for aligning an Rc
-    """
-
-    CENTER = (0, 0, 0)
-    LEFT = (-1, 0, 0)
-    RIGHT = (1, 0, 0)
-    TOP = (0, 1, 0)
-    BOTTOM = (0, -1, 0)
-    FRONT = (0, 0, 1)
-    BACK = (0, 0, -1)
-
-
-class Dir(Enum):
-    """
-    Enum for horizontal or vertical direction arguments.
-    """
-
-    HORIZONTAL = auto()
-    VERTICAL = auto()
+from .selector import Selector
 
 
 @dataclass
@@ -93,8 +56,8 @@ class Rc:
         """
         return Rc(size=self.size + Vector(2 * padding, 2 * padding), shift=self.shift)
 
-    def split(self, amount: float, dir: Dir = Dir.HORIZONTAL) -> list[Rc]:
-        if dir == Dir.HORIZONTAL:
+    def split(self, amount: float, axis: Axis = Axis.X) -> list[Rc]:
+        if axis == Axis.X:
             mid = self.left + amount if amount > 0 else self.right + amount
             return [
                 Rc.from_edges(self.left, mid, self.bottom, self.top),
@@ -107,11 +70,11 @@ class Rc:
                 Rc.from_edges(self.left, self.right, mid, self.top),
             ]
 
-    def divide(self, by: int, dir: Dir = Dir.HORIZONTAL) -> list[Rc]:
+    def divide(self, by: int, axis: Axis = Axis.X) -> list[Rc]:
         """
         Divide the rectangle into `by` equal rectangles in `dir` direction.
         """
-        if dir == Dir.HORIZONTAL:
+        if axis == Axis.X:
             dx = self.size.X / by
             size_x = self.size.X
             return [
@@ -132,16 +95,37 @@ class Rc:
                 for y in np.linspace((-size_y + dy) / 2, (size_y - dy) / 2, by)
             ]
 
-    def alignment_shift(self, bounds: Rc, align: AlignmentVector) -> Vector:
+    def alignment_shift(self, bounds: Rc, align: Selector) -> Vector:
         """
         return the amount of shift to align within the bounds according the alignment vector
         """
+        def selector_as_vector(selector: Selector) -> Vector:
+            """
+            Returns the alignment vector that corrpfor the given selector.
+            """
+            conversion = {   
+                Selector.RIGHT: Vector(1, 0, 0),
+                Selector.LEFT: Vector(-1, 0, 0),
+                Selector.TOP: Vector(0, 1, 0),
+                Selector.BOTTOM: Vector(0, -1, 0),
+                Selector.BACK: Vector(0, 0, 1),
+                Selector.FRONT: Vector(0, 0, -1),
+                Selector.TOP_RIGHT: Vector(1, 1, 0),
+                Selector.BOTTOM_RIGHT: Vector(1, -1, 0),
+                Selector.TOP_LEFT: Vector(-1, 1, 0),
+                Selector.BOTTOM_LEFT: Vector(-1, -1, 0),
+                Selector.CENTER: Vector(0, 0, 0)
+            }
+            assert selector in conversion, f"Selector without a alignment conversion: {selector}"
+            return conversion[selector]
+        
+        align_vec = selector_as_vector(align)
         return Vector(
-            (bounds.size.X - self.size.X) * align.x / 2 + bounds.shift.X,
-            (bounds.size.Y - self.size.Y) * align.y / 2 + bounds.shift.Y,
+            (bounds.size.X - self.size.X) * align_vec.X / 2 + bounds.shift.X,
+            (bounds.size.Y - self.size.Y) * align_vec.Y / 2 + bounds.shift.Y,
         )
 
-    def align(self, bounds: Rc, align: AlignmentVector) -> Rc:
+    def align(self, bounds: Rc, align: Selector) -> Rc:
         """
         Return an Rc that has been shifted to match alignment the bounds and alignment vector
         """

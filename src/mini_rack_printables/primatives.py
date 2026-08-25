@@ -1,4 +1,4 @@
-from .face_selector import select_plane, FaceSelector
+from .selector import select_plane, Selector
 from abc import ABC, abstractmethod
 
 from build123d import (
@@ -128,9 +128,9 @@ def _plane_from_over_under(
     elif over is None and isinstance(under, Face):
         return Plane(Plane(under) * Location((0, 0, -amount)))
     elif isinstance(over, Part) and under is None:
-        return select_plane(over, FaceSelector.MAX_Z)
+        return select_plane(over, Selector.MAX_Z)
     elif over is None and isinstance(under, Part):
-        return Plane(select_plane(under, FaceSelector.MAX_Z) * Location((0, 0, -amount)))
+        return Plane(select_plane(under, Selector.MIN_Z) * Location((0, 0, -amount)))
     else:
         assert False, "Invalid over and under combination"
 

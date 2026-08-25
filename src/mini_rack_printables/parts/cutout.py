@@ -1,4 +1,4 @@
-from ..geometry import RcAlignment, AlignmentVector
+from ..selector import Selector
 from .model_part import ModelPart, PartPiece, Plate
 from ..primatives import PrimativeShape, extrude_prism, extrude_tube
 from build123d import Vector, Mode, VectorLike
@@ -18,7 +18,7 @@ class Cutout(ModelPart):
         self,
         shape: PrimativeShape,
         rib_size: VectorLike = (0, 0),
-        align: AlignmentVector = RcAlignment.CENTER,
+        align: Selector = Selector.CENTER,
         shift: Vector = Vector(0, 0),
         padding: float = 0,
     ):

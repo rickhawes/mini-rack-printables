@@ -1,5 +1,5 @@
 from .import_part import ImportPart
-from ..geometry import RcAlignment
+from ..selector import Selector
 from build123d import Vector
 
 
@@ -10,7 +10,7 @@ class JetKVM(ImportPart):
 
     def __init__(
         self,
-        align: RcAlignment = RcAlignment.CENTER,
+        align: Selector = Selector.CENTER,
         shift: Vector = Vector(0, 0),
         padding: float = 0.0,
     ):

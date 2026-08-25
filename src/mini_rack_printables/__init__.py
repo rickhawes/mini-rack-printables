@@ -8,7 +8,8 @@ from .parts.keystone import Keystone
 from .parts.jetkvm import JetKVM
 from .parts.holder import Holder, HolderStyle
 from .dimensions import RackDims, RackScrewDims, Screw1032Dims
-from .geometry import Rc, RcAlignment, Dir, AlignmentVector
+from .geometry import Rc
+from .selector import Selector
 from .primatives import PrimativeShape, PrimativeCircle, PrimativeRectangle, PrimativeSlot
 
 __all__ = [
@@ -32,7 +33,7 @@ __all__ = [
     "JetKVM",
     "Holder",
     "HolderStyle",
-    "AlignmentVector",
+    "Selector",
     "PrimativeShape",
     "PrimativeCircle",
     "PrimativeRectangle",

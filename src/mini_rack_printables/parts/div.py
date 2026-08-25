@@ -1,7 +1,8 @@
 from typing import TypeAlias, Sequence
 from .model_part import ModelPart, PartPiece, Plate
-from ..geometry import RcAlignment, Dir, Rc, convert_to_3d, AlignmentVector
-from build123d import Vector, Location
+from ..geometry import Rc, convert_to_3d
+from ..selector import Selector
+from build123d import Vector, Location, Axis
 
 
 DivSize: TypeAlias = str | float | int
@@ -19,7 +20,7 @@ class Div(ModelPart):
         sizes: The sizes of the div's sections.
     """
 
-    dir: Dir
+    dir: Axis
     sizes: list[DivSize]
     parts: list[ModelPart]
 
@@ -28,9 +29,9 @@ class Div(ModelPart):
     def __init__(
         self,
         parts: list[ModelPart],
-        dir: Dir = Dir.HORIZONTAL,
+        dir: Axis = Axis.X,
         sizes: list[DivSize] = [AUTO],
-        align: AlignmentVector = RcAlignment.CENTER,
+        align: Selector = Selector.CENTER,
         shift: Vector = Vector(0, 0),
         padding: float = 0,
     ):
@@ -118,13 +119,13 @@ class Div(ModelPart):
         return sum([1 for s in sizes if s == Div.AUTO])
 
     @staticmethod
-    def fill_in_sizes(sizes: DivSizes, bounding_size: Vector, dir=Dir.HORIZONTAL) -> list[float]:
+    def fill_in_sizes(sizes: DivSizes, bounding_size: Vector, dir=Axis.X) -> list[float]:
         """
         Replace "str sizes with their float values,
         filling in auto sizes ("*") with the calculated size based on the bounding size.
         """
         assert Div.is_valid_sizes(sizes)
-        r_size = bounding_size.X if dir == Dir.HORIZONTAL else bounding_size.Y
+        r_size = bounding_size.X if dir == Axis.X else bounding_size.Y
         total_auto_size = r_size - Div.sum_static(sizes)
         assert total_auto_size >= 0, "static sizes must be less than the r size"
         num_auto = Div.count_auto(sizes)
@@ -135,18 +136,18 @@ class Div(ModelPart):
             return [auto_size if s == Div.AUTO else float(s) for s in sizes]
 
     @staticmethod
-    def divide_by_sizes(r: Rc, sizes: DivSizes = [AUTO], dir=Dir.HORIZONTAL) -> list[Rc]:
+    def divide_by_sizes(r: Rc, sizes: DivSizes = [AUTO], axis=Axis.X) -> list[Rc]:
         """
         Divide a RC based on the given sizes and direction.
         """
-        adjusted_sizes: list[float] = Div.fill_in_sizes(sizes, r.size, dir)
+        adjusted_sizes: list[float] = Div.fill_in_sizes(sizes, r.size, axis)
         result: list[Rc] = []
         remaining = r
         for i, s in enumerate(adjusted_sizes):
             if i == len(sizes) - 1:
                 result.append(remaining)
             else:
-                splits = remaining.split(s, dir)
+                splits = remaining.split(s, axis)
                 result.append(splits[0])
                 remaining = splits[1]
         return result
