@@ -99,11 +99,12 @@ class Rc:
         """
         return the amount of shift to align within the bounds according the alignment vector
         """
+
         def selector_as_vector(selector: Selector) -> Vector:
             """
             Returns the alignment vector that corrpfor the given selector.
             """
-            conversion = {   
+            conversion = {
                 Selector.RIGHT: Vector(1, 0, 0),
                 Selector.LEFT: Vector(-1, 0, 0),
                 Selector.TOP: Vector(0, 1, 0),
@@ -114,11 +115,11 @@ class Rc:
                 Selector.BOTTOM_RIGHT: Vector(1, -1, 0),
                 Selector.TOP_LEFT: Vector(-1, 1, 0),
                 Selector.BOTTOM_LEFT: Vector(-1, -1, 0),
-                Selector.CENTER: Vector(0, 0, 0)
+                Selector.CENTER: Vector(0, 0, 0),
             }
             assert selector in conversion, f"Selector without a alignment conversion: {selector}"
             return conversion[selector]
-        
+
         align_vec = selector_as_vector(align)
         return Vector(
             (bounds.size.X - self.size.X) * align_vec.X / 2 + bounds.shift.X,
@@ -137,6 +138,16 @@ class Rc:
         """
         mirror = Rc(self.size, Vector(-self.shift.X, -self.shift.Y))
         return Rc.union(self, mirror)
+
+
+@dataclass(frozen=True)
+class Rib:
+    """
+    Represents a rib (width x depth) on a part or shape
+    """
+
+    width: float
+    depth: float
 
 
 def convert_to_3d(vector2d: Vector, z: float = 0) -> Vector:

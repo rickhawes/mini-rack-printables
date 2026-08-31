@@ -134,7 +134,5 @@ def test_layout_part():
     )
     assert Div.layout_part(leftAlignedShifted, Rc((100, 100))) == Vector(-35, 0)
 
-    leftBottom = DummyPart(
-        align=Selector.BOTTOM_LEFT, layout_size=Vector(10, 10)
-    )
+    leftBottom = DummyPart(align=Selector.BOTTOM_LEFT, layout_size=Vector(10, 10))
     assert Div.layout_part(leftBottom, Rc((100, 100), (10, 10))) == Vector(-35, -35)

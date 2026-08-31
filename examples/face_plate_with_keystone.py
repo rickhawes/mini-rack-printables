@@ -12,7 +12,7 @@ keystone_part = Keystone()
 div = Div(parts=[keystone_part for _ in range(3)])
 plate = FacePlate(
     rack_units=1.0,
-    rib_size=FacePlate.STD_RIB,
+    rib=FacePlate.STD_RIB,
     part=div,
 ).render()
 

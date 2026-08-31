@@ -1,7 +1,8 @@
 from ..selector import Selector
+from ..geometry import Rib
 from .model_part import ModelPart, PartPiece, Plate
-from ..primatives import PrimativeShape, extrude_prism, extrude_tube
-from build123d import Vector, Mode, VectorLike
+from ..elements import Element, extrude_element, extrude_tube
+from build123d import Vector, Mode
 
 
 class Cutout(ModelPart):
@@ -9,38 +10,47 @@ class Cutout(ModelPart):
     A cutout of a plate can be a circle, a rectangle, or a slot in shape. It can also be outlined with a rib.
     """
 
-    shape: PrimativeShape
+    element: Element
     size: Vector
     radius: float
-    rib_size: Vector
+    rib: Rib | None
 
     def __init__(
         self,
-        shape: PrimativeShape,
-        rib_size: VectorLike = (0, 0),
+        element: Element,
+        rib: Rib | None = None,
         align: Selector = Selector.CENTER,
         shift: Vector = Vector(0, 0),
         padding: float = 0,
     ):
+        """
+        Args:
+            element (Element): The element shape to cut out.
+            rib (Rib | None): The rib to outline the cutout with.
+            align (Selector): The alignment of the cutout on the plate.
+            shift (Vector): The shift of the cutout on the plate.
+            padding (float): The padding around the cutout.
+        """
         super().__init__(align, shift, padding)
-        self.shape = shape
-        self.rib_size = Vector(rib_size)
+        self.element = element
+        self.rib = rib
 
     def layout_size(self, plate_size: Vector) -> Vector:
-        shape_size = self.shape.size()
+        shape_size = self.element.size()
+        rib_width = self.rib.width if self.rib else 0
         return Vector(
-            shape_size.X + self.rib_size.X * 2,
-            shape_size.Y + self.rib_size.Y * 2,
+            shape_size.X + rib_width * 2,
+            shape_size.Y + rib_width * 2,
         )
 
     def render(self, plate: Plate) -> list[PartPiece]:
         """Returns a list of PartOutput structures representing the cutout"""
         # the same rendering formula is used for all types of cutouts
-        hole = plate.bottom_plane * extrude_prism(self.shape, plate.size.Z)
+        hole = plate.bottom_plane * extrude_element(self.element, plate.size.Z)
         result = [PartPiece(hole, Mode.SUBTRACT)]
 
-        if self.rib_size.X > 0:
-            rib = plate.top_plane * extrude_tube(self.shape, self.rib_size.X, self.rib_size.Y)
+        if self.rib:
+            rib = plate.top_plane * extrude_tube(self.element, self.rib.width, self.rib.depth)
             result += [PartPiece(rib)]
 
         return result

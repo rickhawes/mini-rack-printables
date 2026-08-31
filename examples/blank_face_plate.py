@@ -7,7 +7,7 @@ from mini_rack_printables import FacePlate
 # This example demonstrates a blank face plate with a rib.
 #
 
-plate = FacePlate(rack_units=1.0, rib_size=FacePlate.STD_RIB).render()
+plate = FacePlate(rack_units=1.0).render()
 
 # Show the plate in the viewer. Run 'task viewer' before.
 show(plate)

@@ -11,7 +11,7 @@ from enum import Enum
 # ------------------------------------------------
 
 # For the 10 inch rack specification see this file
-# https:#upload.wikimedia.org/wikipedia/commons/8/84/19_inch_vs_10_inch_rack_dimensions.svg
+# https://upload.wikimedia.org/wikipedia/commons/8/84/19_inch_vs_10_inch_rack_dimensions.svg
 #
 
 
@@ -64,6 +64,8 @@ class ShelfTabDims(float, Enum):
     """Minimal width of the rack tab from the standard"""
     HOLE_WIDTH_TECMOJO = 9.28
     """Measured width of the tab hole (use 10-24 screw hole diameter for height)"""
+    MAX_DX_TABS = 222.25
+    """Maximal inner distance from left to the right tab"""
 
 
 # ------------------------------------------------
@@ -80,3 +82,8 @@ class Screw1032Dims(float, Enum):
     """Hole for 10-32"""
     HEAD = 10.57
     """Head for a 10-32 screw"""
+
+
+def rack_units_to_mm(units: float) -> float:
+    """Converts rack units to millimeters"""
+    return units * RackDims.HEIGHT_1U

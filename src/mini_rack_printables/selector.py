@@ -8,6 +8,7 @@ class Selector(Enum):
     """
     Enum for selecting faces and edges by axis and value.
     """
+
     # Face/edge selectors
     RIGHT = auto()
     LEFT = auto()
@@ -53,6 +54,7 @@ def select_face(faces: ShapeList[Face], selector: Selector):
         case _:
             assert False, f"Invalid selector: {selector}"
 
+
 def select_faces(part: Part, selector: Sequence[Selector]) -> ShapeList[Face]:
     """
     Selects a list of faces from the given list of faces based on the selector.
@@ -78,11 +80,11 @@ def select_planes(part: Part, selector: Sequence[Selector], flip: bool = False) 
     return [select_plane(part, s, flip) for s in selector]
 
 
-def select_location(part: Part, selector: Selector) -> Location:
+def select_location(part: Part, selector: Selector, flip: bool = False) -> Location:
     """
     Returns the location of the face selected by the selector.
     """
-    return Location(select_plane(part, selector))
+    return Location(select_plane(part, selector, flip))
 
 
 def select_locations(part: Part, selector: Sequence[Selector]) -> list[Location]:
@@ -90,3 +92,45 @@ def select_locations(part: Part, selector: Sequence[Selector]) -> list[Location]
     Forms a list of `Location` objects from the given list of faces based on the selector.
     """
     return [select_location(part, s) for s in selector]
+
+
+def has_top_left_corner(selectors: Sequence[Selector]) -> bool:
+    """
+    Returns True if the list of selectors has a top-left corner.
+    """
+    return (
+        Selector.TOP_LEFT in selectors or Selector.LEFT in selectors or Selector.TOP in selectors
+    )
+
+
+def has_top_right_corner(selectors: Sequence[Selector]) -> bool:
+    """
+    Returns True if the list of selectors has a top-right corner.
+    """
+    return (
+        Selector.TOP_RIGHT in selectors
+        or Selector.RIGHT in selectors
+        or Selector.TOP in selectors
+    )
+
+
+def has_bottom_left_corner(selectors: Sequence[Selector]) -> bool:
+    """
+    Returns True if the list of selectors has a bottom-left corner.
+    """
+    return (
+        Selector.BOTTOM_LEFT in selectors
+        or Selector.LEFT in selectors
+        or Selector.BOTTOM in selectors
+    )
+
+
+def has_bottom_right_corner(selectors: Sequence[Selector]) -> bool:
+    """
+    Returns True if the list of selectors has a bottom-right corner.
+    """
+    return (
+        Selector.BOTTOM_RIGHT in selectors
+        or Selector.RIGHT in selectors
+        or Selector.BOTTOM in selectors
+    )

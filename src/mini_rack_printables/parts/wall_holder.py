@@ -1,65 +1,54 @@
-from enum import Enum, auto
+from dataclasses import dataclass
 from build123d import Vector, VectorLike, Part, Box, Pos, extrude, Mode, Sketch
 
 from .model_part import ModelPart, PartPiece, Plate
 from ..plates import make_plate, PlatePattern
 from ..selector import Selector, select_locations
-from ..primatives import (
-    extrude_prism,
-    PrimativeRectangle,
-    extrude_tube,
-    PrimativeCross,
+from ..geometry import Rib
+from ..elements import (
+    extrude_element,
+    RectangleElement,
+    extrude_sketch,
+    CrossElement,
     sketch_ring,
 )
 
 
-class HolderStyle(Enum):
+@dataclass
+class WallHolderStyle:
     """
-    Holder style without front or back lip.
-    """
-
-    PLAIN = auto()
-    """
-    Plain rectangular holder style without front or back lip.
-    """
-    FRONT_LIP = auto()
-    """
-    Rectangular holder style with front lip.
-    """
-    BACK_LIP = auto()
-    """
-    Rectangular holder style with back lip.
-    """
-    PUCK = auto()
-    """
-    Puck holder style.
+    Represents the style of a wall holder, including cutout presence and lip dimensions.
     """
 
-    def has_lip(self) -> bool:
-        return self == HolderStyle.FRONT_LIP or self == HolderStyle.BACK_LIP
-
-    def has_front_lip(self) -> bool:
-        return self == HolderStyle.FRONT_LIP
-
-    def has_back_lip(self) -> bool:
-        return self == HolderStyle.BACK_LIP
+    has_cutout: bool = True
+    """Does the holder have a cutout for the device?"""
+    front_lip: Rib | None = None
+    """The front lip dimensions, if any."""
+    back_lip: Rib | None = None
+    """The back lip dimensions, if any."""
 
 
-class Holder(ModelPart):
+class WallHolder(ModelPart):
     """
-    A device holder for a single device. Devices are held by friction  from side, top and bottom plates.
+    A device holder for a single device on a face plate.
+    Devices are held by friction from side, top and bottom plates.
     """
 
-    LIP_DZ = 1.0
-    LIP_WIDTH = 1.0
+    FRONT_LIP = WallHolderStyle(True, Rib(0.5, 1.0), None)
+    """A wall holder style with a front lip to prevent the device from falling through."""
+    BACK_LIP = WallHolderStyle(True, None, Rib(0.5, 1.0))
+    """A wall holder style with a back lip to prevent the device from falling through. Default."""
+    NO_LIP = WallHolderStyle(True, None, None)
+    """A wall holder style without a lip."""
+    NO_CUTOUT = WallHolderStyle(False, None, None)
+    """A wall holder style without a cutout in the plate."""
 
     def __init__(
         self,
-        style: HolderStyle = HolderStyle.PLAIN,
         device_size: VectorLike = (0, 0, 0),
         device_rounding: float = 1.0,
         wall_thickness: float = 2.5,
-        puck_radius: float = 5.0,
+        style: WallHolderStyle = BACK_LIP,
         align: Selector = Selector.CENTER,
         shift: Vector = Vector(0, 0),
         padding: float = 0.0,
@@ -68,23 +57,21 @@ class Holder(ModelPart):
         Initialize a holder with the given style, device size, and optional label, align, shift, and padding.
 
         Args:
-            style (HolderStyle): The style of the holder. Defaults to HolderStyle.PLAIN.
             device_size (Vector): The size of the device to hold. Defaults to Vector(0, 0, 0).
-            label (str): The label to display on the holder. Defaults to an empty string.
+            device_rounding (float): The rounding of the device edges. Defaults to 1.0.
+            wall_thickness (float): The thickness of the wall. Defaults to 2.5.
+            style (WallHolderStyle): The style of the holder. Defaults to BACK_LIP.
             align (Vector): The alignment of the holder on the plate. Defaults to Vector(0, 0, 0).
             shift (Vector): The shift of the holder on the plate. Defaults to Vector(0, 0, 0).
             padding (float): The padding around the holder. Defaults to 0.0.
         """
         assert device_rounding >= 0, "device_rounding must be non-negative"
-        assert wall_thickness > 0, "wall_thickness must be positive"
-        assert puck_radius >= 0, "puck_radius must be non-negative"
-        assert style != HolderStyle.PUCK, "PUCK style is not implemented"
+        assert wall_thickness > 0.5, "wall_thickness must be positive"
         super().__init__(align, shift, padding)
-        self.style = style
         self.device_size = Vector(device_size)
         self.device_rounding = device_rounding
         self.wall_thickness = wall_thickness
-        self.puck_radius = puck_radius
+        self.style = style
         assert self.device_size.X > 0 and self.device_size.Y > 0 and self.device_size.Z > 0, (
             "device_size must be positive"
         )
@@ -98,7 +85,9 @@ class Holder(ModelPart):
         # geometry
         dx, dy, r = self.device_size.X, self.device_size.Y, self.device_rounding
         holder_depth = (
-            self.device_size.Z - plate.size.Z + (self.LIP_DZ if self.style.has_lip() else 0)
+            self.device_size.Z
+            - (plate.size.Z if self.style.has_cutout else 0)
+            + (self.style.front_lip.depth if self.style.front_lip else 0)
         )
         w = self.wall_thickness
         e = 1.0  # corner edge
@@ -109,8 +98,8 @@ class Holder(ModelPart):
             Make the corners of the holder by sketching a ring and subtracting a cross where walls will go.
             """
             sk = Sketch(
-                sketch_ring(PrimativeRectangle(dx, dy, r), w)
-                - PrimativeCross(dx + 2 * w, dy + 2 * w, w + e + r, w + e + r).sketch()
+                sketch_ring(RectangleElement(dx, dy, r), w)
+                - CrossElement(dx + 2 * w, dy + 2 * w, w + e + r, w + e + r).sketch()
             )
             return extrude(sk, amount=holder_depth)
 
@@ -132,28 +121,38 @@ class Holder(ModelPart):
             """
             Make the cutout for the holder.
             """
-            if self.style.has_front_lip():
-                cutout = extrude_prism(
-                    PrimativeRectangle(dx - 2 * self.LIP_WIDTH, dy - 2 * self.LIP_WIDTH, r),
-                    self.LIP_DZ,
+            if self.style.front_lip:
+                cutout = extrude_element(
+                    RectangleElement(
+                        dx - 2 * self.style.front_lip.width,
+                        dy - 2 * self.style.front_lip.width,
+                        r,
+                    ),
+                    self.style.front_lip.depth,
                 )
-                cutout += extrude_prism(
-                    PrimativeRectangle(dx, dy, r), plate.size.Z - self.LIP_DZ, over=cutout
+                cutout += extrude_element(
+                    RectangleElement(dx, dy, r),
+                    plate.size.Z - self.style.front_lip.depth,
+                    over=cutout,
                 )
                 return cutout
             else:
-                return extrude_prism(PrimativeRectangle(dx, dy, r), plate.size.Z)
+                return extrude_element(RectangleElement(dx, dy, r), plate.size.Z)
 
         # basic holder shape
         holder = make_corners()
         holder += make_walls()
-        # add the lip if needed
-        if self.style.has_back_lip():
-            lip = PrimativeRectangle(dx - 2 * self.LIP_WIDTH, dy - 2 * self.LIP_WIDTH, r)
-            lip_width = self.wall_thickness + self.LIP_WIDTH
-            holder += extrude_tube(lip, lip_width, self.LIP_DZ, under=holder)
+        # add the back lip if needed
+        if self.style.back_lip:
+            lw = self.style.back_lip.width
+            sk = sketch_ring(RectangleElement(dx, dy, r), w)
+            sk += sketch_ring(RectangleElement(dx - 2 * lw, dy - 2 * lw, 0), lw)
+            holder += extrude_sketch(sk, over=holder, amount=self.style.back_lip.depth)
 
-        return [
-            PartPiece(plate.top_plane * holder),
-            PartPiece(plate.bottom_plane * make_cutout(), Mode.SUBTRACT),
-        ]
+        if self.style.has_cutout:
+            return [
+                PartPiece(plate.top_plane * holder),
+                PartPiece(plate.bottom_plane * make_cutout(), Mode.SUBTRACT),
+            ]
+        else:
+            return [PartPiece(plate.top_plane * holder)]

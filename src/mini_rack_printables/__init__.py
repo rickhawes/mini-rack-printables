@@ -6,22 +6,32 @@ from .parts.div import Div
 from .parts.import_part import ImportPart
 from .parts.keystone import Keystone
 from .parts.jetkvm import JetKVM
-from .parts.holder import Holder, HolderStyle
+from .parts.wall_holder import WallHolder, WallHolderStyle
+from .parts.corner_holder import CornerHolder
+from .parts.puck_holder import PuckHolder, PuckHolderStyle
 from .dimensions import RackDims, RackScrewDims, Screw1032Dims
-from .geometry import Rc
+from .geometry import Rc, Rib
 from .selector import Selector
-from .primatives import PrimativeShape, PrimativeCircle, PrimativeRectangle, PrimativeSlot
+from .elements import Element, CircleElement, RectangleElement, SlotElement
+from .models.shelf import Shelf
 
 __all__ = [
     "FacePlate",
+    "Shelf",
     "RackDims",
     "RackScrewDims",
     "Screw1032Dims",
     "Cutout",
     "CutoutType",
+    "CornerHolder",
+    "PuckHolder",
+    "WallHolder",
+    "WallHolderStyle",
+    "PuckHolderStyle",
     "Div",
     "Keystone",
     "Rc",
+    "Rib",
     "RcAlignment",
     "Dir",
     "ModelPart",
@@ -31,11 +41,10 @@ __all__ = [
     "XRayModel",
     "Keystone",
     "JetKVM",
-    "Holder",
-    "HolderStyle",
+    "WallHolder",
     "Selector",
-    "PrimativeShape",
-    "PrimativeCircle",
-    "PrimativeRectangle",
-    "PrimativeSlot",
+    "Element",
+    "CircleElement",
+    "RectangleElement",
+    "SlotElement",
 ]
