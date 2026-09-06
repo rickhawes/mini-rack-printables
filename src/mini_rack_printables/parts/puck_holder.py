@@ -2,13 +2,14 @@ from dataclasses import dataclass
 from build123d import Vector, VectorLike, Part, Box, Pos, extrude, Sketch, Mode, Location
 
 from .model_part import ModelPart, PartPiece, Plate
-from ..plates import make_plate, PlatePattern
 from ..selectors import Side, select_locations, select_location, Place
 from ..elements import (
     RectangleElement,
     CrossElement,
     RectangleWithCornersElement,
     extrude_element,
+    make_plate,
+    FillPattern,
 )
 
 
@@ -111,8 +112,8 @@ class PuckHolder(ModelPart):
             """
             Make the walls of the holder as 4 plates with room for the corners.
             """
-            top = make_plate(Vector(walls_depth, dx - 2 * dc, w), PlatePattern.HEX)
-            side = make_plate(Vector(walls_depth, dy - 2 * dc, w), PlatePattern.HEX)
+            top = make_plate(Vector(walls_depth, dx - 2 * dc, w), FillPattern.HEX)
+            side = make_plate(Vector(walls_depth, dy - 2 * dc, w), FillPattern.HEX)
             # place around a box the size of the device
             device_box = Pos(0, 0, walls_depth / 2 + walls_z) * Box(dx, dy, walls_depth)
             side_locs = select_locations(device_box, [Side.RIGHT, Side.LEFT])

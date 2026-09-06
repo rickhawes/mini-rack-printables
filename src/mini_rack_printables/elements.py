@@ -1,17 +1,10 @@
-from .selectors import (
-    select_plane,
-    Place,
-    Side,
-    has_top_right_corner,
-    has_bottom_right_corner,
-    has_top_left_corner,
-    has_bottom_left_corner,
-)
 from abc import ABC, abstractmethod
-
+import math
+from enum import Enum, auto
 from build123d import (
     Rectangle,
     Vector,
+    VectorLike,
     Line,
     Circle,
     RadiusArc,
@@ -30,12 +23,40 @@ from build123d import (
     make_face,
     BuildSketch,
     Trapezoid,
+    HexLocations,
+    RegularPolygon,
+)
+
+from .selectors import (
+    select_plane,
+    Place,
+    Side,
+    has_top_right_corner,
+    has_bottom_right_corner,
+    has_top_left_corner,
+    has_bottom_left_corner,
 )
 
 
 # --------------------------------------------------------
 # 2D Elements
 # --------------------------------------------------------
+
+
+class FillPattern(Enum):
+    """The type of hole to use fora fill."""
+
+    SOLID = auto()
+    """No holes, the plate is solid."""
+    HEX = auto()
+    """Hexagonal holes."""
+    CIRCULAR = auto()
+    """Circular holes."""
+
+
+class FillDimensions:
+    WIDTH = 0.5
+    SPACING = 4.0
 
 
 class Element2D(ABC):
@@ -86,25 +107,62 @@ class CircleElement(Element2D):
 class RectangleElement(Element2D):
     """A rectangle shape or rounded rectangle shape."""
 
-    def __init__(self, width: float, height: float, radius: float = 0):
+    def __init__(
+        self,
+        width: float,
+        height: float,
+        radius: float = 0,
+        fill: FillPattern = FillPattern.SOLID,
+    ):
         """
         Args:
             width (float): The width of the rectangle.
             height (float): The height of the rectangle.
             radius (float, optional): The radius of the rounded corners. Defaults to 0.
+            fill (Fill): The fill pattern of the rectangle. Defaults to Fill.SOLID
         """
         self.width = width
         self.height = height
         self.radius = radius
+        self.fill = fill
 
     def size(self) -> Vector:
         return Vector(self.width, self.height)
 
     def sketch(self) -> Sketch:
-        if self.radius > 0:
-            return RectangleRounded(self.width, self.height, self.radius)
-        else:
-            return Rectangle(self.width, self.height)
+        def solid_fill() -> Sketch:
+            if self.radius > 0:
+                return RectangleRounded(self.width, self.height, self.radius)
+            else:
+                return Rectangle(self.width, self.height)
+
+        def hole_fill() -> Sketch:
+            # make a sketch of
+            inner_dx, inner_dy = self.width - self.radius, self.height - self.radius
+            spacing, width = FillDimensions.SPACING, FillDimensions.WIDTH
+
+            assert inner_dx > 2 * spacing and inner_dy > 2 * spacing, (
+                "Hex plate size must be larger than the hex spacing"
+            )
+            outline = solid_fill().wire()
+            hole_locs = HexLocations(
+                spacing,
+                math.floor(inner_dx / (2 * spacing)),
+                math.floor(inner_dy / (2 * spacing)) - 1,
+            )
+            if self.fill == FillPattern.HEX:
+                holes = hole_locs * RegularPolygon(spacing - width, 6).wire()
+            elif self.fill == FillPattern.CIRCULAR:
+                holes = hole_locs * Circle(spacing - width / 2).wire()
+            sk = Sketch()
+            sk += Face(outline, holes)
+            return sk
+
+        match self.fill:
+            case FillPattern.SOLID:
+                return solid_fill()
+            case FillPattern.HEX | FillPattern.CIRCULAR:
+                return hole_fill()
 
 
 class SlotElement(Element2D):
@@ -415,3 +473,19 @@ def extrude_sketch(
         Part: The extruded sketch.
     """
     return _plane_from_over_under(over, under, amount) * extrude(sketch, amount)
+
+
+def make_plate(size: VectorLike, fill: FillPattern = FillPattern.SOLID) -> Part:
+    """
+    Make a plate of the given size and fill pattern.
+
+    Args:
+        size (VectorLike): The size of the plate.
+        fill (FillPattern, optional): The fill pattern of the plate. Defaults to SOLID.
+
+    Returns:
+        Part: The extruded plate.
+    """
+    _size = Vector(size)
+    sketch = RectangleElement(_size.X, _size.Y, fill=fill).sketch()
+    return extrude(sketch, _size.Z)

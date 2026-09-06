@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from build123d import Vector, VectorLike, Part, Box, Pos, extrude, Mode, Sketch
 
 from .model_part import ModelPart, PartPiece, Plate
-from ..plates import make_plate, PlatePattern
 from ..selectors import Side, select_locations, Place
 from ..geometry import Rib
 from ..elements import (
@@ -11,6 +10,8 @@ from ..elements import (
     extrude_sketch,
     CrossElement,
     sketch_ring,
+    FillPattern,
+    make_plate,
 )
 
 
@@ -107,8 +108,8 @@ class WallHolder(ModelPart):
             """
             Make the walls of the holder as 4 plates with room for the corners.
             """
-            top = make_plate(Vector(holder_depth, dx - 2 * dc, w), PlatePattern.HEX)
-            side = make_plate(Vector(holder_depth, dy - 2 * dc, w), PlatePattern.HEX)
+            top = make_plate(Vector(holder_depth, dx - 2 * dc, w), FillPattern.HEX)
+            side = make_plate(Vector(holder_depth, dy - 2 * dc, w), FillPattern.HEX)
             # place around a box the size of the device
             device_box = Pos(0, 0, holder_depth / 2) * Box(dx, dy, holder_depth)
             side_locs = select_locations(device_box, [Side.RIGHT, Side.LEFT])
