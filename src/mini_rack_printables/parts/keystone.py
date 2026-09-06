@@ -1,5 +1,5 @@
 from .import_part import ImportPart
-from ..selector import Selector
+from ..selectors import Place
 from build123d import Vector
 
 
@@ -10,7 +10,7 @@ class Keystone(ImportPart):
 
     def __init__(
         self,
-        align: Selector = Selector.CENTER,
+        align: Place = Place.CENTER,
         shift: Vector = Vector(0, 0),
         padding: float = 0.0,
     ):

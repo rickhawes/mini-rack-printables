@@ -1,10 +1,10 @@
 # Layout tests
 #
-from mini_rack_printables import FacePlate, RackScrewDims, RackDims
+from mini_rack_printables import RackScrewDims, RackDims, layout_rack_screw_holes
 
 
 def test_layout_rack_screw_holes_1u():
-    values = FacePlate.layout_rack_screw_holes(rack_units=1.0)
+    values = layout_rack_screw_holes(rack_units=1.0)
 
     assert len(values) == 3
     assert values[0] == RackScrewDims.BOTTOM
@@ -13,7 +13,7 @@ def test_layout_rack_screw_holes_1u():
 
 
 def test_layout_rack_screw_holes_3u():
-    values = FacePlate.layout_rack_screw_holes(rack_units=3.0)
+    values = layout_rack_screw_holes(rack_units=3.0)
 
     assert len(values) == 9
     assert values[0] == RackScrewDims.BOTTOM
@@ -22,7 +22,7 @@ def test_layout_rack_screw_holes_3u():
 
 
 def test_layout_rack_screw_holes_2u_without_middle_holes():
-    values = FacePlate.layout_rack_screw_holes(rack_units=2.0, middle_holes=False)
+    values = layout_rack_screw_holes(rack_units=2.0, middle_holes=False)
 
     assert len(values) == 4
     assert values[0] == RackScrewDims.BOTTOM
@@ -31,7 +31,7 @@ def test_layout_rack_screw_holes_2u_without_middle_holes():
 
 
 def test_layout_rack_screw_holes_half_u():
-    values = FacePlate.layout_rack_screw_holes(rack_units=0.5)
+    values = layout_rack_screw_holes(rack_units=0.5)
 
     assert len(values) == 2
     assert values[0] == RackScrewDims.BOTTOM
@@ -39,7 +39,7 @@ def test_layout_rack_screw_holes_half_u():
 
 
 def test_layout_rack_screw_holes_1_5u():
-    values = FacePlate.layout_rack_screw_holes(rack_units=1.5)
+    values = layout_rack_screw_holes(rack_units=1.5)
 
     assert len(values) == 5
     assert values[0] == RackScrewDims.BOTTOM
@@ -48,7 +48,7 @@ def test_layout_rack_screw_holes_1_5u():
 
 
 def test_layout_rack_screw_holes_half_u_bottom_aligned():
-    values = FacePlate.layout_rack_screw_holes(rack_units=0.5, half_height_bottom=True)
+    values = layout_rack_screw_holes(rack_units=0.5, half_height_bottom=True)
 
     assert len(values) == 2
     assert values[0] == RackScrewDims.MIDDLE - RackDims.HEIGHT_1U / 2
@@ -56,7 +56,7 @@ def test_layout_rack_screw_holes_half_u_bottom_aligned():
 
 
 def test_layout_rack_screw_holes_1u_bottom_aligned():
-    values = FacePlate.layout_rack_screw_holes(rack_units=1.0, half_height_bottom=True)
+    values = layout_rack_screw_holes(rack_units=1.0, half_height_bottom=True)
 
     assert len(values) == 4
     assert values[0] == RackScrewDims.MIDDLE - RackDims.HEIGHT_1U / 2

@@ -1,7 +1,7 @@
 from typing import TypeAlias, Sequence
 from .model_part import ModelPart, PartPiece, Plate
 from ..geometry import Rc, convert_to_3d
-from ..selector import Selector
+from ..selectors import Place
 from build123d import Vector, Location, Axis
 
 
@@ -31,7 +31,7 @@ class Div(ModelPart):
         parts: list[ModelPart],
         dir: Axis = Axis.X,
         sizes: list[DivSize] = [AUTO],
-        align: Selector = Selector.CENTER,
+        align: Place = Place.CENTER,
         shift: Vector = Vector(0, 0),
         padding: float = 0,
     ):
@@ -159,5 +159,5 @@ class Div(ModelPart):
         """
         layout_rc = Rc(part.layout_size(bounding.size))
         layout_with_padding = layout_rc.apply_padding(part.padding)
-        aligned_shift = layout_with_padding.alignment_shift(bounding, part.align)
+        aligned_shift = layout_with_padding.bounded_shift(bounding, part.align)
         return aligned_shift + part.shift

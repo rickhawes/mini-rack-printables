@@ -3,7 +3,7 @@ from build123d import Vector, VectorLike, Part, Box, Pos, extrude, Sketch, Mode,
 
 from .model_part import ModelPart, PartPiece, Plate
 from ..plates import make_plate, PlatePattern
-from ..selector import Selector, select_locations, select_location
+from ..selectors import Side, select_locations, select_location, Place
 from ..elements import (
     RectangleElement,
     CrossElement,
@@ -43,7 +43,7 @@ class PuckHolder(ModelPart):
         device_rounding: float = 1.0,
         wall_thickness: float = 2.5,
         style: PuckHolderStyle = PLAIN,
-        align: Selector = Selector.CENTER,
+        align: Place = Place.CENTER,
         shift: Vector = Vector(0, 0),
         padding: float = 0.0,
     ):
@@ -115,8 +115,8 @@ class PuckHolder(ModelPart):
             side = make_plate(Vector(walls_depth, dy - 2 * dc, w), PlatePattern.HEX)
             # place around a box the size of the device
             device_box = Pos(0, 0, walls_depth / 2 + walls_z) * Box(dx, dy, walls_depth)
-            side_locs = select_locations(device_box, [Selector.RIGHT, Selector.LEFT])
-            top_locs = select_locations(device_box, [Selector.TOP, Selector.BOTTOM])
+            side_locs = select_locations(device_box, [Side.RIGHT, Side.LEFT])
+            top_locs = select_locations(device_box, [Side.TOP, Side.BOTTOM])
             return Part(
                 top_locs[0] * top + side_locs[0] * side + top_locs[1] * top + side_locs[1] * side
             )
@@ -124,8 +124,8 @@ class PuckHolder(ModelPart):
         def make_puck_cutout() -> Part:
             device_dz = dz / 2 if self.style.has_cutout else dz / 2 + plate.size.Z
             device_box = Pos(0, 0, device_dz) * Box(dx, dy, dz)
-            base_loc = select_location(device_box, Selector.BOTTOM, flip=True)
-            base_sketch = RectangleWithCornersElement(dx, dz, r, [Selector.LEFT]).sketch()
+            base_loc = select_location(device_box, Side.BOTTOM, flip=True)
+            base_sketch = RectangleWithCornersElement(dx, dz, r, [Place.LEFT]).sketch()
             return Part(base_loc * extrude(base_sketch, amount=dy))
 
         # basic holder shape

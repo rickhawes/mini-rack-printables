@@ -1,7 +1,7 @@
-from ..selector import Selector
+from ..selectors import Place
 from ..geometry import Rib
 from .model_part import ModelPart, PartPiece, Plate
-from ..elements import Element, extrude_element, extrude_tube
+from ..elements import Element2D, extrude_element, extrude_tube
 from build123d import Vector, Mode
 
 
@@ -10,16 +10,16 @@ class Cutout(ModelPart):
     A cutout of a plate can be a circle, a rectangle, or a slot in shape. It can also be outlined with a rib.
     """
 
-    element: Element
+    element: Element2D
     size: Vector
     radius: float
     rib: Rib | None
 
     def __init__(
         self,
-        element: Element,
+        element: Element2D,
         rib: Rib | None = None,
-        align: Selector = Selector.CENTER,
+        align: Place = Place.CENTER,
         shift: Vector = Vector(0, 0),
         padding: float = 0,
     ):

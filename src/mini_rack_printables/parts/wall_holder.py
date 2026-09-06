@@ -3,7 +3,7 @@ from build123d import Vector, VectorLike, Part, Box, Pos, extrude, Mode, Sketch
 
 from .model_part import ModelPart, PartPiece, Plate
 from ..plates import make_plate, PlatePattern
-from ..selector import Selector, select_locations
+from ..selectors import Side, select_locations, Place
 from ..geometry import Rib
 from ..elements import (
     extrude_element,
@@ -49,7 +49,7 @@ class WallHolder(ModelPart):
         device_rounding: float = 1.0,
         wall_thickness: float = 2.5,
         style: WallHolderStyle = BACK_LIP,
-        align: Selector = Selector.CENTER,
+        align: Place = Place.CENTER,
         shift: Vector = Vector(0, 0),
         padding: float = 0.0,
     ):
@@ -111,8 +111,8 @@ class WallHolder(ModelPart):
             side = make_plate(Vector(holder_depth, dy - 2 * dc, w), PlatePattern.HEX)
             # place around a box the size of the device
             device_box = Pos(0, 0, holder_depth / 2) * Box(dx, dy, holder_depth)
-            side_locs = select_locations(device_box, [Selector.RIGHT, Selector.LEFT])
-            top_locs = select_locations(device_box, [Selector.TOP, Selector.BOTTOM])
+            side_locs = select_locations(device_box, [Side.RIGHT, Side.LEFT])
+            top_locs = select_locations(device_box, [Side.TOP, Side.BOTTOM])
             return Part(
                 top_locs[0] * top + side_locs[0] * side + top_locs[1] * top + side_locs[1] * side
             )

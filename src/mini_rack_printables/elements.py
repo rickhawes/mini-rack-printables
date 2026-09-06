@@ -1,6 +1,7 @@
-from .selector import (
+from .selectors import (
     select_plane,
-    Selector,
+    Place,
+    Side,
     has_top_right_corner,
     has_bottom_right_corner,
     has_top_left_corner,
@@ -32,15 +33,13 @@ from build123d import (
 )
 
 
-#
-# A system of 2d that are used in the parts in the rack.
-#
-# Dev Note:
-# Q: Why not use the build123d shapes directly?
-# A: Elements define a limited subset of the all build123d shapes and their operations that work.
-#
-class Element(ABC):
-    """ABC for the primative shapes that are used for parts in the rack."""
+# --------------------------------------------------------
+# 2D Elements
+# --------------------------------------------------------
+
+
+class Element2D(ABC):
+    """ABC for the 2d shapes that are used for parts in the rack."""
 
     @abstractmethod
     def size(self) -> Vector:
@@ -52,22 +51,22 @@ class Element(ABC):
         """Draw the outline of the shape."""
         pass
 
-    # def alignment_for(self, other: Element, edge: Selector, outside: bool = False) -> Pos:
-    #     """
-    #     Returns the alignment position for the edge of this element relative to the given element.
+    def locate(self, other: Element2D, where: Place, outside: bool = False) -> Location:
+        """
+        Returns the alignment position for the edge of this element relative to the given element.
 
-    #     Args:
-    #         other (Element): The element for which the calculation is made
-    #         edge (Selector): Which edge or corner of this element to align on.
-    #         outside (bool): Whether to align the `other` element outside the boundary of this element.
+        Args:
+            other (Element): The element for which the calculation is made
+            edge (Selector): Which edge or corner of this element to align on.
+            outside (bool): Whether to align the `other` element outside the boundary of this element.
 
-    #     Returns:
-    #         Pos: The alignment position for `other` element relative to this element.
-    #     """
-    #     raise NotImplementedError
+        Returns:
+            Pos: The alignment position for `other` element relative to this element.
+        """
+        raise NotImplementedError
 
 
-class CircleElement(Element):
+class CircleElement(Element2D):
     """A circle element."""
 
     def __init__(self, radius: float):
@@ -84,7 +83,7 @@ class CircleElement(Element):
         return Circle(self.radius)
 
 
-class RectangleElement(Element):
+class RectangleElement(Element2D):
     """A rectangle shape or rounded rectangle shape."""
 
     def __init__(self, width: float, height: float, radius: float = 0):
@@ -108,7 +107,7 @@ class RectangleElement(Element):
             return Rectangle(self.width, self.height)
 
 
-class SlotElement(Element):
+class SlotElement(Element2D):
     """A slot shape."""
 
     def __init__(self, width: float, height: float):
@@ -127,7 +126,7 @@ class SlotElement(Element):
         return SlotOverall(self.width, self.height)
 
 
-class CrossElement(Element):
+class CrossElement(Element2D):
     """A cross shape."""
 
     def __init__(self, width: float, height: float, corner_width: float, corner_height: float):
@@ -163,12 +162,12 @@ class CrossElement(Element):
         return sk.sketch
 
 
-class RectangleWithCornersElement(Element):
+class RectangleWithCornersElement(Element2D):
     """
     Element for a rectangle with explicit rounded corners.
     """
 
-    def __init__(self, width: float, height: float, radius: float, corners: list[Selector]):
+    def __init__(self, width: float, height: float, radius: float, corners: list[Place]):
         """
         Args:
             width (float): The width of the rectangle.
@@ -224,7 +223,7 @@ class RectangleWithCornersElement(Element):
         return sk.sketch
 
 
-class TrapezoidElement(Element):
+class TrapezoidElement(Element2D):
     """A trapezoid shape or rounded rectangle shape."""
 
     def __init__(self, width: float, height: float, angle1: float = 90, angle2: float = 90):
@@ -249,6 +248,50 @@ class TrapezoidElement(Element):
         )
 
 
+# --------------------------------------------------------
+# 3D Elements
+# --------------------------------------------------------
+
+
+class Element3D(Element2D):
+    """Element for 3d shapes"""
+
+    @abstractmethod
+    def size(self) -> Vector:
+        """Returns the size of the shape in 3d."""
+        pass
+
+    @abstractmethod
+    def extrude(self) -> Part:
+        """Extrudes the shape along the z-axis."""
+        pass
+
+    @abstractmethod
+    def on(self, selector: Place) -> Plane:
+        """Returns the plane for the element."""
+        pass
+
+    def place(
+        self,
+        other: Element3D,
+        where: Place,
+        outside: bool = False,
+        on: Place | Plane | None = None,
+    ) -> Part:
+        """
+        Returns the alignment position for the edge of this element relative to the given element.
+
+        Args:
+            other (Element): The element for which the calculation is made
+            edge (Selector): Which edge or corner of this element to align on.
+            outside (bool): Whether to align the `other` element outside the boundary of this element.
+
+        Returns:
+            Pos: The alignment position for `other` element relative to this element.
+        """
+        raise NotImplementedError
+
+
 def _plane_from_over_under(
     over: Part | Face | None, under: Part | Face | None, amount: float
 ) -> Plane:
@@ -270,15 +313,30 @@ def _plane_from_over_under(
     elif over is None and isinstance(under, Face):
         return Plane(Plane(under) * Location((0, 0, -amount)))
     elif isinstance(over, Part) and under is None:
-        return select_plane(over, Selector.MAX_Z)
+        return select_plane(over, Side.MAX_Z)
     elif over is None and isinstance(under, Part):
-        return Plane(select_plane(under, Selector.MIN_Z) * Location((0, 0, -amount)))
+        return Plane(select_plane(under, Side.MIN_Z) * Location((0, 0, -amount)))
     else:
         assert False, "Invalid over and under combination"
 
 
+def PrismElement(Element3D):
+    """A prism element."""
+
+    def __init__(self, element: Element2D, amount: float):
+        self.element = element
+        self.amount = amount
+
+    def size(self) -> Vector:
+        size2d = self.element.size()
+        return Vector(size2d.X, size2d.Y, self.amount)
+
+    def extrude(self) -> Part:
+        return self.element.sketch()
+
+
 def extrude_element(
-    element: Element,
+    element: Element2D,
     amount: float,
     over: Part | Face | None = None,
     under: Part | Face | None = None,
@@ -298,7 +356,7 @@ def extrude_element(
     return _plane_from_over_under(over, under, amount) * extrude(element.sketch(), amount)
 
 
-def sketch_ring(element: Element, wall_thickness: float) -> Sketch:
+def sketch_ring(element: Element2D, wall_thickness: float) -> Sketch:
     """
     Make a 2d ring from the element shape.
 
@@ -316,7 +374,7 @@ def sketch_ring(element: Element, wall_thickness: float) -> Sketch:
 
 
 def extrude_tube(
-    element: Element,
+    element: Element2D,
     wall_thickness: float,
     amount: float,
     over: Part | Face | None = None,

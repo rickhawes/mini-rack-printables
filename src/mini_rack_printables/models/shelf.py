@@ -3,7 +3,7 @@ from build123d import Vector, Compound, Location, mirror, Plane, Part, Sketch, e
 
 from ..dimensions import ShelfTabDims, RackDims, rack_units_to_mm
 from ..parts.model_part import ModelPart
-from ..selector import Selector, select_plane
+from ..selectors import Side, select_plane
 from ..elements import extrude_element, TrapezoidElement, RectangleElement
 from ..rack_holes import sketch_rack_holes
 from .model import Model
@@ -67,7 +67,7 @@ class Shelf(Model):
                 base_size.Y - 10, rack_units_to_mm(self.rack_units), self.style.wall_thickness
             )
             wall_plane = (
-                select_plane(base_plate, Selector.MIN_X)
+                select_plane(base_plate, Side.MIN_X)
                 .moved(
                     Location(
                         (
@@ -90,7 +90,7 @@ class Shelf(Model):
                 rack_units_to_mm(self.rack_units),
                 self.style.face_thickness,
             )
-            face_plane = select_plane(base_plate, Selector.MIN_Y).moved(
+            face_plane = select_plane(base_plate, Side.MIN_Y).moved(
                 Location((0, (face_size.Y - base_size.Z) / 2, -face_size.Z))
             )
             face_sketch = RectangleElement(

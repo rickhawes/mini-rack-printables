@@ -2,10 +2,10 @@ from build123d import Sketch, Vector, extrude
 
 from ..elements import (
     CrossElement,
-    Element,
+    Element2D,
     sketch_ring,
 )
-from ..selector import Selector
+from ..selectors import Place
 from .model_part import ModelPart, PartPiece, Plate
 
 
@@ -17,12 +17,12 @@ class CornerHolder(ModelPart):
 
     def __init__(
         self,
-        element: Element,
+        element: Element2D,
         corner_width: float = 10.0,
         corner_height: float = 10.0,
         wall_depth: float = 5.0,
         wall_thickness: float = 3.0,
-        align: Selector = Selector.CENTER,
+        align: Place = Place.CENTER,
         shift: Vector = Vector(0, 0),
         padding: float = 0.0,
     ):

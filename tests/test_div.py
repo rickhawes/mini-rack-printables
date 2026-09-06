@@ -3,7 +3,7 @@ from mini_rack_printables import (
     Rc,
     ModelPart,
     PartPiece,
-    Selector,
+    Place,
     Plate,
 )
 from build123d import Vector, Axis
@@ -104,7 +104,7 @@ class DummyPart(ModelPart):
 
     def __init__(
         self,
-        align: Selector = Selector.CENTER,
+        align: Place = Place.CENTER,
         shift: Vector = Vector(0, 0),
         padding: float = 0.0,
         layout_size: Vector = Vector(0, 0),
@@ -120,19 +120,19 @@ class DummyPart(ModelPart):
 
 
 def test_layout_part():
-    centerAligned = DummyPart(align=Selector.CENTER, layout_size=Vector(10, 10))
+    centerAligned = DummyPart(align=Place.CENTER, layout_size=Vector(10, 10))
     assert Div.layout_part(centerAligned, Rc((100, 100))) == Vector(0, 0)
 
-    leftAligned = DummyPart(align=Selector.LEFT, layout_size=Vector(10, 10))
+    leftAligned = DummyPart(align=Place.LEFT, layout_size=Vector(10, 10))
     assert Div.layout_part(leftAligned, Rc((100, 100))) == Vector(-45, 0)
 
-    leftAlignedPadded = DummyPart(align=Selector.LEFT, padding=1, layout_size=Vector(10, 10))
+    leftAlignedPadded = DummyPart(align=Place.LEFT, padding=1, layout_size=Vector(10, 10))
     assert Div.layout_part(leftAlignedPadded, Rc((100, 100))) == Vector(-44, 0)
 
     leftAlignedShifted = DummyPart(
-        align=Selector.LEFT, shift=Vector(10, 0), layout_size=Vector(10, 10)
+        align=Place.LEFT, shift=Vector(10, 0), layout_size=Vector(10, 10)
     )
     assert Div.layout_part(leftAlignedShifted, Rc((100, 100))) == Vector(-35, 0)
 
-    leftBottom = DummyPart(align=Selector.BOTTOM_LEFT, layout_size=Vector(10, 10))
+    leftBottom = DummyPart(align=Place.BOTTOM_LEFT, layout_size=Vector(10, 10))
     assert Div.layout_part(leftBottom, Rc((100, 100), (10, 10))) == Vector(-35, -35)

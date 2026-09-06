@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import numpy as np
 from build123d import Vector, VectorLike, Axis
 
-from .selector import Selector
+from .selectors import Place
 
 
 @dataclass
@@ -95,42 +95,31 @@ class Rc:
                 for y in np.linspace((-size_y + dy) / 2, (size_y - dy) / 2, by)
             ]
 
-    def alignment_shift(self, bounds: Rc, align: Selector) -> Vector:
+    def place_position(self, place: Place) -> Vector:
         """
-        return the amount of shift to align within the bounds according the alignment vector
+        Returns the position (an x, y vector) of the place on the rectangle.
         """
-
-        def selector_as_vector(selector: Selector) -> Vector:
-            """
-            Returns the alignment vector that corrpfor the given selector.
-            """
-            conversion = {
-                Selector.RIGHT: Vector(1, 0, 0),
-                Selector.LEFT: Vector(-1, 0, 0),
-                Selector.TOP: Vector(0, 1, 0),
-                Selector.BOTTOM: Vector(0, -1, 0),
-                Selector.BACK: Vector(0, 0, 1),
-                Selector.FRONT: Vector(0, 0, -1),
-                Selector.TOP_RIGHT: Vector(1, 1, 0),
-                Selector.BOTTOM_RIGHT: Vector(1, -1, 0),
-                Selector.TOP_LEFT: Vector(-1, 1, 0),
-                Selector.BOTTOM_LEFT: Vector(-1, -1, 0),
-                Selector.CENTER: Vector(0, 0, 0),
-            }
-            assert selector in conversion, f"Selector without a alignment conversion: {selector}"
-            return conversion[selector]
-
-        align_vec = selector_as_vector(align)
+        place_x, place_y = place.as_units()
         return Vector(
-            (bounds.size.X - self.size.X) * align_vec.X / 2 + bounds.shift.X,
-            (bounds.size.Y - self.size.Y) * align_vec.Y / 2 + bounds.shift.Y,
+            (self.size.X / 2) * place_x + self.shift.X,
+            (self.size.Y / 2) * place_y + self.shift.Y,
         )
 
-    def align(self, bounds: Rc, align: Selector) -> Rc:
+    def bounded_shift(self, bounds: Rc, align: Place) -> Vector:
         """
-        Return an Rc that has been shifted to match alignment the bounds and alignment vector
+        The amount of shift to apply to this Rc to place it within the `bounds` according to
+        the `place`. Useful in layout calculations.
         """
-        return Rc(size=self.size, shift=self.alignment_shift(bounds, align))
+        return bounds.place_position(align) - self.place_position(align)
+
+    def alignment_shift(self, other: Rc, align: Alignment) -> Vector:
+        """
+        The shift to align the `other` rectangle with this one according to the alignment.
+        Useful in placement calculations.
+        """
+        self_pos = self.place_position(align.main)
+        other_pos = other.place_position(align.other)
+        return self_pos - other_pos
 
     def centered_bounding(self) -> Rc:
         """
@@ -138,6 +127,19 @@ class Rc:
         """
         mirror = Rc(self.size, Vector(-self.shift.X, -self.shift.Y))
         return Rc.union(self, mirror)
+
+
+@dataclass(frozen=True)
+class Alignment:
+    """
+    Represents the alignment of two Rcs, or two 2d shapes,
+    """
+
+    main: Place
+    """The position in the main shape to align with"""
+
+    other: Place
+    """The position in the other shape to align with"""
 
 
 @dataclass(frozen=True)

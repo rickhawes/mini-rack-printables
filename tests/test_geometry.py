@@ -1,4 +1,4 @@
-from mini_rack_printables import Rc, Selector
+from mini_rack_printables import Rc, Place
 from build123d import Vector, Axis
 
 
@@ -73,17 +73,17 @@ def test_alignment_shift():
     bounding_rc = Rc((10, 10))
     rc = Rc((2, 2))
 
-    shift_left = rc.alignment_shift(bounding_rc, Selector.LEFT)
+    shift_left = rc.bounded_shift(bounding_rc, Place.LEFT)
     assert shift_left == Vector(-4, 0)
-    shift_top = rc.alignment_shift(bounding_rc, Selector.TOP)
+    shift_top = rc.bounded_shift(bounding_rc, Place.TOP)
     assert shift_top == Vector(0, 4)
-    shift_top_left = rc.alignment_shift(bounding_rc, Selector.TOP_LEFT)
+    shift_top_left = rc.bounded_shift(bounding_rc, Place.TOP_LEFT)
     assert shift_top_left == Vector(-4, 4)
 
     bounding_rc2 = Rc((10, 10), (20, 20))
-    shift_left2 = rc.alignment_shift(bounding_rc2, Selector.LEFT)
+    shift_left2 = rc.bounded_shift(bounding_rc2, Place.LEFT)
     assert shift_left2 == Vector(16, 20)
-    shift_top_left2 = rc.alignment_shift(bounding_rc2, Selector.TOP_LEFT)
+    shift_top_left2 = rc.bounded_shift(bounding_rc2, Place.TOP_LEFT)
     assert shift_top_left2 == Vector(16, 24)
 
 

@@ -14,7 +14,7 @@ from build123d import (
 )
 
 from .model_part import ModelPart, PartPiece, Plate
-from ..selector import Selector
+from ..selectors import Place
 
 E = 0.02
 "Small tolerance to make the imported part join with its cutout"
@@ -38,7 +38,7 @@ class ImportPart(ModelPart):
         asset: str | None = None,
         cutout: bool = True,
         label: str = "import",
-        align: Selector = Selector.CENTER,
+        align: Place = Place.CENTER,
         shift: Vector = Vector(0, 0),
         padding: float = 0.0,
     ):
