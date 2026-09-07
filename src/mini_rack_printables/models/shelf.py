@@ -114,5 +114,6 @@ class Shelf(Model):
         shelf += wall
         shelf += mirror(wall, about=Plane.YZ)
         shelf += make_face()
+        shelf.label = "shelf"
 
         return shelf

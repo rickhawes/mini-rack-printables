@@ -13,7 +13,16 @@ from .parts.puck_holder import PuckHolder, PuckHolderStyle
 from .dimensions import RackDims, RackScrewDims, Screw1032Dims
 from .geometry import Rc, Rib
 from .selectors import Place, Side
-from .elements import Element2D, Element3D, CircleElement, RectangleElement, SlotElement
+from .elements import (
+    Element2D,
+    Element3D,
+    CircleElement,
+    RectangleElement,
+    SlotElement,
+    FillPattern,
+    CrossElement,
+    RectangleWithCornersElement,
+)
 from .rack_holes import layout_rack_screw_holes, sketch_rack_holes
 
 
@@ -34,8 +43,6 @@ __all__ = [
     "Keystone",
     "Rc",
     "Rib",
-    "RcAlignment",
-    "Dir",
     "ModelPart",
     "PartPiece",
     "Plate",
@@ -51,6 +58,9 @@ __all__ = [
     "CircleElement",
     "RectangleElement",
     "SlotElement",
+    "FillPattern",
+    "CrossElement",
+    "RectangleWithCornersElement",
     "layout_rack_screw_holes",
     "sketch_rack_holes",
 ]

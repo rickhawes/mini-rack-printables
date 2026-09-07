@@ -55,8 +55,10 @@ class FillPattern(Enum):
 
 
 class FillDimensions:
-    WIDTH = 0.5
-    SPACING = 4.0
+    HEX_WIDTH = 0.5
+    HEX_SPACING = 4.0
+    CIRCULAR_WIDTH = 1.5
+    CIRCULAR_SPACING = 3.0
 
 
 class Element2D(ABC):
@@ -139,7 +141,11 @@ class RectangleElement(Element2D):
         def hole_fill() -> Sketch:
             # make a sketch of
             inner_dx, inner_dy = self.width - self.radius, self.height - self.radius
-            spacing, width = FillDimensions.SPACING, FillDimensions.WIDTH
+            spacing, width = (
+                (FillDimensions.CIRCULAR_SPACING, FillDimensions.CIRCULAR_WIDTH)
+                if self.fill == FillPattern.CIRCULAR
+                else (FillDimensions.HEX_SPACING, FillDimensions.HEX_WIDTH)
+            )
 
             assert inner_dx > 2 * spacing and inner_dy > 2 * spacing, (
                 "Hex plate size must be larger than the hex spacing"
