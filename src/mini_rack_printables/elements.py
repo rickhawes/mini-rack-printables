@@ -17,6 +17,7 @@ from build123d import (
     Face,
     Plane,
     Location,
+    LocationList,
     Polyline,
     BuildLine,
     mirror,
@@ -25,6 +26,7 @@ from build123d import (
     Trapezoid,
     HexLocations,
     RegularPolygon,
+    GridLocations,
 )
 
 from .selectors import (
@@ -52,13 +54,42 @@ class FillPattern(Enum):
     """Hexagonal holes."""
     CIRCULAR = auto()
     """Circular holes."""
+    SQUARE = auto()
+    """Square holes"""
 
+    def get_spacing_width(self) -> tuple[float, float]:
+        dims = {
+            FillPattern.HEX: (4.0, 0.5),
+            FillPattern.CIRCULAR: (3.0, 1.5),
+            FillPattern.SQUARE: (4.0, 1.0),
+        }
+        return dims.get(self, (0, 0))
 
-class FillDimensions:
-    HEX_WIDTH = 0.5
-    HEX_SPACING = 4.0
-    CIRCULAR_WIDTH = 1.5
-    CIRCULAR_SPACING = 3.0
+    def locations(self, dx, dy) -> LocationList:
+        spacing, _ = self.get_spacing_width()
+        match self:
+            case FillPattern.HEX | FillPattern.CIRCULAR:
+                return HexLocations(
+                    spacing,
+                    math.floor(dx / (2 * spacing)),
+                    math.floor(dy / (2 * spacing)) - 1,
+                )
+            case _:
+                return GridLocations(
+                    spacing, spacing, math.floor(dx / spacing) - 1, math.floor(dy / spacing) - 1
+                )
+
+    def sketch(self) -> Sketch:
+        spacing, width = self.get_spacing_width()
+        match self:
+            case FillPattern.HEX:
+                return RegularPolygon(spacing - width, 6)
+            case FillPattern.CIRCULAR:
+                return Circle(spacing - width / 2)
+            case FillPattern.SQUARE:
+                return Rectangle(spacing - width, spacing - width)
+            case _:
+                assert False, f"unexpected fill pattern: {self}"
 
 
 class Element2D(ABC):
@@ -139,27 +170,15 @@ class RectangleElement(Element2D):
                 return Rectangle(self.width, self.height)
 
         def hole_fill() -> Sketch:
-            # make a sketch of
+            assert self.fill in {FillPattern.CIRCULAR, FillPattern.HEX, FillPattern.SQUARE}
+            # make a sketch of the holes
             inner_dx, inner_dy = self.width - self.radius, self.height - self.radius
-            spacing, width = (
-                (FillDimensions.CIRCULAR_SPACING, FillDimensions.CIRCULAR_WIDTH)
-                if self.fill == FillPattern.CIRCULAR
-                else (FillDimensions.HEX_SPACING, FillDimensions.HEX_WIDTH)
-            )
-
+            spacing, width = self.fill.get_spacing_width()
             assert inner_dx > 2 * spacing and inner_dy > 2 * spacing, (
                 "Hex plate size must be larger than the hex spacing"
             )
             outline = solid_fill().wire()
-            hole_locs = HexLocations(
-                spacing,
-                math.floor(inner_dx / (2 * spacing)),
-                math.floor(inner_dy / (2 * spacing)) - 1,
-            )
-            if self.fill == FillPattern.HEX:
-                holes = hole_locs * RegularPolygon(spacing - width, 6).wire()
-            elif self.fill == FillPattern.CIRCULAR:
-                holes = hole_locs * Circle(spacing - width / 2).wire()
+            holes = self.fill.locations(inner_dx, inner_dy) * self.fill.sketch().wire()
             sk = Sketch()
             sk += Face(outline, holes)
             return sk
@@ -167,7 +186,7 @@ class RectangleElement(Element2D):
         match self.fill:
             case FillPattern.SOLID:
                 return solid_fill()
-            case FillPattern.HEX | FillPattern.CIRCULAR:
+            case FillPattern.HEX | FillPattern.CIRCULAR | FillPattern.SQUARE:
                 return hole_fill()
 
 

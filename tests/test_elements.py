@@ -32,6 +32,11 @@ def test_circular_fill(viewer_logger):
     viewer_logger.log(elem.sketch())
 
 
+def test_square_fill(viewer_logger):
+    elem = RectangleElement(width=40, height=20, radius=4, fill=FillPattern.SQUARE)
+    viewer_logger.log(elem.sketch())
+
+
 def test_circle_element(viewer_logger):
     elem = CircleElement(radius=10)
     viewer_logger.log(elem.sketch())
