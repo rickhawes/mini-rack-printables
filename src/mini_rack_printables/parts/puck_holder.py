@@ -9,7 +9,8 @@ from ..elements import (
     RectangleWithCornersElement,
     extrude_element,
     make_plate,
-    FillPattern,
+    RoundedCorner,
+    HexHoles,
 )
 
 
@@ -102,9 +103,11 @@ class PuckHolder(ModelPart):
             Make the block of the holder by sketching the device block + extra for the corners.
             """
             sk = Sketch(
-                RectangleElement(dx + 2 * w, dy + 2 * w, self.style.corner_rounding).sketch()
+                RectangleElement(
+                    dx + 2 * w, dy + 2 * w, RoundedCorner(self.style.corner_rounding)
+                ).sketch()
                 - CrossElement(dx + 2 * w, dy + 2 * w, w + e, w + e).sketch()
-                + RectangleElement(dx, dy, 0).sketch()
+                + RectangleElement(dx, dy).sketch()
             )
             return Location((0, 0, walls_z)) * extrude(sk, amount=walls_depth)
 
@@ -112,8 +115,8 @@ class PuckHolder(ModelPart):
             """
             Make the walls of the holder as 4 plates with room for the corners.
             """
-            top = make_plate(Vector(walls_depth, dx - 2 * dc, w), FillPattern.HEX)
-            side = make_plate(Vector(walls_depth, dy - 2 * dc, w), FillPattern.HEX)
+            top = make_plate(Vector(walls_depth, dx - 2 * dc, w), HexHoles())
+            side = make_plate(Vector(walls_depth, dy - 2 * dc, w), HexHoles())
             # place around a box the size of the device
             device_box = Pos(0, 0, walls_depth / 2 + walls_z) * Box(dx, dy, walls_depth)
             side_locs = select_locations(device_box, [Side.RIGHT, Side.LEFT])
@@ -131,7 +134,8 @@ class PuckHolder(ModelPart):
 
         # basic holder shape
         holder = extrude_element(
-            RectangleElement(dx + 2 * w, dy + 2 * w, self.style.corner_rounding), walls_z
+            RectangleElement(dx + 2 * w, dy + 2 * w, RoundedCorner(self.style.corner_rounding)),
+            walls_z,
         )
         holder += make_block_with_corners()
         holder += make_walls()

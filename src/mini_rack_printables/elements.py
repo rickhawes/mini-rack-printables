@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 import math
-from enum import Enum, auto
 from build123d import (
     Rectangle,
     Vector,
@@ -27,6 +26,7 @@ from build123d import (
     HexLocations,
     RegularPolygon,
     GridLocations,
+    Wire,
 )
 
 from .selectors import (
@@ -41,55 +41,117 @@ from .selectors import (
 
 
 # --------------------------------------------------------
-# 2D Elements
+# Hole Fills
 # --------------------------------------------------------
 
 
-class FillPattern(Enum):
-    """The type of hole to use fora fill."""
+class Holes(ABC):
+    """Some elements can support holes"""
 
-    SOLID = auto()
-    """No holes, the plate is solid."""
-    HEX = auto()
+    def __init__(self, spacing, width):
+        """Initialize with `spacing` between holes and `width` of the fill between holes."""
+        self.s = spacing
+        self.w = width
+
+    @abstractmethod
+    def locations(self, dx, dy) -> LocationList:
+        """Return the locations of the holes for the given dimensions."""
+        pass
+
+    @abstractmethod
+    def sketch(self) -> Sketch:
+        """Sketch a single hole."""
+        pass
+
+
+class HexHoles(Holes):
     """Hexagonal holes."""
-    CIRCULAR = auto()
-    """Circular holes."""
-    SQUARE = auto()
-    """Square holes"""
 
-    def get_spacing_width(self) -> tuple[float, float]:
-        dims = {
-            FillPattern.HEX: (4.0, 0.5),
-            FillPattern.CIRCULAR: (3.0, 1.5),
-            FillPattern.SQUARE: (4.0, 1.0),
-        }
-        return dims.get(self, (0, 0))
+    def __init__(self, spacing: float = 4.0, width: float = 0.5):
+        super().__init__(spacing, width)
 
     def locations(self, dx, dy) -> LocationList:
-        spacing, _ = self.get_spacing_width()
-        match self:
-            case FillPattern.HEX | FillPattern.CIRCULAR:
-                return HexLocations(
-                    spacing,
-                    math.floor(dx / (2 * spacing)),
-                    math.floor(dy / (2 * spacing)) - 1,
-                )
-            case _:
-                return GridLocations(
-                    spacing, spacing, math.floor(dx / spacing) - 1, math.floor(dy / spacing) - 1
-                )
+        return HexLocations(
+            self.s, math.floor(dx / (2 * self.s)), math.floor(dy / (2 * self.s)) - 1
+        )
 
     def sketch(self) -> Sketch:
-        spacing, width = self.get_spacing_width()
-        match self:
-            case FillPattern.HEX:
-                return RegularPolygon(spacing - width, 6)
-            case FillPattern.CIRCULAR:
-                return Circle(spacing - width / 2)
-            case FillPattern.SQUARE:
-                return Rectangle(spacing - width, spacing - width)
+        return RegularPolygon(self.w - self.s, 6)
+
+
+class CircleHoles(Holes):
+    """Circular holes."""
+
+    def __init__(self, spacing: float = 3.0, width: float = 1.5):
+        super().__init__(spacing, width)
+
+    def locations(self, dx, dy) -> LocationList:
+        return HexLocations(
+            self.s, math.floor(dx / (2 * self.s)), math.floor(dy / (2 * self.s)) - 1
+        )
+
+    def sketch(self) -> Sketch:
+        return Circle(self.s - self.w / 2)
+
+
+class SquareHoles(Holes):
+    """Square holes."""
+
+    def __init__(self, spacing: float = 4.0, width: float = 1.0):
+        super().__init__(spacing, width)
+
+    def locations(self, dx, dy) -> LocationList:
+        return GridLocations(
+            self.s, self.s, math.floor(dx / self.s) - 1, math.floor(dy / self.s) - 1
+        )
+
+    def sketch(self) -> Sketch:
+        return Rectangle(self.s - self.w, self.s - self.w)
+
+
+# --------------------------------------------------------
+# Corner classes
+# --------------------------------------------------------
+
+
+class Corner(ABC):
+    @abstractmethod
+    def size(self) -> float:
+        pass
+
+    @abstractmethod
+    def draw(self, start: Vector, end: Vector, where: Place) -> Wire:
+        pass
+
+
+class RoundedCorner(Corner):
+    def __init__(self, radius: float):
+        self.radius = radius
+
+    def size(self) -> float:
+        return self.radius
+
+    def draw(self, start: Vector, end: Vector, where: Place) -> Wire:
+        return RadiusArc(start, end, self.radius).wire()
+
+
+class SquareCorner(Corner):
+    def size(self) -> float:
+        return 0
+
+    def draw(self, start: Vector, end: Vector, where: Place) -> Wire:
+        match where:
+            case Place.TOP_LEFT | Place.BOTTOM_RIGHT:
+                return Polyline([start, (start.X, end.Y), end])
+            case Place.TOP_RIGHT | Place.BOTTOM_LEFT:
+                return Polyline([start, (start.X, end.Y), end])
             case _:
-                assert False, f"unexpected fill pattern: {self}"
+                assert False, "Invalid placement for corner"
+
+
+# --------------------------------------------------------
+# 2D Elements
+# --------------------------------------------------------
 
 
 class Element2D(ABC):
@@ -144,50 +206,54 @@ class RectangleElement(Element2D):
         self,
         width: float,
         height: float,
-        radius: float = 0,
-        fill: FillPattern = FillPattern.SOLID,
+        corner: Corner | None = None,
+        fill: Holes | None = None,
     ):
         """
         Args:
             width (float): The width of the rectangle.
             height (float): The height of the rectangle.
-            radius (float, optional): The radius of the rounded corners. Defaults to 0.
-            fill (Fill): The fill pattern of the rectangle. Defaults to Fill.SOLID
+            corner (Corner): The corner shape of the rectangle.
+            fill (Holes): The hole pattern of the rectangle. Defaults to Fill.SOLID
         """
         self.width = width
         self.height = height
-        self.radius = radius
+        self.corner = corner
         self.fill = fill
 
     def size(self) -> Vector:
         return Vector(self.width, self.height)
 
+    def inner_size(self) -> Vector:
+        return (
+            Vector(self.width - self.corner.size(), self.height - self.corner.size())
+            if self.corner
+            else Vector(self.width, self.height)
+        )
+
     def sketch(self) -> Sketch:
         def solid_fill() -> Sketch:
-            if self.radius > 0:
-                return RectangleRounded(self.width, self.height, self.radius)
-            else:
-                return Rectangle(self.width, self.height)
+            r = self.corner.radius if self.corner is RoundedCorner else 0
+            return (
+                Rectangle(self.width, self.height)
+                if r == 0
+                else RectangleRounded(self.width, self.height, r)
+            )
 
         def hole_fill() -> Sketch:
-            assert self.fill in {FillPattern.CIRCULAR, FillPattern.HEX, FillPattern.SQUARE}
+            assert self.fill, "fill must be provided"
             # make a sketch of the holes
-            inner_dx, inner_dy = self.width - self.radius, self.height - self.radius
-            spacing, width = self.fill.get_spacing_width()
-            assert inner_dx > 2 * spacing and inner_dy > 2 * spacing, (
-                "Hex plate size must be larger than the hex spacing"
-            )
+            inner_dx, inner_dy = self.inner_size().X, self.inner_size().Y
             outline = solid_fill().wire()
             holes = self.fill.locations(inner_dx, inner_dy) * self.fill.sketch().wire()
             sk = Sketch()
             sk += Face(outline, holes)
             return sk
 
-        match self.fill:
-            case FillPattern.SOLID:
-                return solid_fill()
-            case FillPattern.HEX | FillPattern.CIRCULAR | FillPattern.SQUARE:
-                return hole_fill()
+        if self.fill:
+            return hole_fill()
+        else:
+            return solid_fill()
 
 
 class SlotElement(Element2D):
@@ -500,7 +566,7 @@ def extrude_sketch(
     return _plane_from_over_under(over, under, amount) * extrude(sketch, amount)
 
 
-def make_plate(size: VectorLike, fill: FillPattern = FillPattern.SOLID) -> Part:
+def make_plate(size: VectorLike, fill: Holes | None = None) -> Part:
     """
     Make a plate of the given size and fill pattern.
 

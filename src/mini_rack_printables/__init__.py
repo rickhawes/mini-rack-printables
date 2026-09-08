@@ -19,9 +19,15 @@ from .elements import (
     CircleElement,
     RectangleElement,
     SlotElement,
-    FillPattern,
     CrossElement,
     RectangleWithCornersElement,
+    Holes,
+    SquareHoles,
+    HexHoles,
+    CircleHoles,
+    Corner,
+    SquareCorner,
+    RoundedCorner,
 )
 from .rack_holes import layout_rack_screw_holes, sketch_rack_holes
 
@@ -58,9 +64,15 @@ __all__ = [
     "CircleElement",
     "RectangleElement",
     "SlotElement",
-    "FillPattern",
     "CrossElement",
     "RectangleWithCornersElement",
+    "Holes",
+    "SquareHoles",
+    "HexHoles",
+    "CircleHoles",
+    "Corner",
+    "SquareCorner",
+    "RoundedCorner",
     "layout_rack_screw_holes",
     "sketch_rack_holes",
 ]

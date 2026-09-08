@@ -7,10 +7,11 @@ from ..geometry import Rib
 from ..elements import (
     extrude_element,
     RectangleElement,
+    RoundedCorner,
     extrude_sketch,
     CrossElement,
     sketch_ring,
-    FillPattern,
+    HexHoles,
     make_plate,
 )
 
@@ -99,7 +100,7 @@ class WallHolder(ModelPart):
             Make the corners of the holder by sketching a ring and subtracting a cross where walls will go.
             """
             sk = Sketch(
-                sketch_ring(RectangleElement(dx, dy, r), w)
+                sketch_ring(RectangleElement(dx, dy, RoundedCorner(r)), w)
                 - CrossElement(dx + 2 * w, dy + 2 * w, w + e + r, w + e + r).sketch()
             )
             return extrude(sk, amount=holder_depth)
@@ -108,8 +109,8 @@ class WallHolder(ModelPart):
             """
             Make the walls of the holder as 4 plates with room for the corners.
             """
-            top = make_plate(Vector(holder_depth, dx - 2 * dc, w), FillPattern.HEX)
-            side = make_plate(Vector(holder_depth, dy - 2 * dc, w), FillPattern.HEX)
+            top = make_plate(Vector(holder_depth, dx - 2 * dc, w), HexHoles())
+            side = make_plate(Vector(holder_depth, dy - 2 * dc, w), HexHoles())
             # place around a box the size of the device
             device_box = Pos(0, 0, holder_depth / 2) * Box(dx, dy, holder_depth)
             side_locs = select_locations(device_box, [Side.RIGHT, Side.LEFT])
@@ -127,18 +128,18 @@ class WallHolder(ModelPart):
                     RectangleElement(
                         dx - 2 * self.style.front_lip.width,
                         dy - 2 * self.style.front_lip.width,
-                        r,
+                        RoundedCorner(r),
                     ),
                     self.style.front_lip.depth,
                 )
                 cutout += extrude_element(
-                    RectangleElement(dx, dy, r),
+                    RectangleElement(dx, dy, RoundedCorner(r)),
                     plate.size.Z - self.style.front_lip.depth,
                     over=cutout,
                 )
                 return cutout
             else:
-                return extrude_element(RectangleElement(dx, dy, r), plate.size.Z)
+                return extrude_element(RectangleElement(dx, dy, RoundedCorner(r)), plate.size.Z)
 
         # basic holder shape
         holder = make_corners()
@@ -146,8 +147,8 @@ class WallHolder(ModelPart):
         # add the back lip if needed
         if self.style.back_lip:
             lw = self.style.back_lip.width
-            sk = sketch_ring(RectangleElement(dx, dy, r), w)
-            sk += sketch_ring(RectangleElement(dx - 2 * lw, dy - 2 * lw, 0), lw)
+            sk = sketch_ring(RectangleElement(dx, dy, RoundedCorner(r)), w)
+            sk += sketch_ring(RectangleElement(dx - 2 * lw, dy - 2 * lw), lw)
             holder += extrude_sketch(sk, over=holder, amount=self.style.back_lip.depth)
 
         if self.style.has_cutout:

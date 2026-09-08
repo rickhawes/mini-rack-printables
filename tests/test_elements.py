@@ -1,6 +1,9 @@
 from mini_rack_printables import (
+    RoundedCorner,
+    HexHoles,
+    SquareHoles,
+    CircleHoles,
     RectangleElement,
-    FillPattern,
     CircleElement,
     SlotElement,
     CrossElement,
@@ -14,26 +17,26 @@ def test_rectangle_element(viewer_logger):
 
 
 def test_rectangle_rounded_element(viewer_logger):
-    elem = RectangleElement(width=40, height=20, radius=2)
+    elem = RectangleElement(width=40, height=20, corner=RoundedCorner(4))
     viewer_logger.log(elem.sketch())
 
 
 def test_hex_fill(viewer_logger):
-    elem = RectangleElement(width=40, height=20, radius=0, fill=FillPattern.HEX)
+    elem = RectangleElement(width=40, height=20, fill=HexHoles())
     viewer_logger.log(elem.sketch())
-    elem = RectangleElement(width=40, height=20, radius=4, fill=FillPattern.HEX)
+    elem = RectangleElement(width=40, height=20, corner=RoundedCorner(4), fill=HexHoles())
     viewer_logger.log(elem.sketch())
 
 
 def test_circular_fill(viewer_logger):
-    elem = RectangleElement(width=40, height=20, radius=0, fill=FillPattern.CIRCULAR)
+    elem = RectangleElement(width=40, height=20, fill=CircleHoles())
     viewer_logger.log(elem.sketch())
-    elem = RectangleElement(width=40, height=20, radius=4, fill=FillPattern.CIRCULAR)
+    elem = RectangleElement(width=40, height=20, corner=RoundedCorner(4), fill=CircleHoles())
     viewer_logger.log(elem.sketch())
 
 
 def test_square_fill(viewer_logger):
-    elem = RectangleElement(width=40, height=20, radius=4, fill=FillPattern.SQUARE)
+    elem = RectangleElement(width=40, height=20, corner=RoundedCorner(4), fill=SquareHoles())
     viewer_logger.log(elem.sketch())
 
 
