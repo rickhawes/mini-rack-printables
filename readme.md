@@ -54,6 +54,7 @@ Terms like `width`, `height`, `depth`, `top`, `bottom`, `front`, `back`, `left`,
   - [x] Convert to python and build123d
   - [x] WalledHolder, PuckHolder, CornerHolder parts 
   - [ ] Shelves
+  - [ ] ValueErrors instead of asserts
   - [ ] SVG primative 
   - [ ] Fill pattern for primatives using intersections
   - [ ] Layout redesign with spacers 

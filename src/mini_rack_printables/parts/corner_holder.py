@@ -1,7 +1,8 @@
 from build123d import Sketch, Vector, extrude
 
 from ..elements import (
-    CrossElement,
+    InsetCorners,
+    RectangleElement,
     Element2D,
     sketch_ring,
 )
@@ -60,14 +61,12 @@ class CornerHolder(ModelPart):
         return self.element.size() + 2 * Vector(self.wall_thickness, self.wall_thickness)
 
     def render(self, plate: Plate) -> list[PartPiece]:
-        # geometry
+        # dimensions
         w, d = self.wall_thickness, self.wall_depth
-        cw, ch = self.corner_width, self.corner_height
+        cw = self.corner_width
         size = self.element.size()
 
         # sketch the holder shape
-        sk = Sketch(
-            sketch_ring(self.element, w)
-            - CrossElement(size.X + 2 * w, size.Y + 2 * w, cw + 2 * w, ch + 2 * w).sketch()
-        )
+        cross = RectangleElement(size.X + 2 * w, size.Y + 2 * w, InsetCorners(cw + 2 * w))
+        sk = Sketch(sketch_ring(self.element, w) - cross.sketch())
         return [PartPiece(plate.top_plane * extrude(sk, d))]

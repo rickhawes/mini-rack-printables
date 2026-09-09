@@ -4,7 +4,7 @@ from build123d import Vector, Compound, Location, mirror, Plane, Part, Sketch, e
 from ..dimensions import ShelfTabDims, RackDims, rack_units_to_mm
 from ..parts.model_part import ModelPart
 from ..selectors import Side, select_plane
-from ..elements import extrude_element, TrapezoidElement, RectangleElement, RoundedCorner
+from ..elements import extrude_element, TrapezoidElement, RectangleElement
 from ..rack_holes import sketch_rack_holes
 from .model import Model
 
@@ -94,7 +94,7 @@ class Shelf(Model):
                 Location((0, (face_size.Y - base_size.Z) / 2, -face_size.Z))
             )
             face_sketch = RectangleElement(
-                face_size.X, face_size.Y, RoundedCorner(self.style.face_rounding)
+                face_size.X, face_size.Y, self.style.face_rounding
             ).sketch()
             face_sketch -= sketch_rack_holes(
                 self.rack_units, self.style.middle_holes, self.style.half_height_bottom

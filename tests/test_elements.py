@@ -1,12 +1,14 @@
 from mini_rack_printables import (
-    RoundedCorner,
+    InsetCorners,
     HexHoles,
     SquareHoles,
     CircleHoles,
     RectangleElement,
     CircleElement,
     SlotElement,
-    CrossElement,
+    BeveledCorners,
+    SelectedCorners,
+    RoundedCorners,
 )
 # test by rendering a bunch of elements
 
@@ -17,26 +19,26 @@ def test_rectangle_element(viewer_logger):
 
 
 def test_rectangle_rounded_element(viewer_logger):
-    elem = RectangleElement(width=40, height=20, corner=RoundedCorner(4))
+    elem = RectangleElement(width=40, height=20, corners=4)
     viewer_logger.log(elem.sketch())
 
 
 def test_hex_fill(viewer_logger):
     elem = RectangleElement(width=40, height=20, fill=HexHoles())
     viewer_logger.log(elem.sketch())
-    elem = RectangleElement(width=40, height=20, corner=RoundedCorner(4), fill=HexHoles())
+    elem = RectangleElement(width=40, height=20, corners=4, fill=HexHoles())
     viewer_logger.log(elem.sketch())
 
 
 def test_circular_fill(viewer_logger):
     elem = RectangleElement(width=40, height=20, fill=CircleHoles())
     viewer_logger.log(elem.sketch())
-    elem = RectangleElement(width=40, height=20, corner=RoundedCorner(4), fill=CircleHoles())
+    elem = RectangleElement(width=40, height=20, corners=4, fill=CircleHoles())
     viewer_logger.log(elem.sketch())
 
 
 def test_square_fill(viewer_logger):
-    elem = RectangleElement(width=40, height=20, corner=RoundedCorner(4), fill=SquareHoles())
+    elem = RectangleElement(width=40, height=20, fill=SquareHoles())
     viewer_logger.log(elem.sketch())
 
 
@@ -51,5 +53,17 @@ def test_slot_element(viewer_logger):
 
 
 def test_cross_element(viewer_logger):
-    elem = CrossElement(40, 20, 5, 5)
+    elem = RectangleElement(40, 20, InsetCorners(5))
+    viewer_logger.log(elem.sketch())
+
+
+def test_beveled_corners(viewer_logger):
+    elem = RectangleElement(40, 20, BeveledCorners(4, 6))
+    viewer_logger.log(elem.sketch())
+
+
+def test_selected_corners(viewer_logger):
+    elem = RectangleElement(
+        40, 20, SelectedCorners(RoundedCorners(6), top_left=True, bottom_right=True)
+    )
     viewer_logger.log(elem.sketch())

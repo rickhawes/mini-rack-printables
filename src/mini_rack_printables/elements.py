@@ -19,7 +19,6 @@ from build123d import (
     LocationList,
     Polyline,
     BuildLine,
-    mirror,
     make_face,
     BuildSketch,
     Trapezoid,
@@ -28,16 +27,7 @@ from build123d import (
     GridLocations,
     Wire,
 )
-
-from .selectors import (
-    select_plane,
-    Place,
-    Side,
-    has_top_right_corner,
-    has_bottom_right_corner,
-    has_top_left_corner,
-    has_bottom_left_corner,
-)
+from .selectors import select_plane, Place, Side, CornerPlace
 
 
 # --------------------------------------------------------
@@ -67,13 +57,13 @@ class Holes(ABC):
 class HexHoles(Holes):
     """Hexagonal holes."""
 
-    def __init__(self, spacing: float = 4.0, width: float = 0.5):
+    def __init__(self, spacing: float = 4.0, width: float = 1.0):
         super().__init__(spacing, width)
 
     def locations(self, dx, dy) -> LocationList:
-        return HexLocations(
-            self.s, math.floor(dx / (2 * self.s)), math.floor(dy / (2 * self.s)) - 1
-        )
+        x_count, y_count = math.floor(dx / (2 * self.s)), math.floor((dy - self.s) / (2 * self.s))
+        assert x_count > 0 and y_count > 0, f"Must have a few holes {dx, dy, x_count, y_count}"
+        return HexLocations(self.s, x_count, y_count)
 
     def sketch(self) -> Sketch:
         return RegularPolygon(self.w - self.s, 6)
@@ -87,7 +77,7 @@ class CircleHoles(Holes):
 
     def locations(self, dx, dy) -> LocationList:
         return HexLocations(
-            self.s, math.floor(dx / (2 * self.s)), math.floor(dy / (2 * self.s)) - 1
+            self.s, math.floor(dx / (2 * self.s)), math.floor((dy - self.s) / (2 * self.s))
         )
 
     def sketch(self) -> Sketch:
@@ -101,9 +91,7 @@ class SquareHoles(Holes):
         super().__init__(spacing, width)
 
     def locations(self, dx, dy) -> LocationList:
-        return GridLocations(
-            self.s, self.s, math.floor(dx / self.s) - 1, math.floor(dy / self.s) - 1
-        )
+        return GridLocations(self.s, self.s, math.floor(dx / self.s), math.floor(dy / self.s))
 
     def sketch(self) -> Sketch:
         return Rectangle(self.s - self.w, self.s - self.w)
@@ -114,39 +102,95 @@ class SquareHoles(Holes):
 # --------------------------------------------------------
 
 
-class Corner(ABC):
-    @abstractmethod
-    def size(self) -> float:
-        pass
+class Corners(ABC):
+    """Base class for classes that draw corners of a rectangle"""
+
+    def __init__(self, width: float, height: float | None = None):
+        self.width = width
+        self.height = height if height is not None else width
+
+    def size(self) -> Vector:
+        return Vector(self.width, self.height)
 
     @abstractmethod
-    def draw(self, start: Vector, end: Vector, where: Place) -> Wire:
+    def draw(self, start: Vector, end: Vector, where: CornerPlace):
+        """draw the lines or arcs in the context of `BuildLine`"""
         pass
 
 
-class RoundedCorner(Corner):
+class RoundedCorners(Corners):
+    """Rounded corners"""
+
     def __init__(self, radius: float):
         self.radius = radius
 
-    def size(self) -> float:
-        return self.radius
+    def size(self) -> Vector:
+        return Vector(self.radius, self.radius)
 
-    def draw(self, start: Vector, end: Vector, where: Place) -> Wire:
-        return RadiusArc(start, end, self.radius).wire()
+    def draw(self, start: Vector, end: Vector, where: CornerPlace):
+        RadiusArc(start, end, self.radius)
 
 
-class SquareCorner(Corner):
-    def size(self) -> float:
-        return 0
+class SquareCorners(Corners):
+    """
+    Square corners. Square corners are not visible on a rectangle, but they do
+    affect the insets in fills.
+    """
 
-    def draw(self, start: Vector, end: Vector, where: Place) -> Wire:
+    def draw(self, start: Vector, end: Vector, where: CornerPlace):
         match where:
             case Place.TOP_LEFT | Place.BOTTOM_RIGHT:
-                return Polyline([start, (start.X, end.Y), end])
+                Polyline(start, (start.X, end.Y), end)
             case Place.TOP_RIGHT | Place.BOTTOM_LEFT:
-                return Polyline([start, (start.X, end.Y), end])
-            case _:
-                assert False, "Invalid placement for corner"
+                Polyline(start, (end.X, start.Y), end)
+
+
+class InsetCorners(Corners):
+    """Inset corners make the rectangle a cross"""
+
+    def draw(self, start: Vector, end: Vector, where: CornerPlace):
+        match where:
+            case Place.TOP_LEFT | Place.BOTTOM_RIGHT:
+                Polyline([start, (end.X, start.Y), end])
+            case Place.TOP_RIGHT | Place.BOTTOM_LEFT:
+                Polyline([start, (start.X, end.Y), end])
+
+
+class BeveledCorners(Corners):
+    """Beveled corners"""
+
+    def draw(self, start: Vector, end: Vector, where: Place):
+        Line(start, end)
+
+
+class SelectedCorners(Corners):
+    """Only draw the selected corners. Use a square corner for the unslected corners"""
+
+    def __init__(
+        self,
+        corners: Corners,
+        top_left: bool = False,
+        top_right: bool = False,
+        bottom_left: bool = False,
+        bottom_right: bool = False,
+    ):
+        self.corners = corners
+        self.is_selected = {
+            Place.TOP_LEFT: top_left,
+            Place.TOP_RIGHT: top_right,
+            Place.BOTTOM_LEFT: bottom_left,
+            Place.BOTTOM_RIGHT: bottom_right,
+        }
+        self.square_corners = SquareCorners(corners.size().X, corners.size().Y)
+
+    def size(self) -> Vector:
+        return self.corners.size()
+
+    def draw(self, start: Vector, end: Vector, where: CornerPlace) -> Wire:
+        if self.is_selected.get(where, False):
+            return self.corners.draw(start, end, where)
+        else:
+            return self.square_corners.draw(start, end, where)
 
 
 # --------------------------------------------------------
@@ -206,44 +250,70 @@ class RectangleElement(Element2D):
         self,
         width: float,
         height: float,
-        corner: Corner | None = None,
+        corners: float | int | Corners | None = None,
         fill: Holes | None = None,
     ):
         """
         Args:
             width (float): The width of the rectangle.
             height (float): The height of the rectangle.
-            corner (Corner): The corner shape of the rectangle.
-            fill (Holes): The hole pattern of the rectangle. Defaults to Fill.SOLID
+            corners (Corners): The corner shape of the rectangle.
+                If a `float` > 0, then a Rounded Corner is used.
+            fill (Holes): The hole pattern for the inside of the rectangle after
+                insetting the rectangle for the corner size. Defaults to Fill.SOLID.
         """
         self.width = width
         self.height = height
-        self.corner = corner
+        if isinstance(corners, (int, float)):
+            self.corners = RoundedCorners(corners)
+        elif corners is None:
+            self.corners = SquareCorners(0)
+        else:
+            self.corners = corners
         self.fill = fill
 
     def size(self) -> Vector:
         return Vector(self.width, self.height)
 
-    def inner_size(self) -> Vector:
-        return (
-            Vector(self.width - self.corner.size(), self.height - self.corner.size())
-            if self.corner
-            else Vector(self.width, self.height)
-        )
-
     def sketch(self) -> Sketch:
         def solid_fill() -> Sketch:
-            r = self.corner.radius if self.corner is RoundedCorner else 0
-            return (
-                Rectangle(self.width, self.height)
-                if r == 0
-                else RectangleRounded(self.width, self.height, r)
-            )
+            """Sketch the rectangle with its corners"""
+            # Optimize for square and rounded corners
+            match self.corners:
+                case SquareCorners():
+                    return Rectangle(self.width, self.height)
+                case RoundedCorners() if self.corners.radius == 0:
+                    return Rectangle(self.width, self.height)
+                case RoundedCorners():
+                    return RectangleRounded(self.width, self.height, self.corners.radius)
+                case _:
+                    return complex_corners()
+
+        def complex_corners() -> Sketch:
+            cs = self.corners.size()
+            cw, ch = cs.X, cs.Y
+            dx, dy = (self.width / 2) - cw, (self.height / 2) - ch
+            with BuildSketch() as sk:
+                with BuildLine():
+                    # side lines
+                    l_top = Line((-dx, dy + ch), (dx, dy + ch))
+                    l_right = Line((dx + cw, dy), (dx + cw, -dy))
+                    l_bottom = Line((dx, -dy - ch), (-dx, -dy - ch))
+                    l_left = Line((-dx - cw, -dy), (-dx - cw, dy))
+                    # corners
+                    self.corners.draw(l_top @ 1, l_right @ 0, Place.TOP_RIGHT)
+                    self.corners.draw(l_right @ 1, l_bottom @ 0, Place.BOTTOM_RIGHT)
+                    self.corners.draw(l_bottom @ 1, l_left @ 0, Place.BOTTOM_LEFT)
+                    self.corners.draw(l_left @ 1, l_top @ 0, Place.TOP_LEFT)
+                make_face()
+            return sk.sketch
 
         def hole_fill() -> Sketch:
             assert self.fill, "fill must be provided"
             # make a sketch of the holes
-            inner_dx, inner_dy = self.inner_size().X, self.inner_size().Y
+            #
+            cs = self.corners.size()
+            inner_dx, inner_dy = self.width - 2 * cs.X, self.height - 2 * cs.Y
             outline = solid_fill().wire()
             holes = self.fill.locations(inner_dx, inner_dy) * self.fill.sketch().wire()
             sk = Sketch()
@@ -273,103 +343,6 @@ class SlotElement(Element2D):
 
     def sketch(self) -> Sketch:
         return SlotOverall(self.width, self.height)
-
-
-class CrossElement(Element2D):
-    """A cross shape."""
-
-    def __init__(self, width: float, height: float, corner_width: float, corner_height: float):
-        """
-        Args:
-            width (float): The overall width of the cross.
-            height (float): The overall height of the cross.
-            corner_width (float): The width of the corner.
-            corner_height (float): The height of the corner.
-        """
-        self.width = width
-        self.height = height
-        self.corner_width = corner_width
-        self.corner_height = corner_height
-
-    def size(self) -> Vector:
-        return Vector(self.width, self.height)
-
-    def sketch(self) -> Sketch:
-        dx = self.width / 2 - self.corner_width
-        dy = self.height / 2 - self.corner_height
-        cw = self.corner_width
-        ch = self.corner_height
-
-        with BuildSketch() as sk:
-            with BuildLine():
-                # Draw one quadrant of the outline using Polyline
-                Polyline((0, dy + ch), (dx, dy + ch), (dx, dy), (dx + cw, dy), (dx + cw, 0))
-                # Mirror the outline
-                mirror(about=Plane.YZ)
-                mirror(about=Plane.XZ)
-            make_face()
-        return sk.sketch
-
-
-class RectangleWithCornersElement(Element2D):
-    """
-    Element for a rectangle with explicit rounded corners.
-    """
-
-    def __init__(self, width: float, height: float, radius: float, corners: list[Place]):
-        """
-        Args:
-            width (float): The width of the rectangle.
-            height (float): The height of the rectangle.
-            radius (float): The radius of the rounded corners.
-            corners (list[Selector]): The corners to round.
-        """
-        assert radius > 0, "radius must be greater than 0"
-        self.width = width
-        self.height = height
-        self.radius = radius
-        self.corners = corners
-
-    def size(self) -> Vector:
-        return Vector(self.width, self.height)
-
-    def sketch(self) -> Sketch:
-        r = self.radius
-        dx = (self.width / 2) - r
-        dy = (self.height / 2) - r
-        with BuildSketch() as sk:
-            with BuildLine():
-                # top line
-                l_top = Line((-dx, dy + r), (dx, dy + r))
-                l_right = Line((dx + r, dy), (dx + r, -dy))
-                l_bottom = Line((dx, -dy - r), (-dx, -dy - r))
-                l_left = Line((-dx - r, -dy), (-dx - r, dy))
-                # top_right corner
-                if has_top_right_corner(self.corners):
-                    RadiusArc(l_top @ 1, l_right @ 0, radius=r)
-                else:
-                    Line(l_top @ 1, (dx + r, dy + r))
-                    Line((dx + r, dy + r), l_right @ 0)
-                # bottom_right corner
-                if has_bottom_right_corner(self.corners):
-                    RadiusArc(l_right @ 1, l_bottom @ 0, radius=r)
-                else:
-                    Line(l_right @ 1, (dx + r, -dy - r))
-                    Line((dx + r, -dy - r), l_bottom @ 0)
-                # bottom_left corner
-                if has_bottom_left_corner(self.corners):
-                    RadiusArc(l_bottom @ 1, l_left @ 0, radius=r)
-                else:
-                    Line(l_bottom @ 1, (-dx - r, -dy - r))
-                    Line((-dx - r, -dy - r), l_left @ 0)
-                # top_left corner
-                if has_top_left_corner(self.corners):
-                    RadiusArc(l_left @ 1, l_top @ 0, radius=r)
-                else:
-                    Line(l_left @ 1, (-dx - r, dy + r))
-                    Line((-dx - r, dy + r), l_top @ 0)
-            make_face()
-        return sk.sketch
 
 
 class TrapezoidElement(Element2D):

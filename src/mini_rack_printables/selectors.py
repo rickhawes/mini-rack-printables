@@ -1,5 +1,6 @@
 from collections.abc import Sequence
 from enum import Enum, auto
+from typing import Literal
 
 from build123d import Axis, Face, Location, Part, Plane, ShapeList, Align
 
@@ -194,29 +195,5 @@ class Place(Enum):
         return unit_to_align(x), unit_to_align(y)
 
 
-def has_top_left_corner(places: Sequence[Place]) -> bool:
-    """
-    Returns True if the list of selectors has a top-left corner.
-    """
-    return Place.TOP_LEFT in places or Place.LEFT in places or Place.TOP in places
-
-
-def has_top_right_corner(places: Sequence[Place]) -> bool:
-    """
-    Returns True if the list of places has a top-right corner.
-    """
-    return Place.TOP_RIGHT in places or Place.RIGHT in places or Place.TOP in places
-
-
-def has_bottom_left_corner(places: Sequence[Place]) -> bool:
-    """
-    Returns True if the list of places has a bottom-left corner.
-    """
-    return Place.BOTTOM_LEFT in places or Place.LEFT in places or Place.BOTTOM in places
-
-
-def has_bottom_right_corner(places: Sequence[Place]) -> bool:
-    """
-    Returns True if the list of places has a bottom-right corner.
-    """
-    return Place.BOTTOM_RIGHT in places or Place.RIGHT in places or Place.BOTTOM in places
+CornerPlace = Literal[Place.TOP_LEFT, Place.TOP_RIGHT, Place.BOTTOM_LEFT, Place.BOTTOM_RIGHT]
+"""The subset of Place that represent corners"""

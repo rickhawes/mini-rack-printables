@@ -5,11 +5,11 @@ from .model_part import ModelPart, PartPiece, Plate
 from ..selectors import Side, select_locations, select_location, Place
 from ..elements import (
     RectangleElement,
-    CrossElement,
-    RectangleWithCornersElement,
+    SelectedCorners,
+    InsetCorners,
+    RoundedCorners,
     extrude_element,
     make_plate,
-    RoundedCorner,
     HexHoles,
 )
 
@@ -103,10 +103,8 @@ class PuckHolder(ModelPart):
             Make the block of the holder by sketching the device block + extra for the corners.
             """
             sk = Sketch(
-                RectangleElement(
-                    dx + 2 * w, dy + 2 * w, RoundedCorner(self.style.corner_rounding)
-                ).sketch()
-                - CrossElement(dx + 2 * w, dy + 2 * w, w + e, w + e).sketch()
+                RectangleElement(dx + 2 * w, dy + 2 * w, self.style.corner_rounding).sketch()
+                - RectangleElement(dx + 2 * w, dy + 2 * w, InsetCorners(w + e)).sketch()
                 + RectangleElement(dx, dy).sketch()
             )
             return Location((0, 0, walls_z)) * extrude(sk, amount=walls_depth)
@@ -129,12 +127,14 @@ class PuckHolder(ModelPart):
             device_dz = dz / 2 if self.style.has_cutout else dz / 2 + plate.size.Z
             device_box = Pos(0, 0, device_dz) * Box(dx, dy, dz)
             base_loc = select_location(device_box, Side.BOTTOM, flip=True)
-            base_sketch = RectangleWithCornersElement(dx, dz, r, [Place.LEFT]).sketch()
+            # puck shape by selectively using rounded corners
+            corners = SelectedCorners(RoundedCorners(r), top_left=True, bottom_left=True)
+            base_sketch = RectangleElement(dx, dz, corners).sketch()
             return Part(base_loc * extrude(base_sketch, amount=dy))
 
         # basic holder shape
         holder = extrude_element(
-            RectangleElement(dx + 2 * w, dy + 2 * w, RoundedCorner(self.style.corner_rounding)),
+            RectangleElement(dx + 2 * w, dy + 2 * w, self.style.corner_rounding),
             walls_z,
         )
         holder += make_block_with_corners()

@@ -7,9 +7,8 @@ from ..geometry import Rib
 from ..elements import (
     extrude_element,
     RectangleElement,
-    RoundedCorner,
+    InsetCorners,
     extrude_sketch,
-    CrossElement,
     sketch_ring,
     HexHoles,
     make_plate,
@@ -100,8 +99,8 @@ class WallHolder(ModelPart):
             Make the corners of the holder by sketching a ring and subtracting a cross where walls will go.
             """
             sk = Sketch(
-                sketch_ring(RectangleElement(dx, dy, RoundedCorner(r)), w)
-                - CrossElement(dx + 2 * w, dy + 2 * w, w + e + r, w + e + r).sketch()
+                sketch_ring(RectangleElement(dx, dy, r), w)
+                - RectangleElement(dx + 2 * w, dy + 2 * w, InsetCorners(w + e + r)).sketch()
             )
             return extrude(sk, amount=holder_depth)
 
@@ -128,18 +127,18 @@ class WallHolder(ModelPart):
                     RectangleElement(
                         dx - 2 * self.style.front_lip.width,
                         dy - 2 * self.style.front_lip.width,
-                        RoundedCorner(r),
+                        r,
                     ),
                     self.style.front_lip.depth,
                 )
                 cutout += extrude_element(
-                    RectangleElement(dx, dy, RoundedCorner(r)),
+                    RectangleElement(dx, dy, r),
                     plate.size.Z - self.style.front_lip.depth,
                     over=cutout,
                 )
                 return cutout
             else:
-                return extrude_element(RectangleElement(dx, dy, RoundedCorner(r)), plate.size.Z)
+                return extrude_element(RectangleElement(dx, dy, r), plate.size.Z)
 
         # basic holder shape
         holder = make_corners()
@@ -147,7 +146,7 @@ class WallHolder(ModelPart):
         # add the back lip if needed
         if self.style.back_lip:
             lw = self.style.back_lip.width
-            sk = sketch_ring(RectangleElement(dx, dy, RoundedCorner(r)), w)
+            sk = sketch_ring(RectangleElement(dx, dy, r), w)
             sk += sketch_ring(RectangleElement(dx - 2 * lw, dy - 2 * lw), lw)
             holder += extrude_sketch(sk, over=holder, amount=self.style.back_lip.depth)
 

@@ -4,7 +4,6 @@ from mini_rack_printables import (
     PuckHolder,
     CornerHolder,
     RectangleElement,
-    RoundedCorner,
 )
 
 
@@ -44,7 +43,7 @@ def test_puck_holder():
 
 
 def test_corner_holder():
-    holder = CornerHolder(RectangleElement(100, 30, RoundedCorner(2)))
+    holder = CornerHolder(RectangleElement(100, 30, 2))
     xray = XRayModel(holder, only_adds=False)
     compound = xray.render()
     assert len(compound.children) == 1
