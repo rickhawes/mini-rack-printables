@@ -30,7 +30,7 @@ tasks:
       Example: task test -- test_face_plate.py
     deps: [init]
     cmds:
-      - uv run pytest {{.CLI_ARGS}}
+      - uv run pytest --durations=5 {{.CLI_ARGS}}
 
   lint:
     desc: "Check linting and formatting with ruff"

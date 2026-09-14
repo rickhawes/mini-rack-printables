@@ -1,7 +1,8 @@
-from mini_rack_printables.geometry import AlignmentVector
 from build123d import Mode, Vector, Plane, Solid, Part, Compound
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+
+from ..selectors import Place
 
 
 @dataclass
@@ -54,7 +55,7 @@ class ModelPart(ABC):
         padding: Padding around the part with respect to the plate.
     """
 
-    def __init__(self, align: AlignmentVector, shift: Vector, padding: float):
+    def __init__(self, align: Place, shift: Vector, padding: float):
         self.align = align
         self.shift = shift
         self.padding = padding

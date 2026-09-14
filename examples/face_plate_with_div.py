@@ -5,10 +5,10 @@ from mini_rack_printables import (
     Cutout,
     Div,
     FacePlate,
-    RcAlignment,
-    PrimativeCircle,
-    PrimativeRectangle,
-    PrimativeSlot,
+    Place,
+    CircleElement,
+    RectangleElement,
+    SlotElement,
 )
 
 #
@@ -17,30 +17,26 @@ from mini_rack_printables import (
 #
 
 # Define a basic cutout
-partCenter = Cutout(PrimativeRectangle(10.0, 5.0))
+partCenter = Cutout(RectangleElement(10.0, 5.0))
 
 # Show what alignment and padding does
-partLeft = Cutout(PrimativeCircle(5.0), align=RcAlignment.TOP, padding=1.0)
+partLeft = Cutout(CircleElement(5.0), align=Place.TOP, padding=1.0)
 
 # Show that a shift can be used to move the shape outside of its bounding box.
 # In this case, the cutout rib is merged with the plate rib.
 # Shift when used with caution, it can be powerful feature
 #
 partRight = Cutout(
-    PrimativeSlot(10.0, 5.0),
-    align=RcAlignment.BOTTOM,
+    SlotElement(10.0, 5.0),
+    align=Place.BOTTOM,
     shift=bd.Vector(0, -1),
-    rib_size=FacePlate.STD_RIB,
+    rib=FacePlate.STD_RIB,
 )
 
 # A basic Div with horizontal layout and evenly divided sections
 div = Div([partLeft, partCenter, partRight])
 
-plate = FacePlate(
-    rack_units=1.0,
-    rib_size=FacePlate.STD_RIB,
-    part=div,
-).render()
+plate = FacePlate(rack_units=1.0, part=div).render()
 
 # Show the plate in the OCP viewer
 show(plate)

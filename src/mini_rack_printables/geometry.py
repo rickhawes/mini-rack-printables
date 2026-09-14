@@ -1,45 +1,8 @@
 from dataclasses import dataclass
-from enum import Enum, auto
-
 import numpy as np
-from build123d import Vector, VectorLike
+from build123d import Vector, VectorLike, Axis
 
-
-@dataclass(frozen=True)
-class AlignmentVector:
-    """
-    Represents how to align a Rc within another Rc.
-    """
-
-    x: int
-    y: int
-    z: int
-
-    def __add__(self, other: AlignmentVector) -> AlignmentVector:
-        return AlignmentVector(self.x + other.x, self.y + other.y, self.z + other.z)
-
-
-class RcAlignment(AlignmentVector, Enum):
-    """
-    Enum for aligning an Rc
-    """
-
-    CENTER = (0, 0, 0)
-    LEFT = (-1, 0, 0)
-    RIGHT = (1, 0, 0)
-    TOP = (0, 1, 0)
-    BOTTOM = (0, -1, 0)
-    FRONT = (0, 0, 1)
-    BACK = (0, 0, -1)
-
-
-class Dir(Enum):
-    """
-    Enum for horizontal or vertical direction arguments.
-    """
-
-    HORIZONTAL = auto()
-    VERTICAL = auto()
+from .selectors import Place
 
 
 @dataclass
@@ -93,8 +56,8 @@ class Rc:
         """
         return Rc(size=self.size + Vector(2 * padding, 2 * padding), shift=self.shift)
 
-    def split(self, amount: float, dir: Dir = Dir.HORIZONTAL) -> list[Rc]:
-        if dir == Dir.HORIZONTAL:
+    def split(self, amount: float, axis: Axis = Axis.X) -> list[Rc]:
+        if axis == Axis.X:
             mid = self.left + amount if amount > 0 else self.right + amount
             return [
                 Rc.from_edges(self.left, mid, self.bottom, self.top),
@@ -107,11 +70,11 @@ class Rc:
                 Rc.from_edges(self.left, self.right, mid, self.top),
             ]
 
-    def divide(self, by: int, dir: Dir = Dir.HORIZONTAL) -> list[Rc]:
+    def divide(self, by: int, axis: Axis = Axis.X) -> list[Rc]:
         """
         Divide the rectangle into `by` equal rectangles in `dir` direction.
         """
-        if dir == Dir.HORIZONTAL:
+        if axis == Axis.X:
             dx = self.size.X / by
             size_x = self.size.X
             return [
@@ -132,20 +95,31 @@ class Rc:
                 for y in np.linspace((-size_y + dy) / 2, (size_y - dy) / 2, by)
             ]
 
-    def alignment_shift(self, bounds: Rc, align: AlignmentVector) -> Vector:
+    def place_position(self, place: Place) -> Vector:
         """
-        return the amount of shift to align within the bounds according the alignment vector
+        Returns the position (an x, y vector) of the place on the rectangle.
         """
+        place_x, place_y = place.as_units()
         return Vector(
-            (bounds.size.X - self.size.X) * align.x / 2 + bounds.shift.X,
-            (bounds.size.Y - self.size.Y) * align.y / 2 + bounds.shift.Y,
+            (self.size.X / 2) * place_x + self.shift.X,
+            (self.size.Y / 2) * place_y + self.shift.Y,
         )
 
-    def align(self, bounds: Rc, align: AlignmentVector) -> Rc:
+    def bounded_shift(self, bounds: Rc, align: Place) -> Vector:
         """
-        Return an Rc that has been shifted to match alignment the bounds and alignment vector
+        The amount of shift to apply to this Rc to place it within the `bounds` according to
+        the `place`. Useful in layout calculations.
         """
-        return Rc(size=self.size, shift=self.alignment_shift(bounds, align))
+        return bounds.place_position(align) - self.place_position(align)
+
+    def alignment_shift(self, other: Rc, align: Alignment) -> Vector:
+        """
+        The shift to align the `other` rectangle with this one according to the alignment.
+        Useful in placement calculations.
+        """
+        self_pos = self.place_position(align.main)
+        other_pos = other.place_position(align.other)
+        return self_pos - other_pos
 
     def centered_bounding(self) -> Rc:
         """
@@ -153,6 +127,29 @@ class Rc:
         """
         mirror = Rc(self.size, Vector(-self.shift.X, -self.shift.Y))
         return Rc.union(self, mirror)
+
+
+@dataclass(frozen=True)
+class Alignment:
+    """
+    Represents the alignment of two Rcs, or two 2d shapes,
+    """
+
+    main: Place
+    """The position in the main shape to align with"""
+
+    other: Place
+    """The position in the other shape to align with"""
+
+
+@dataclass(frozen=True)
+class Rib:
+    """
+    Represents a rib (width x depth) on a part or shape
+    """
+
+    width: float
+    depth: float
 
 
 def convert_to_3d(vector2d: Vector, z: float = 0) -> Vector:

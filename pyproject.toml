@@ -44,3 +44,9 @@ line-ending = "auto"
 # Enable auto-formatting of code examples inside docstrings
 docstring-code-format = true
 
+[tool.pytest]
+# Suppress DeprecationWarning because build123d depends on Lib3MF which has a structure layout 
+# Nothing can be done about it and it doesn't matter until python 3.19
+filterwarnings = [
+    'ignore::DeprecationWarning'
+]
