@@ -61,9 +61,8 @@ class HexHoles(Holes):
         super().__init__(spacing, width)
 
     def locations(self, dx, dy) -> LocationList:
-        x_count, y_count = math.floor(dx / (2 * self.s)), math.floor((dy - self.s) / (2 * self.s))
-        assert x_count > 0 and y_count > 0, f"Must have a few holes {dx, dy, x_count, y_count}"
-        return HexLocations(self.s, x_count, y_count)
+        cx, cy = math.floor(dx / (2 * self.s)), math.floor((dy - self.s) / (2 * self.s))
+        return HexLocations(self.s, cx, cy) if cx > 0 and cy > 0 else LocationList([])
 
     def sketch(self) -> Sketch:
         return RegularPolygon(self.w - self.s, 6)
@@ -76,9 +75,8 @@ class CircleHoles(Holes):
         super().__init__(spacing, width)
 
     def locations(self, dx, dy) -> LocationList:
-        return HexLocations(
-            self.s, math.floor(dx / (2 * self.s)), math.floor((dy - self.s) / (2 * self.s))
-        )
+        cx, cy = math.floor(dx / (2 * self.s)), math.floor((dy - self.s) / (2 * self.s))
+        return HexLocations(self.s, cx, cy) if cx > 0 and cy > 0 else LocationList([])
 
     def sketch(self) -> Sketch:
         return Circle(self.s - self.w / 2)
@@ -91,7 +89,8 @@ class SquareHoles(Holes):
         super().__init__(spacing, width)
 
     def locations(self, dx, dy) -> LocationList:
-        return GridLocations(self.s, self.s, math.floor(dx / self.s), math.floor(dy / self.s))
+        cx, cy = math.floor(dx / self.s), math.floor(dy / self.s)
+        return GridLocations(self.s, self.s, cx, cy) if cx > 0 and cy > 0 else LocationList([])
 
     def sketch(self) -> Sketch:
         return Rectangle(self.s - self.w, self.s - self.w)

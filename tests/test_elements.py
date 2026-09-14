@@ -30,6 +30,11 @@ def test_hex_fill(viewer_logger):
     viewer_logger.log(elem.sketch())
 
 
+def test_empty_fill(viewer_logger):
+    elem = RectangleElement(width=40, height=10, corners=4, fill=HexHoles())
+    viewer_logger.log(elem.sketch())
+
+
 def test_circular_fill(viewer_logger):
     elem = RectangleElement(width=40, height=20, fill=CircleHoles())
     viewer_logger.log(elem.sketch())
