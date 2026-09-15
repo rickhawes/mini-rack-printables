@@ -159,5 +159,5 @@ class Div(ModelPart):
         """
         layout_rc = Rc(part.layout_size(bounding.size))
         layout_with_padding = layout_rc.apply_padding(part.padding)
-        aligned_shift = layout_with_padding.bounded_shift(bounding, part.align)
+        aligned_shift = layout_with_padding.bounds_shift(bounding, part.align)
         return aligned_shift + part.shift

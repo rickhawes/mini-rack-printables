@@ -1,5 +1,5 @@
 from mini_rack_printables import Rc, Place
-from build123d import Vector, Axis
+from build123d import Vector, Axis, Align
 
 
 def test_edge_functions():
@@ -19,16 +19,16 @@ def test_from_edges():
 
 def test_divide_horizontally():
     rc1 = Rc((4, 6))
-    div1 = rc1.divide(2)
+    div1 = rc1.divide_evenly(2)
     assert div1[0] == Rc((2, 6), (-1, 0))
     assert div1[1] == Rc(size=(2, 6), shift=(1, 0))
 
     rc2 = Rc((4, 6))
-    div2 = rc2.divide(1)
+    div2 = rc2.divide_evenly(1)
     assert div2[0] == rc2
 
     rc3 = Rc((6, 6))
-    div3 = rc3.divide(3)
+    div3 = rc3.divide_evenly(3)
     assert div3[0] == Rc((2, 6), (-2, 0))
     assert div3[1] == Rc(size=(2, 6), shift=(0, 0))
     assert div3[2] == Rc(size=(2, 6), shift=(2, 0))
@@ -73,17 +73,17 @@ def test_alignment_shift():
     bounding_rc = Rc((10, 10))
     rc = Rc((2, 2))
 
-    shift_left = rc.bounded_shift(bounding_rc, Place.LEFT)
+    shift_left = rc.bounds_shift(bounding_rc, Place.LEFT)
     assert shift_left == Vector(-4, 0)
-    shift_top = rc.bounded_shift(bounding_rc, Place.TOP)
+    shift_top = rc.bounds_shift(bounding_rc, Place.TOP)
     assert shift_top == Vector(0, 4)
-    shift_top_left = rc.bounded_shift(bounding_rc, Place.TOP_LEFT)
+    shift_top_left = rc.bounds_shift(bounding_rc, Place.TOP_LEFT)
     assert shift_top_left == Vector(-4, 4)
 
     bounding_rc2 = Rc((10, 10), (20, 20))
-    shift_left2 = rc.bounded_shift(bounding_rc2, Place.LEFT)
+    shift_left2 = rc.bounds_shift(bounding_rc2, Place.LEFT)
     assert shift_left2 == Vector(16, 20)
-    shift_top_left2 = rc.bounded_shift(bounding_rc2, Place.TOP_LEFT)
+    shift_top_left2 = rc.bounds_shift(bounding_rc2, Place.TOP_LEFT)
     assert shift_top_left2 == Vector(16, 24)
 
 
@@ -101,3 +101,41 @@ def test_split():
 
     split4 = rc.split(amount=-2, axis=Axis.Y)
     assert split4 == [Rc((8, 6), (4, 3)), Rc((8, 2), (4, 7))]
+
+
+def test_arrange_horizontal():
+    rc1 = Rc((4, 4))
+    rc2 = Rc((2, 2))
+    rc3 = Rc((2, 4))
+    l1 = Rc.arrange(Axis.X, (Align.CENTER, Align.CENTER), rc1, rc2)
+    assert l1[0] == Rc((4, 4), (-1, 0))
+    assert l1[1] == Rc((2, 2), (2, 0))
+    l2 = Rc.arrange(Axis.X, (Align.MIN, Align.CENTER), rc1, rc2)
+    assert l2[0] == Rc((4, 4), (2, 0))
+    assert l2[1] == Rc((2, 2), (5, 0))
+    l3 = Rc.arrange(Axis.X, (Align.MIN, Align.MIN), rc1, rc2)
+    assert l3[0] == Rc((4, 4), (2, 2))
+    assert l3[1] == Rc((2, 2), (5, 1))
+    l4 = Rc.arrange(Axis.X, (Align.MIN, Align.MAX), rc1, rc2, rc3)
+    assert l4[0] == Rc((4, 4), (2, -2))
+    assert l4[1] == Rc((2, 2), (5, -1))
+    assert l4[2] == Rc((2, 4), (7, -2))
+    l5 = Rc.arrange(Axis.X, Place.TOP_LEFT, rc1)
+    assert l5[0] == Rc((4, 4), (2, -2))
+    l6 = Rc.arrange(Axis.X, Place.TOP_RIGHT)
+    assert len(l6) == 0
+
+
+def test_arrange_vertical():
+    rc1 = Rc((4, 4))
+    rc2 = Rc((2, 2))
+    rc3 = Rc((4, 2))
+    l1 = Rc.arrange(Axis.Y, Place.CENTER, rc1, rc2)
+    assert l1[0] == Rc((4, 4), (0, -1))
+    assert l1[1] == Rc((2, 2), (0, 2))
+    l2 = Rc.arrange(Axis.Y, Place.LEFT, rc1, rc2, rc3)
+    assert l2[0] == Rc((4, 4), (2, -2))
+    assert l2[1] == Rc((2, 2), (1, 1))
+    assert l2[2] == Rc((4, 2), (2, 3))
+    l5 = Rc.arrange(Axis.Y, Place.TOP_LEFT, rc1)
+    assert l5[0] == Rc((4, 4), (2, -2))

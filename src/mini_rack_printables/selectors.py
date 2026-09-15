@@ -195,5 +195,24 @@ class Place(Enum):
         return unit_to_align(x), unit_to_align(y)
 
 
+def place_from_aligns(align: tuple[Align, Align]) -> Place:
+    """
+    Returns the place that corresponds to the given alignment tuple
+    """
+    conversion = {
+        (Align.MIN, Align.MIN): Place.BOTTOM_LEFT,
+        (Align.MIN, Align.CENTER): Place.LEFT,
+        (Align.MIN, Align.MAX): Place.TOP_LEFT,
+        (Align.CENTER, Align.MIN): Place.BOTTOM,
+        (Align.CENTER, Align.CENTER): Place.CENTER,
+        (Align.CENTER, Align.MAX): Place.TOP,
+        (Align.MAX, Align.MIN): Place.BOTTOM_RIGHT,
+        (Align.MAX, Align.CENTER): Place.RIGHT,
+        (Align.MAX, Align.MAX): Place.TOP_RIGHT,
+    }
+    assert align in conversion, "Invalid align"
+    return conversion[align]
+
+
 CornerPlace = Literal[Place.TOP_LEFT, Place.TOP_RIGHT, Place.BOTTOM_LEFT, Place.BOTTOM_RIGHT]
 """The subset of Place that represent corners"""

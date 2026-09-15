@@ -22,6 +22,7 @@ from build123d import (
     make_face,
     BuildSketch,
     Trapezoid,
+    Triangle,
     HexLocations,
     RegularPolygon,
     GridLocations,
@@ -210,19 +211,25 @@ class Element2D(ABC):
         """Draw the outline of the shape."""
         pass
 
-    def locate(self, other: Element2D, where: Place, outside: bool = False) -> Location:
+    def place_coords(self, where: Place) -> Vector:
+        """Returns the coordinates of the place on the element."""
+        dx, dy = self.size().X / 2, self.size().Y / 2
+        unit_x, unit_y = where.as_units()
+        return Vector(unit_x * dx, unit_y * dy)
+
+    def locate(self, align: Place, other: Element2D, other_align: Place) -> Location:
         """
         Returns the alignment position for the edge of this element relative to the given element.
 
         Args:
+            align (Selector): Which edge or corner of this element to align on.
             other (Element): The element for which the calculation is made
-            edge (Selector): Which edge or corner of this element to align on.
-            outside (bool): Whether to align the `other` element outside the boundary of this element.
+            other_align (Selector): Which edge or corner of the `other` element to align on.
 
         Returns:
             Pos: The alignment position for `other` element relative to this element.
         """
-        raise NotImplementedError
+        return Location(self.place_coords(align) - other.place_coords(other_align))
 
 
 class CircleElement(Element2D):
@@ -367,6 +374,25 @@ class TrapezoidElement(Element2D):
         return Trapezoid(
             self.width, self.height, left_side_angle=self.angle1, right_side_angle=self.angle2
         )
+
+
+class RightTriangleElement(Element2D):
+    """A right triangle shape."""
+
+    def __init__(self, width: float, height: float):
+        """
+        Args:
+            width (float): The width of the triangle.
+            height (float): The height of the triangle.
+        """
+        self.width = width
+        self.height = height
+
+    def size(self) -> Vector:
+        return Vector(self.width, self.height)
+
+    def sketch(self) -> Sketch:
+        return Triangle(a=self.width, b=self.height, C=90)
 
 
 # --------------------------------------------------------

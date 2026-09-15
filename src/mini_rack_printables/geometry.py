@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 import numpy as np
-from build123d import Vector, VectorLike, Axis
+from build123d import Vector, VectorLike, Axis, Align
 
-from .selectors import Place
+from .selectors import Place, place_from_aligns
 
 
 @dataclass
@@ -50,6 +50,55 @@ class Rc:
     def top(self) -> float:
         return self.size.Y / 2 + self.shift.Y
 
+    def shifted(self, shift: Vector) -> Rc:
+        """
+        Return a new Rc with the same size but shifted by `shift`.
+        """
+        return Rc(size=self.size, shift=shift)
+
+    def resized(self, size: Vector) -> Rc:
+        """
+        Return a new Rc with the same shift but resized to `size`.
+        """
+        return Rc(size=size, shift=self.shift)
+
+    def anchor_shifted(self, anchor: Place | tuple[Align, Align]) -> Rc:
+        """
+        Return a new Rc with the same size but shifted so that `anchor` is at the origin.
+        """
+        if isinstance(anchor, tuple):
+            anchor = place_from_aligns(anchor)
+        return Rc(size=self.size, shift=-self.anchor_position(anchor))
+
+    def anchor_position(self, anchor: Place | tuple[Align, Align]) -> Vector:
+        """
+        Returns the position (an x, y vector) of the place on the rectangle.
+        """
+        if isinstance(anchor, tuple):
+            anchor = place_from_aligns(anchor)
+        place_x, place_y = anchor.as_units()
+        return Vector(
+            (self.size.X / 2) * place_x + self.shift.X,
+            (self.size.Y / 2) * place_y + self.shift.Y,
+        )
+
+    def bounds_shifted(self, bounds: Rc, anchor: Place | tuple[Align, Align]) -> Rc:
+        """
+        Return a new Rc with the same size but shifted so that `align` is at the origin.
+        """
+        if isinstance(anchor, tuple):
+            anchor = place_from_aligns(anchor)
+        return Rc(size=self.size, shift=self.bounds_shift(bounds, anchor))
+
+    def bounds_shift(self, bounds: Rc, anchor: Place | tuple[Align, Align]) -> Vector:
+        """
+        The amount of shift to apply to this Rc to place it within the `bounds` according to
+        the `place`. Useful in layout calculations.
+        """
+        if isinstance(anchor, tuple):
+            anchor = place_from_aligns(anchor)
+        return bounds.anchor_position(anchor) - self.anchor_position(anchor)
+
     def apply_padding(self, padding: float) -> Rc:
         """
         Apply padding to the Rc, expanding its size by `padding` amount but not shifting its center.
@@ -70,7 +119,7 @@ class Rc:
                 Rc.from_edges(self.left, self.right, mid, self.top),
             ]
 
-    def divide(self, by: int, axis: Axis = Axis.X) -> list[Rc]:
+    def divide_evenly(self, by: int, axis: Axis = Axis.X) -> list[Rc]:
         """
         Divide the rectangle into `by` equal rectangles in `dir` direction.
         """
@@ -95,32 +144,6 @@ class Rc:
                 for y in np.linspace((-size_y + dy) / 2, (size_y - dy) / 2, by)
             ]
 
-    def place_position(self, place: Place) -> Vector:
-        """
-        Returns the position (an x, y vector) of the place on the rectangle.
-        """
-        place_x, place_y = place.as_units()
-        return Vector(
-            (self.size.X / 2) * place_x + self.shift.X,
-            (self.size.Y / 2) * place_y + self.shift.Y,
-        )
-
-    def bounded_shift(self, bounds: Rc, align: Place) -> Vector:
-        """
-        The amount of shift to apply to this Rc to place it within the `bounds` according to
-        the `place`. Useful in layout calculations.
-        """
-        return bounds.place_position(align) - self.place_position(align)
-
-    def alignment_shift(self, other: Rc, align: Alignment) -> Vector:
-        """
-        The shift to align the `other` rectangle with this one according to the alignment.
-        Useful in placement calculations.
-        """
-        self_pos = self.place_position(align.main)
-        other_pos = other.place_position(align.other)
-        return self_pos - other_pos
-
     def centered_bounding(self) -> Rc:
         """
         return a rectangle in opposite direction of the offset by the amount needed to center a rect.
@@ -128,18 +151,47 @@ class Rc:
         mirror = Rc(self.size, Vector(-self.shift.X, -self.shift.Y))
         return Rc.union(self, mirror)
 
+    @staticmethod
+    def arrange(axis: Axis, anchor: Place | tuple[Align, Align], *items: Rc) -> list[Rc]:
+        """
+        Arrange a collection of Rcs along an axis, aligning the collection according to the given alignment.
 
-@dataclass(frozen=True)
-class Alignment:
-    """
-    Represents the alignment of two Rcs, or two 2d shapes,
-    """
+        Args:
+            axis (Axis): The axis to arrange along.
+            anchor (tuple[Align, Align]): The origin point for the whole collection.
+            *items (Rc): The Rcs to arrange.
 
-    main: Place
-    """The position in the main shape to align with"""
-
-    other: Place
-    """The position in the other shape to align with"""
+        Returns:
+            list[Rc]: The arranged Rcs.
+        """
+        if len(items) == 0:
+            return []
+        if isinstance(anchor, tuple):
+            anchor = place_from_aligns(anchor)
+        if axis == Axis.X:
+            bounds = Rc(
+                size=(sum(item.size.X for item in items), max(item.size.Y for item in items))
+            ).anchor_shifted(anchor)
+            edge = bounds.left
+            output: list[Rc] = []
+            for item in items:
+                item_bounds = Rc.from_edges(edge, edge + item.size.X, bounds.bottom, bounds.top)
+                arranged_item = item.bounds_shifted(item_bounds, anchor)
+                output.append(arranged_item)
+                edge = item_bounds.right
+            return output
+        else:
+            bounds = Rc(
+                size=(max(item.size.X for item in items), sum(item.size.Y for item in items))
+            ).anchor_shifted(anchor)
+            edge = bounds.bottom
+            output: list[Rc] = []
+            for item in items:
+                item_bounds = Rc.from_edges(bounds.left, bounds.right, edge, edge + item.size.Y)
+                arranged_item = item.bounds_shifted(item_bounds, anchor)
+                output.append(arranged_item)
+                edge = item_bounds.top
+            return output
 
 
 @dataclass(frozen=True)
