@@ -154,7 +154,7 @@ class Rc:
     @staticmethod
     def arrange(
         axis: Axis,
-        anchor: Place | tuple[Align, Align],
+        align: Place | tuple[Align, Align],
         *items: Rc,
     ) -> list[Rc]:
         """
@@ -170,29 +170,33 @@ class Rc:
         """
         if len(items) == 0:
             return []
-        if isinstance(anchor, tuple):
-            anchor = place_from_aligns(anchor)
+        if isinstance(align, tuple):
+            align = place_from_aligns(align)
         if axis == Axis.X:
+            if align not in (Place.CENTER, Place.BOTTOM, Place.TOP):
+                raise ValueError(f"Invalid align for axis X: {align}")
             bounds = Rc(
                 size=(sum(item.size.X for item in items), max(item.size.Y for item in items))
-            ).anchor_shifted(anchor)
+            )
             edge = bounds.left
             output: list[Rc] = []
             for item in items:
                 item_bounds = Rc.from_edges(edge, edge + item.size.X, bounds.bottom, bounds.top)
-                arranged_item = item.bounds_shifted(item_bounds, anchor)
+                arranged_item = item.bounds_shifted(item_bounds, align)
                 output.append(arranged_item)
                 edge = item_bounds.right
             return output
         else:
+            if align not in (Place.CENTER, Place.LEFT, Place.RIGHT):
+                raise ValueError(f"Invalid align for axis Y: {align}")
             bounds = Rc(
                 size=(max(item.size.X for item in items), sum(item.size.Y for item in items))
-            ).anchor_shifted(anchor)
+            )
             edge = bounds.bottom
             output: list[Rc] = []
             for item in items:
                 item_bounds = Rc.from_edges(bounds.left, bounds.right, edge, edge + item.size.Y)
-                arranged_item = item.bounds_shifted(item_bounds, anchor)
+                arranged_item = item.bounds_shifted(item_bounds, align)
                 output.append(arranged_item)
                 edge = item_bounds.top
             return output

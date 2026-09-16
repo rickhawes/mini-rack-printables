@@ -213,32 +213,12 @@ class Element2D(ABC):
         """Draw the outline of the shape."""
         pass
 
-    def place_coords(self, where: Place) -> Vector:
-        """Returns the coordinates of the place on the element."""
-        dx, dy = self.size().X / 2, self.size().Y / 2
-        unit_x, unit_y = where.as_units()
-        return Vector(unit_x * dx, unit_y * dy)
-
-    def locate(self, align: Place, other: Element2D, other_align: Place) -> Location:
-        """
-        Returns the alignment position for the edge of this element relative to the given element.
-
-        Args:
-            align (Selector): Which edge or corner of this element to align on.
-            other (Element): The element for which the calculation is made
-            other_align (Selector): Which edge or corner of the `other` element to align on.
-
-        Returns:
-            Pos: The alignment position for `other` element relative to this element.
-        """
-        return Location(self.place_coords(align) - other.place_coords(other_align))
-
     @staticmethod
     def arrange(
         elements: list[Element2D],
         axis: Axis = Axis.X,
         anchor: Place | tuple[Align, Align] = Place.CENTER,
-    ) -> LocationList:
+    ) -> list[Location]:
         """
         Arranges a list of elements along an axis, returning their locations.
 
@@ -252,10 +232,10 @@ class Element2D(ABC):
         """
         elem_rects = [Rc(size=element.size()) for element in elements]
         arranged_rects = Rc.arrange(axis, anchor, *elem_rects)
-        return LocationList([Location(position=rect.shift) for rect in arranged_rects])
+        return [Location(position=rect.shift) for rect in arranged_rects]
 
     @staticmethod
-    def arrange_and_sketch(
+    def combine(
         elements: list[Element2D],
         axis: Axis = Axis.X,
         anchor: Place | tuple[Align, Align] = Place.CENTER,
@@ -398,34 +378,76 @@ class SlotElement(Element2D):
 
 
 class TrapezoidElement(Element2D):
-    """A trapezoid shape or rounded rectangle shape."""
+    """A trapezoid shape with the major width on the bottom and minor on the top."""
 
-    def __init__(self, width: float, height: float, angle1: float = 90, angle2: float = 90):
+    def __init__(
+        self,
+        width: float,
+        height: float,
+        angle1: float | None = 90,
+        angle2: float | None = None,
+        minor_width: float | None = None,
+        rotate: float = 0,
+    ):
         """
+        A trapezoid shape with the major width on the bottom and minor on the top.
+
         Args:
-            width (float): The width of the rectangle.
-            height (float): The height of the rectangle.
+            width (float): The major width of the trapezoid.
+            height (float): The height of the trapezoid.
             angle1 (float): The interior angle of the first side. Defaults to 90.
-            angle2 (float): The interior angle of the second side. Defaults to 90.
+            angle2 (float): The interior angle of the second side. Defaults to symmetrical to angle1.
+            minor_width (float): The width of the minor side. Defaults to None.
+            rotation (bool): Whether to rotate the trapezoid. Defaults to False.
         """
+        if angle1 is not None and angle2 is not None and minor_width is not None:
+            raise ValueError("angle1, angle2, and minor_width cannot all be set")
+        if angle1 is None and angle2 is None and minor_width is None:
+            raise ValueError("angle1, angle2, and minor_width cannot all be None")
+
+        if minor_width is not None:
+            # Calculate angle1 or angle2 based on minor_width
+            if angle1 is not None and angle2 is None:
+                reduction_left = 0 if angle1 == 90 else height / math.tan(math.radians(angle1))
+                angle2 = math.degrees(math.atan(height / (width - minor_width - reduction_left)))
+            elif angle2 is not None and angle1 is None:
+                reduction_right = 0 if angle2 == 90 else height / math.tan(math.radians(angle2))
+                angle1 = math.degrees(math.atan(height / (width - minor_width - reduction_right)))
+            else:
+                angle1 = angle2 = math.degrees(math.atan(2 * height / (width - minor_width)))
+        if angle2 is not None and angle1 is None:
+            angle1 = angle2
+        assert angle1 is not None, "angle1 could not be calculated"
+
         self.width = width
         self.height = height
         self.angle1 = angle1
         self.angle2 = angle2
+        self.rotate = rotate
 
     def size(self) -> Vector:
-        return Vector(self.width, self.height)
+        dx = self.height * math.sin(math.radians(self.rotate)) + self.width * math.cos(
+            math.radians(self.rotate)
+        )
+        dy = self.height * math.cos(math.radians(self.rotate)) + self.width * math.sin(
+            math.radians(self.rotate)
+        )
+        return Vector(dx, dy)
 
     def sketch(self) -> Sketch:
         return Trapezoid(
-            self.width, self.height, left_side_angle=self.angle1, right_side_angle=self.angle2
+            self.width,
+            self.height,
+            left_side_angle=self.angle1,
+            right_side_angle=self.angle2,
+            rotation=self.rotate,
         )
 
 
 class RightTriangleElement(Element2D):
     """A right triangle shape."""
 
-    def __init__(self, width: float, height: float):
+    def __init__(self, width: float, height: float, flip: bool = False):
         """
         Args:
             width (float): The width of the triangle.
@@ -433,13 +455,17 @@ class RightTriangleElement(Element2D):
         """
         self.width = width
         self.height = height
+        self.flip = flip
 
     def size(self) -> Vector:
         return Vector(self.width, self.height)
 
     def sketch(self) -> Sketch:
         dx, dy = self.width / 2, self.height / 2
-        return make_face(Polyline([(-dx, -dy), (dx, dy), (dx, -dy)], close=True))
+        pts = (
+            [(-dx, -dy), (-dx, dy), (dx, -dy)] if self.flip else [(-dx, -dy), (dx, dy), (dx, -dy)]
+        )
+        return make_face(Polyline(pts, close=True))
 
 
 # --------------------------------------------------------
@@ -464,26 +490,6 @@ class Element3D(Element2D):
     def on(self, selector: Place) -> Plane:
         """Returns the plane for the element."""
         pass
-
-    def place(
-        self,
-        other: Element3D,
-        where: Place,
-        outside: bool = False,
-        on: Place | Plane | None = None,
-    ) -> Part:
-        """
-        Returns the alignment position for the edge of this element relative to the given element.
-
-        Args:
-            other (Element): The element for which the calculation is made
-            edge (Selector): Which edge or corner of this element to align on.
-            outside (bool): Whether to align the `other` element outside the boundary of this element.
-
-        Returns:
-            Pos: The alignment position for `other` element relative to this element.
-        """
-        raise NotImplementedError
 
 
 def _plane_from_over_under(

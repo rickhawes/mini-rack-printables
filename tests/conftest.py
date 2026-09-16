@@ -11,6 +11,7 @@ from build123d import Compound, Part, Location, Text, Sketch, Rectangle, Align, 
 STD_SPACING = 80
 MIN_SPACING = 10
 TEXT_BOX_HEIGHT = 10
+MAX_ELEMENTS_PER_ROW = 6
 
 
 class Logger:
@@ -56,20 +57,22 @@ def viewer_logger():
         # A group label
         group_label = Location((-STD_SPACING - 10, y, 0)) * Label(group_name)
         push_object(group_label, name=group_name)
-        x = 0
 
-        # A group of entries
-        for entry in entries:
-            c = Location((x, y, 0)) * Compound(
-                label=entry.function_name,
-                children=[
-                    entry.part,
-                    Location((0, -STD_SPACING / 2 + TEXT_BOX_HEIGHT / 2, 0))
-                    * Label(entry.function_name),
-                ],
-            )
-            push_object(c, name=entry.function_name)
-            x += STD_SPACING if entry.size.X < STD_SPACING else entry.size.X + MIN_SPACING
-        y += STD_SPACING
+        row = 0
+        for i in range(0, len(entries), MAX_ELEMENTS_PER_ROW):
+            x = 0
+            for entry in entries[i : i + MAX_ELEMENTS_PER_ROW]:
+                c = Location((x, y, 0)) * Compound(
+                    label=entry.function_name,
+                    children=[
+                        entry.part,
+                        Location((0, -STD_SPACING / 2 + TEXT_BOX_HEIGHT / 2, 0))
+                        * Label(entry.function_name),
+                    ],
+                )
+                push_object(c, name=entry.function_name)
+                x += STD_SPACING if entry.size.X < STD_SPACING else entry.size.X + MIN_SPACING
+            y -= STD_SPACING
+            row += 1
     show_objects(reset_camera=Camera.TOP)
     #

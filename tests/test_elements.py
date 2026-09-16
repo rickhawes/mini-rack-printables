@@ -1,4 +1,7 @@
+from build123d import Axis
 from mini_rack_printables import (
+    Place,
+    Element2D,
     InsetCorners,
     HexHoles,
     SquareHoles,
@@ -10,6 +13,7 @@ from mini_rack_printables import (
     SelectedCorners,
     RoundedCorners,
     RightTriangleElement,
+    TrapezoidElement,
 )
 # test by rendering a bunch of elements
 
@@ -58,9 +62,20 @@ def test_slot_element(viewer_logger):
     viewer_logger.log(elem.sketch())
 
 
+def test_trapezoid_element(viewer_logger):
+    e1 = TrapezoidElement(40, 20, angle1=80)
+    viewer_logger.log(e1.sketch())
+    e2 = TrapezoidElement(40, 20, minor_width=10, angle1=90)
+    viewer_logger.log(e2.sketch())
+    e3 = TrapezoidElement(40, 20, minor_width=10, angle1=90, rotate=90)
+    viewer_logger.log(e3.sketch())
+
+
 def test_right_triangle_element(viewer_logger):
     elem = RightTriangleElement(width=40, height=20)
     viewer_logger.log(elem.sketch())
+    elem2 = RightTriangleElement(width=40, height=20, flip=True)
+    viewer_logger.log(elem2.sketch())
 
 
 def test_cross_element(viewer_logger):
@@ -78,3 +93,11 @@ def test_selected_corners(viewer_logger):
         40, 20, SelectedCorners(RoundedCorners(6), top_left=True, bottom_right=True)
     )
     viewer_logger.log(elem.sketch())
+
+
+def test_combine_elements(viewer_logger):
+    e1 = RectangleElement(5, 2)
+    e2 = TrapezoidElement(10, 15, minor_width=2, angle1=90, rotate=90)
+    e3 = RectangleElement(20, 10)
+    sk = Element2D.combine([e1, e2, e3], axis=Axis.X, anchor=Place.BOTTOM)
+    viewer_logger.log(sk)

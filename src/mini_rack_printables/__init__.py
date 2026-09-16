@@ -30,6 +30,7 @@ from .elements import (
     InsetCorners,
     BeveledCorners,
     SelectedCorners,
+    TrapezoidElement,
 )
 from .rack_holes import layout_rack_screw_holes, sketch_rack_holes
 
@@ -67,6 +68,7 @@ __all__ = [
     "RectangleElement",
     "SlotElement",
     "RightTriangleElement",
+    "TrapezoidElement",
     "RectangleWithCornersElement",
     "Holes",
     "SquareHoles",

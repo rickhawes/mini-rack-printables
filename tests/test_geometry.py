@@ -1,5 +1,5 @@
 from mini_rack_printables import Rc, Place
-from build123d import Vector, Axis, Align
+from build123d import Vector, Axis
 
 
 def test_edge_functions():
@@ -107,22 +107,22 @@ def test_arrange_horizontal():
     rc1 = Rc((4, 4))
     rc2 = Rc((2, 2))
     rc3 = Rc((2, 4))
-    l1 = Rc.arrange(Axis.X, (Align.CENTER, Align.CENTER), rc1, rc2)
+    l1 = Rc.arrange(Axis.X, Place.CENTER, rc1, rc2)
     assert l1[0] == Rc((4, 4), (-1, 0))
     assert l1[1] == Rc((2, 2), (2, 0))
-    l2 = Rc.arrange(Axis.X, (Align.MIN, Align.CENTER), rc1, rc2)
-    assert l2[0] == Rc((4, 4), (2, 0))
-    assert l2[1] == Rc((2, 2), (5, 0))
-    l3 = Rc.arrange(Axis.X, (Align.MIN, Align.MIN), rc1, rc2)
-    assert l3[0] == Rc((4, 4), (2, 2))
-    assert l3[1] == Rc((2, 2), (5, 1))
-    l4 = Rc.arrange(Axis.X, (Align.MIN, Align.MAX), rc1, rc2, rc3)
-    assert l4[0] == Rc((4, 4), (2, -2))
-    assert l4[1] == Rc((2, 2), (5, -1))
-    assert l4[2] == Rc((2, 4), (7, -2))
-    l5 = Rc.arrange(Axis.X, Place.TOP_LEFT, rc1)
-    assert l5[0] == Rc((4, 4), (2, -2))
-    l6 = Rc.arrange(Axis.X, Place.TOP_RIGHT)
+    l2 = Rc.arrange(Axis.X, Place.BOTTOM, rc1, rc2)
+    assert l2[0] == Rc((4, 4), (-1, 0))
+    assert l2[1] == Rc((2, 2), (2, -1))
+    l3 = Rc.arrange(Axis.X, Place.TOP, rc1, rc2)
+    assert l3[0] == Rc((4, 4), (-1, 0))
+    assert l3[1] == Rc((2, 2), (2, 1))
+    l4 = Rc.arrange(Axis.X, Place.BOTTOM, rc1, rc2, rc3)
+    assert l4[0] == Rc((4, 4), (-2, 0))
+    assert l4[1] == Rc((2, 2), (1, -1))
+    assert l4[2] == Rc((2, 4), (3, 0))
+    l5 = Rc.arrange(Axis.X, Place.CENTER, rc1)
+    assert l5[0] == Rc((4, 4), (0, 0))
+    l6 = Rc.arrange(Axis.X, Place.CENTER)
     assert len(l6) == 0
 
 
@@ -134,8 +134,8 @@ def test_arrange_vertical():
     assert l1[0] == Rc((4, 4), (0, -1))
     assert l1[1] == Rc((2, 2), (0, 2))
     l2 = Rc.arrange(Axis.Y, Place.LEFT, rc1, rc2, rc3)
-    assert l2[0] == Rc((4, 4), (2, -2))
-    assert l2[1] == Rc((2, 2), (1, 1))
-    assert l2[2] == Rc((4, 2), (2, 3))
-    l5 = Rc.arrange(Axis.Y, Place.TOP_LEFT, rc1)
-    assert l5[0] == Rc((4, 4), (2, -2))
+    assert l2[0] == Rc((4, 4), (0, -2))
+    assert l2[1] == Rc((2, 2), (-1, 1))
+    assert l2[2] == Rc((4, 2), (0, 3))
+    l5 = Rc.arrange(Axis.Y, Place.RIGHT, rc1)
+    assert l5[0] == Rc((4, 4), (0, 0))

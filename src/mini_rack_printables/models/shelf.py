@@ -1,16 +1,16 @@
 from dataclasses import dataclass
-from build123d import Vector, Compound, Location, mirror, Plane, Part, Sketch, extrude
+from build123d import Vector, Compound, Location, mirror, Plane, Part, Sketch, extrude, Axis
 
 from ..dimensions import ShelfTabDims, RackDims, rack_units_to_mm
 from ..parts.model_part import ModelPart
-from ..selectors import Side, select_plane
+from ..selectors import Side, select_plane, Place
 from ..elements import (
     Element2D,
     extrude_element,
     RectangleElement,
-    RightTriangleElement,
     HexHoles,
     SquareCorners,
+    TrapezoidElement,
 )
 from ..rack_holes import sketch_rack_holes
 from .model import Model
@@ -61,6 +61,9 @@ class Shelf(Model):
         """
         self.rack_units = rack_units
         self.style = style
+        assert 4 * style.wall_inset < style.shelf_depth, (
+            "wall_inset must be less than shelf_depth / 4"
+        )
 
     def render(self) -> Compound:
         # geometry
@@ -73,10 +76,11 @@ class Shelf(Model):
         # wall
         def make_wall() -> Part:
             wall_size = Vector(
-                base_size.Y - self.style.wall_inset,
+                base_size.Y,
                 rack_units_to_mm(self.rack_units),
                 self.style.wall_thickness,
             )
+            inset = self.style.wall_inset
             wall_plane = (
                 select_plane(base_plate, Side.MIN_X)
                 .moved(
@@ -90,16 +94,25 @@ class Shelf(Model):
                 )
                 .rotated((180, 0, 0))
             )
-            wall_sketch = Element2D.arrange_and_sketch(
+            wall_sketch = Element2D.combine(
                 [
-                    RightTriangleElement(self.style.wall_inset, wall_size.Y),
+                    RectangleElement(inset, 2*base_size.Z),
+                    TrapezoidElement(
+                        wall_size.Y,
+                        wall_size.X / 2 - inset,
+                        angle1=90,
+                        minor_width=2*base_size.Z,
+                        rotate=90,
+                    ),
                     RectangleElement(
-                        wall_size.X - self.style.wall_inset,
+                        wall_size.X / 2,
                         wall_size.Y,
                         fill=HexHoles(),
                         corners=SquareCorners(base_size.Z),  # insets the fill area a bit
                     ),
-                ]
+                ],
+                axis=Axis.X,
+                anchor=Place.BOTTOM,
             )
             return wall_plane * extrude(wall_sketch, wall_size.Z)
 
