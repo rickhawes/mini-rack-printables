@@ -9,6 +9,7 @@ from mini_rack_printables import (
     BeveledCorners,
     SelectedCorners,
     RoundedCorners,
+    RightTriangleElement,
 )
 # test by rendering a bunch of elements
 
@@ -54,6 +55,11 @@ def test_circle_element(viewer_logger):
 
 def test_slot_element(viewer_logger):
     elem = SlotElement(40, 20)
+    viewer_logger.log(elem.sketch())
+
+
+def test_right_triangle_element(viewer_logger):
+    elem = RightTriangleElement(width=40, height=20)
     viewer_logger.log(elem.sketch())
 
 

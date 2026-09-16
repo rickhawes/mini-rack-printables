@@ -4,7 +4,14 @@ from build123d import Vector, Compound, Location, mirror, Plane, Part, Sketch, e
 from ..dimensions import ShelfTabDims, RackDims, rack_units_to_mm
 from ..parts.model_part import ModelPart
 from ..selectors import Side, select_plane
-from ..elements import extrude_element, TrapezoidElement, RectangleElement
+from ..elements import (
+    Element2D,
+    extrude_element,
+    RectangleElement,
+    RightTriangleElement,
+    HexHoles,
+    SquareCorners,
+)
 from ..rack_holes import sketch_rack_holes
 from .model import Model
 
@@ -26,6 +33,8 @@ class Shelf(Model):
         """Rounding of the face of the rack shelf."""
         shelf_depth: float = RackDims.DEPTH_8INCH
         """Whether the rack shelf has a ten inch depth."""
+        wall_inset: float = 20
+        """Inset of the from the back of the rack shelf."""
         open_face: bool = True
         """Whether the face of the rack shelf is open or closed."""
         middle_holes: bool = True
@@ -64,7 +73,9 @@ class Shelf(Model):
         # wall
         def make_wall() -> Part:
             wall_size = Vector(
-                base_size.Y - 10, rack_units_to_mm(self.rack_units), self.style.wall_thickness
+                base_size.Y - self.style.wall_inset,
+                rack_units_to_mm(self.rack_units),
+                self.style.wall_thickness,
             )
             wall_plane = (
                 select_plane(base_plate, Side.MIN_X)
@@ -79,9 +90,18 @@ class Shelf(Model):
                 )
                 .rotated((180, 0, 0))
             )
-            return wall_plane * extrude_element(
-                TrapezoidElement(wall_size.X, wall_size.Y, angle1=30), wall_size.Z
+            wall_sketch = Element2D.arrange_and_sketch(
+                [
+                    RightTriangleElement(self.style.wall_inset, wall_size.Y),
+                    RectangleElement(
+                        wall_size.X - self.style.wall_inset,
+                        wall_size.Y,
+                        fill=HexHoles(),
+                        corners=SquareCorners(base_size.Z),  # insets the fill area a bit
+                    ),
+                ]
             )
+            return wall_plane * extrude(wall_sketch, wall_size.Z)
 
         # add face
         def make_face() -> Part:

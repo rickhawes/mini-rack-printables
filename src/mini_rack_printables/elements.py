@@ -22,13 +22,15 @@ from build123d import (
     make_face,
     BuildSketch,
     Trapezoid,
-    Triangle,
     HexLocations,
     RegularPolygon,
     GridLocations,
     Wire,
+    Axis,
+    Align,
 )
 from .selectors import select_plane, Place, Side, CornerPlace
+from .geometry import Rc
 
 
 # --------------------------------------------------------
@@ -231,6 +233,50 @@ class Element2D(ABC):
         """
         return Location(self.place_coords(align) - other.place_coords(other_align))
 
+    @staticmethod
+    def arrange(
+        elements: list[Element2D],
+        axis: Axis = Axis.X,
+        anchor: Place | tuple[Align, Align] = Place.CENTER,
+    ) -> LocationList:
+        """
+        Arranges a list of elements along an axis, returning their locations.
+
+        Args:
+            axis (Axis): The axis along which to arrange the elements.
+            anchor (Place | tuple[Align, Align]): The anchor point or alignment for the group of elements.
+            elements (list[Element2D]): The list of elements to arrange.
+
+        Returns:
+            LocationList: The locations of the arranged elements.
+        """
+        elem_rects = [Rc(size=element.size()) for element in elements]
+        arranged_rects = Rc.arrange(axis, anchor, *elem_rects)
+        return LocationList([Location(position=rect.shift) for rect in arranged_rects])
+
+    @staticmethod
+    def arrange_and_sketch(
+        elements: list[Element2D],
+        axis: Axis = Axis.X,
+        anchor: Place | tuple[Align, Align] = Place.CENTER,
+    ) -> Sketch:
+        """
+        Arranges a list of elements along an axis and returns a sketch of their outline.
+
+        Args:
+            axis (Axis): The axis along which to arrange the elements.
+            anchor (Place | tuple[Align, Align]): The anchor point or alignment for the group of elements.
+            elements (list[Element2D]): The list of elements to arrange.
+
+        Returns:
+            Sketch: The sketch of the arranged elements.
+        """
+        locations = Element2D.arrange(elements, axis, anchor)
+        sketch = Sketch()
+        for element, location in zip(elements, locations):
+            sketch += element.sketch().move(location)
+        return sketch
+
 
 class CircleElement(Element2D):
     """A circle element."""
@@ -392,7 +438,8 @@ class RightTriangleElement(Element2D):
         return Vector(self.width, self.height)
 
     def sketch(self) -> Sketch:
-        return Triangle(a=self.width, b=self.height, C=90)
+        dx, dy = self.width / 2, self.height / 2
+        return make_face(Polyline([(-dx, -dy), (dx, dy), (dx, -dy)], close=True))
 
 
 # --------------------------------------------------------

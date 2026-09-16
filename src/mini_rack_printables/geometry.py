@@ -152,7 +152,11 @@ class Rc:
         return Rc.union(self, mirror)
 
     @staticmethod
-    def arrange(axis: Axis, anchor: Place | tuple[Align, Align], *items: Rc) -> list[Rc]:
+    def arrange(
+        axis: Axis,
+        anchor: Place | tuple[Align, Align],
+        *items: Rc,
+    ) -> list[Rc]:
         """
         Arrange a collection of Rcs along an axis, aligning the collection according to the given alignment.
 
