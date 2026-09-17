@@ -12,7 +12,7 @@ from build123d import (
     extrude,
     Mode,
     Axis,
-    add, 
+    add,
 )
 
 from ..dimensions import RackDims, ShelfTabDims

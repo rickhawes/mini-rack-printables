@@ -14,7 +14,6 @@ from build123d import (
 )
 
 from .model_part import ModelPart, PartPiece, Plate
-from ..selectors import Place
 
 E = 0.02
 "Small tolerance to make the imported part join with its cutout"
@@ -37,10 +36,6 @@ class ImportPart(ModelPart):
         path: Path | None = None,
         asset: str | None = None,
         cutout: bool = True,
-        label: str = "import",
-        align: Place = Place.CENTER,
-        shift: Vector = Vector(0, 0),
-        padding: float = 0.0,
     ):
         """
         Initialize the ImportPart with the given path or asset name and optional parameters.
@@ -49,19 +44,14 @@ class ImportPart(ModelPart):
             path (Path): The path to the BREP or STL file.
             asset (str): The name of the asset to import.
             cutout (bool, optional): Whether to cut out the part from the enclosing model or place on top of it. Defaults to True.
-            label (str, optional): The label for the part. Defaults to "import".
-            align (RcAlignment, optional): The alignment of the part. Defaults to RcAlignment.CENTER.
-            shift (Vector, optional): The shift of the part. Defaults to Vector(0, 0).
-            padding (float, optional): The padding of the part. Defaults to 0.0.
         """
         if path:
-            assert path.exists, f"Path does not exist: {path}"
-            assert path.suffix == self.BREP_SUFFIX or path.suffix == self.STL_SUFFIX, (
-                f"Expected BREP or STL file, got {path.suffix}"
-            )
-        else:
-            assert asset, "Either path or asset must be provided"
-        super().__init__(align, shift, padding)
+            if not path.exists():
+                raise ValueError(f"Path does not exist: {path}")
+            if not (path.suffix == self.BREP_SUFFIX or path.suffix == self.STL_SUFFIX):
+                raise ValueError(f"Expected BREP or STL file, got {path.suffix}")
+        elif asset is None:
+            raise ValueError("Either path or asset must be provided")
         self.path = path
         self.asset = asset
         self.cutout = cutout

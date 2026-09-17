@@ -2,9 +2,9 @@ from build123d import Mode, Vector, Plane, Solid, Part, Compound
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
-from ..selectors import Place
 from .part_layouts import PartLayout
 from .row_column_collection import RowsColumnsCollection
+
 
 @dataclass
 class Plate:
@@ -53,17 +53,7 @@ class PartPiece:
 class ModelPart(ABC):
     """
     Base class for all parts of a Model
-
-    Args:
-        align: Alignment of the part within its division of the plate.
-        shift: Shift of the part within its division of the plate.
-        padding: Padding around the part with respect to the plate.
     """
-
-    def __init__(self, align: Place, shift: Vector, padding: float):
-        self.align = align
-        self.shift = shift
-        self.padding = padding
 
     @abstractmethod
     def layout_size(self, plate_size: Vector) -> Vector:
@@ -108,5 +98,6 @@ class ModelPart(ABC):
                 assert False, "unhandled rendering mode"
         return Compound(result)
 
-type PartList = list[ModelPart] | list[list[ModelPart]]
 
+type PartList = list[ModelPart] | list[list[ModelPart]]
+"""A row-column list of ModelParts."""

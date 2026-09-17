@@ -1,20 +1,23 @@
 """
-A Collection of either list of items or a list of lists of items. In all cases, the collection can 
-be treated as a 2d row-column collection. 
+A Collection of either list of items or a list of lists of items. In all cases, the collection can
+be treated as a 2d row-column collection.
 """
+
 from typing import cast
+
 
 class RowsColumnsIterator[T]:
     """
     An iterator over the items in a RowsColumnsCollection by row and then column.
     Returns the item, row, column, and index of each item.
-    """    
-    def __init__(self, collection: 'RowsColumnsCollection[T]') -> None:
+    """
+
+    def __init__(self, collection: "RowsColumnsCollection[T]") -> None:
         self.collection = collection
         self.row = 0
         self.col = 0
         self.index = 0
-        
+
     def __iter__(self) -> RowsColumnsIterator[T]:
         return self
 
@@ -29,7 +32,8 @@ class RowsColumnsIterator[T]:
         self.col += 1
         self.index += 1
         return item, self.row, self.col, self.index
-        
+
+
 class RowsColumnsCollection[T]:
     items: list[T] | list[list[T]]
     """
@@ -37,7 +41,7 @@ class RowsColumnsCollection[T]:
     be treated as a 2d row-column collection. 
     The array may be sparse (e.g. some rows may have fewer columns) or full (e.g. all rows have the same number of columns).
     """
-    
+
     row_count: int
     """The number of rows in the collection."""
     col_count: int
@@ -48,7 +52,7 @@ class RowsColumnsCollection[T]:
     """Whether the collection is full with all row containing the same number of columns."""
     length: int
     """The total number of items in the collection."""
-    
+
     def __init__(self, items: list[T] | list[list[T]]) -> None:
         """
         Initialize a sparse or full 2D collection of items.
@@ -70,7 +74,9 @@ class RowsColumnsCollection[T]:
             self.row_count = len(items)
             self.col_count = max(len(row) for row in items if isinstance(row, list))
             self.has_single_list = False
-            self.is_full = all(len(row) == self.col_count for row in items if isinstance(row, list))
+            self.is_full = all(
+                len(row) == self.col_count for row in items if isinstance(row, list)
+            )
             self.length = sum(len(row) for row in items if isinstance(row, list))
 
     def __iter__(self) -> RowsColumnsIterator[T]:
@@ -94,4 +100,3 @@ class RowsColumnsCollection[T]:
             return cast(list[T], self.items)
         else:
             return cast(list[T], self.items[row])
-            
