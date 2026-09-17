@@ -12,14 +12,15 @@ from build123d import (
     extrude,
     Mode,
     Axis,
-    add,
+    add, 
 )
 
 from ..dimensions import RackDims, ShelfTabDims
 from ..rack_holes import sketch_rack_holes
 from ..geometry import Rib
 from .model import Model
-from ..parts.model_part import ModelPart, Plate
+from ..parts.model_part import ModelPart, Plate, PartList
+from ..parts.part_layouts import PartLayout, RowLayout
 
 
 class FacePlate(Model):
@@ -58,7 +59,8 @@ class FacePlate(Model):
         self,
         rack_units: float,
         style: Style = Style(),
-        part: ModelPart | None = None,
+        parts: PartList | None = None,
+        layout: PartLayout = RowLayout(),
     ):
         """
         Create a face plate model
@@ -70,7 +72,8 @@ class FacePlate(Model):
         """
         self.rack_units = rack_units
         self.style = style
-        self.part = part
+        self.parts = parts
+        self.layout = layout
 
     def render(self) -> Compound:
         """
@@ -125,7 +128,8 @@ class FacePlate(Model):
         # Add/subtract parts
         result = face_plate.part
         assert result is not None
-        if self.part:
-            result = self.part.intersect_with(result, plate)
+        if self.parts:
+            pieces = ModelPart.render_pieces(self.parts, plate, self.layout)
+            result = ModelPart.assemble_pieces(result, pieces)
 
         return Compound(label="face_plate", children=[result])

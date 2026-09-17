@@ -3,7 +3,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 from ..selectors import Place
-
+from .part_layouts import PartLayout
+from .row_column_collection import RowsColumnsCollection
 
 @dataclass
 class Plate:
@@ -24,6 +25,10 @@ class Plate:
         self.size = size
         self.top_plane = top_plane
         self.bottom_plane = bottom_plane
+
+
+type PlateList = list[Plate] | list[list[Plate]]
+"""A 2d list of plates"""
 
 
 @dataclass
@@ -77,17 +82,31 @@ class ModelPart(ABC):
         """
         pass
 
-    def intersect_with(self, other: Part, plate: Plate) -> Compound:
+    @staticmethod
+    def render_pieces(parts: PartList, plate: Plate, layout: PartLayout) -> list[PartPiece]:
         """
-        Intersect this part with another part.
+        Render all `parts` using the given `plate` and `layout` alogrithm.
         """
-        part_nodes = self.render(plate)
-        result = other
-        for node in part_nodes:
-            if node.mode == Mode.ADD:
-                result = result + node.part
-            elif node.mode == Mode.SUBTRACT:
-                result = result - node.part
+        pieces = []
+        sub_plates = layout.layout_parts(parts, plate)
+        for part, _, _, index in RowsColumnsCollection(parts):
+            pieces.extend(part.render(sub_plates[index]))
+        return pieces
+
+    @staticmethod
+    def assemble_pieces(to_part: Part, pieces: list[PartPiece]) -> Compound:
+        """
+        Intersect `pieces` with `to_part` to create the final result.
+        """
+        result = to_part
+        for piece in pieces:
+            if piece.mode == Mode.ADD:
+                result = result + piece.part
+            elif piece.mode == Mode.SUBTRACT:
+                result = result - piece.part
             else:
                 assert False, "unhandled rendering mode"
         return Compound(result)
+
+type PartList = list[ModelPart] | list[list[ModelPart]]
+

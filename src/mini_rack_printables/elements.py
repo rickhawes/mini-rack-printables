@@ -1,3 +1,10 @@
+"""
+Elements
+
+Elements are the primitives that make up models and parts. They are built to be easily
+composable.
+"""
+
 from abc import ABC, abstractmethod
 import math
 from build123d import (

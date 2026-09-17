@@ -96,12 +96,12 @@ class Shelf(Model):
             )
             wall_sketch = Element2D.combine(
                 [
-                    RectangleElement(inset, 2*base_size.Z),
+                    RectangleElement(inset, 2 * base_size.Z),
                     TrapezoidElement(
                         wall_size.Y,
                         wall_size.X / 2 - inset,
                         angle1=90,
-                        minor_width=2*base_size.Z,
+                        minor_width=2 * base_size.Z,
                         rotate=90,
                     ),
                     RectangleElement(

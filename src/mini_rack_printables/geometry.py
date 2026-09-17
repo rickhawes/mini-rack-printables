@@ -20,14 +20,14 @@ class Rc:
 
     @classmethod
     def from_edges(cls, left: float, right: float, bottom: float, top: float) -> Rc:
-        return Rc(
+        return cls(
             size=Vector(right - left, top - bottom),
             shift=Vector((right + left) / 2, (top + bottom) / 2),
         )
 
     @classmethod
     def union(cls, r1: Rc, r2: Rc) -> Rc:
-        return Rc.from_edges(
+        return cls.from_edges(
             right=max(r1.right, r2.right),
             left=min(r1.left, r2.left),
             top=max(r1.top, r2.top),
@@ -64,15 +64,16 @@ class Rc:
 
     def anchor_shifted(self, anchor: Place | tuple[Align, Align]) -> Rc:
         """
-        Return a new Rc with the same size but shifted so that `anchor` is at the origin.
+        Return a new Rc with the same size but
+        shifted so that the anchor's position is at the rectangle's center
         """
         if isinstance(anchor, tuple):
             anchor = place_from_aligns(anchor)
-        return Rc(size=self.size, shift=-self.anchor_position(anchor))
+        return Rc(size=self.size, shift=self.anchor_position(anchor))
 
     def anchor_position(self, anchor: Place | tuple[Align, Align]) -> Vector:
         """
-        Returns the position (an x, y vector) of the place on the rectangle.
+        Returns the position (an x, y vector) of the 'anchor' on the rectangle.
         """
         if isinstance(anchor, tuple):
             anchor = place_from_aligns(anchor)

@@ -9,7 +9,7 @@ from mini_rack_printables import FacePlate, Cutout, CircleElement
 
 plate = FacePlate(
     rack_units=1.0,
-    part=Cutout(CircleElement(10.0)),
+    parts=[Cutout(CircleElement(10.0), rib=FacePlate.STD_RIB)],
 ).render()
 
 show(plate)
