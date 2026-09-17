@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from build123d import Vector, VectorLike, Part, Box, Pos, extrude, Mode, Sketch
 
-from .model_part import ModelPart, PartPiece, Plate
-from ..selectors import Side, select_locations, Place
+from .model_part import ModelPart, PartPiece, PlatePlanes
+from ..selectors import Side, select_locations
 from ..geometry import Rib
 from ..elements import (
     extrude_element,
@@ -15,44 +15,41 @@ from ..elements import (
 )
 
 
-@dataclass
-class WallHolderStyle:
-    """
-    Represents the style of a wall holder, including cutout presence and lip dimensions.
-    """
-
-    has_cutout: bool = True
-    """Does the holder have a cutout for the device?"""
-    front_lip: Rib | None = None
-    """The front lip dimensions, if any."""
-    back_lip: Rib | None = None
-    """The back lip dimensions, if any."""
-
-
 class WallHolder(ModelPart):
     """
     A device holder for a single device on a face plate.
     Devices are held by friction from side, top and bottom plates.
     """
 
-    FRONT_LIP = WallHolderStyle(True, Rib(0.5, 1.0), None)
+    @dataclass
+    class Style:
+        """
+        Represents the style of a wall holder, including cutout presence and lip dimensions.
+        """
+
+        has_cutout: bool = True
+        """Does the holder have a cutout for the device?"""
+        front_lip: Rib | None = None
+        """The front lip dimensions, if any."""
+        back_lip: Rib | None = None
+        """The back lip dimensions, if any."""
+        wall_thickness: float = 2.5
+        """The thickness of the wall. Defaults to 2.5."""
+
+    FRONT_LIP = Style(True, Rib(0.5, 1.0), None)
     """A wall holder style with a front lip to prevent the device from falling through."""
-    BACK_LIP = WallHolderStyle(True, None, Rib(0.5, 1.0))
+    BACK_LIP = Style(True, None, Rib(0.5, 1.0))
     """A wall holder style with a back lip to prevent the device from falling through. Default."""
-    NO_LIP = WallHolderStyle(True, None, None)
+    NO_LIP = Style(True, None, None)
     """A wall holder style without a lip."""
-    NO_CUTOUT = WallHolderStyle(False, None, None)
+    NO_CUTOUT = Style(False, None, None)
     """A wall holder style without a cutout in the plate."""
 
     def __init__(
         self,
         device_size: VectorLike = (0, 0, 0),
         device_rounding: float = 1.0,
-        wall_thickness: float = 2.5,
-        style: WallHolderStyle = BACK_LIP,
-        align: Place = Place.CENTER,
-        shift: Vector = Vector(0, 0),
-        padding: float = 0.0,
+        style: Style = BACK_LIP,
     ):
         """
         Initialize a holder with the given style, device size, and optional label, align, shift, and padding.
@@ -60,37 +57,30 @@ class WallHolder(ModelPart):
         Args:
             device_size (Vector): The size of the device to hold. Defaults to Vector(0, 0, 0).
             device_rounding (float): The rounding of the device edges. Defaults to 1.0.
-            wall_thickness (float): The thickness of the wall. Defaults to 2.5.
             style (WallHolderStyle): The style of the holder. Defaults to BACK_LIP.
-            align (Vector): The alignment of the holder on the plate. Defaults to Vector(0, 0, 0).
-            shift (Vector): The shift of the holder on the plate. Defaults to Vector(0, 0, 0).
-            padding (float): The padding around the holder. Defaults to 0.0.
         """
         assert device_rounding >= 0, "device_rounding must be non-negative"
-        assert wall_thickness > 0.5, "wall_thickness must be positive"
-        super().__init__(align, shift, padding)
         self.device_size = Vector(device_size)
         self.device_rounding = device_rounding
-        self.wall_thickness = wall_thickness
         self.style = style
         assert self.device_size.X > 0 and self.device_size.Y > 0 and self.device_size.Z > 0, (
             "device_size must be positive"
         )
 
-    def layout_size(self, plate_size: Vector) -> Vector:
-        return Vector(self.device_size.X, self.device_size.Y) + 2 * Vector(
-            self.wall_thickness, self.wall_thickness
-        )
+    def desired_size(self) -> ModelPart.DesiredSize:
+        wall = 2 * self.style.wall_thickness
+        size = self.device_size + Vector(wall, wall)
+        return ModelPart.DesiredSize(size)
 
-    def render(self, plate: Plate) -> list[PartPiece]:
+    def render(self, plate_planes: PlatePlanes) -> list[PartPiece]:
         # geometry
         dx, dy, r = self.device_size.X, self.device_size.Y, self.device_rounding
         holder_depth = (
             self.device_size.Z
-            - (plate.size.Z if self.style.has_cutout else 0)
+            - (plate_planes.depth if self.style.has_cutout else 0)
             + (self.style.front_lip.depth if self.style.front_lip else 0)
         )
-        w = self.wall_thickness
+        w = self.style.wall_thickness
         e = 1.0  # corner edge
         dc = e + r  # corner width
 
@@ -133,12 +123,12 @@ class WallHolder(ModelPart):
                 )
                 cutout += extrude_element(
                     RectangleElement(dx, dy, r),
-                    plate.size.Z - self.style.front_lip.depth,
+                    plate_planes.depth - self.style.front_lip.depth,
                     over=cutout,
                 )
                 return cutout
             else:
-                return extrude_element(RectangleElement(dx, dy, r), plate.size.Z)
+                return extrude_element(RectangleElement(dx, dy, r), plate_planes.depth)
 
         # basic holder shape
         holder = make_corners()
@@ -152,8 +142,8 @@ class WallHolder(ModelPart):
 
         if self.style.has_cutout:
             return [
-                PartPiece(plate.top_plane * holder),
-                PartPiece(plate.bottom_plane * make_cutout(), Mode.SUBTRACT),
+                PartPiece(plate_planes.top_plane * holder),
+                PartPiece(plate_planes.bottom_plane * make_cutout(), Mode.SUBTRACT),
             ]
         else:
-            return [PartPiece(plate.top_plane * holder)]
+            return [PartPiece(plate_planes.top_plane * holder)]

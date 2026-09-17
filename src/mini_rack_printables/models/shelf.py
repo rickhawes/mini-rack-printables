@@ -2,7 +2,9 @@ from dataclasses import dataclass
 from build123d import Vector, Compound, Location, mirror, Plane, Part, Sketch, extrude, Axis
 
 from ..dimensions import ShelfTabDims, RackDims, rack_units_to_mm
-from ..parts.model_part import ModelPart
+from ..geometry import Bx
+from ..parts.model_part import PartList, PlatePlanes
+from ..parts.layouts import PartLayout, GridLayout
 from ..selectors import Side, select_plane, Place
 from ..elements import (
     Element2D,
@@ -49,7 +51,11 @@ class Shelf(Model):
     """A rack shelf with a closed face."""
 
     def __init__(
-        self, rack_units: float = 1.0, style: Style = OPEN_FACE, part: ModelPart | None = None
+        self,
+        rack_units: float = 1.0,
+        style: Style = OPEN_FACE,
+        shelf_parts: PartList | None = None,
+        shelf_layout: PartLayout = GridLayout(),
     ):
         """
         A rack shelf with either an open or closed face.
@@ -61,6 +67,8 @@ class Shelf(Model):
         """
         self.rack_units = rack_units
         self.style = style
+        self.shelf_parts = shelf_parts
+        self.shelf_layout = shelf_layout
         assert 4 * style.wall_inset < style.shelf_depth, (
             "wall_inset must be less than shelf_depth / 4"
         )
@@ -71,6 +79,11 @@ class Shelf(Model):
             ShelfTabDims.MAX_DX_TABS,
             self.style.shelf_depth,
             self.style.base_thickness,
+        )
+        plate_size = Vector(
+            base_size.X - 2 * self.style.wall_thickness,
+            base_size.Y - self.style.face_thickness,
+            base_size.Z,
         )
 
         # wall
@@ -96,12 +109,12 @@ class Shelf(Model):
             )
             wall_sketch = Element2D.combine(
                 [
-                    RectangleElement(inset, 2*base_size.Z),
+                    RectangleElement(inset, 2 * base_size.Z),
                     TrapezoidElement(
                         wall_size.Y,
                         wall_size.X / 2 - inset,
                         angle1=90,
-                        minor_width=2*base_size.Z,
+                        minor_width=2 * base_size.Z,
                         rotate=90,
                     ),
                     RectangleElement(
@@ -140,13 +153,20 @@ class Shelf(Model):
             return face_plane * extrude(Sketch(face_sketch), face_size.Z)
 
         # shelf
-        base_plate = extrude_element(RectangleElement(base_size.X, base_size.Y), base_size.Z)
-        shelf = Part()
-        shelf += base_plate
-        wall = make_wall()
-        shelf += wall
-        shelf += mirror(wall, about=Plane.YZ)
-        shelf += make_face()
-        shelf.label = "shelf"
+        def make_shelf() -> Part:
+            shelf = Part()
+            shelf += base_plate
+            wall = make_wall()
+            shelf += wall
+            shelf += mirror(wall, about=Plane.YZ)
+            shelf += make_face()
+            shelf.label = "shelf"
+            return shelf
 
+        base_plate = extrude_element(RectangleElement(base_size.X, base_size.Y), base_size.Z)
+        shelf = make_shelf()
+        if self.shelf_parts:
+            shelf_plate = PlatePlanes(Bx(size=plate_size))
+            pieces = PartLayout.render_pieces(self.shelf_parts, shelf_plate, self.shelf_layout)
+            shelf = PartLayout.assemble_pieces(shelf, pieces)
         return shelf

@@ -1,78 +1,117 @@
 from dataclasses import dataclass
 import numpy as np
+from typing import Self
 from build123d import Vector, VectorLike, Axis, Align
 
 from .selectors import Place, place_from_aligns
 
 
-@dataclass
-class Rc:
+@dataclass(frozen=True, init=False)
+class Bx:
     """
-    Class representing a rectangle in 2d-space. Usefull in laying out features of models.
+    Represents a axis aligned 3d box.
     """
 
     size: Vector
     shift: Vector
 
-    def __init__(self, size: VectorLike, shift: VectorLike = Vector(0, 0)):
-        self.size = Vector(size)
-        self.shift = Vector(shift)
+    def __init__(self, size: VectorLike, shift: VectorLike = Vector(0, 0, 0)):
+        sz = Vector(size)
+        sh = Vector(shift)
+        object.__setattr__(self, "size", sz)
+        object.__setattr__(self, "shift", sh)
 
     @classmethod
-    def from_edges(cls, left: float, right: float, bottom: float, top: float) -> Rc:
-        return Rc(
-            size=Vector(right - left, top - bottom),
-            shift=Vector((right + left) / 2, (top + bottom) / 2),
+    def from_edges(
+        cls,
+        left: float,
+        right: float,
+        bottom: float,
+        top: float,
+        front: float = 0,
+        back: float = 0,
+    ) -> Self:
+        return cls(
+            size=Vector(right - left, top - bottom, back - front),
+            shift=Vector((right + left) / 2, (top + bottom) / 2, (back + front) / 2),
         )
 
     @classmethod
-    def union(cls, r1: Rc, r2: Rc) -> Rc:
-        return Rc.from_edges(
+    def union(cls, r1: Rc, r2: Rc) -> Self:
+        return cls.from_edges(
             right=max(r1.right, r2.right),
             left=min(r1.left, r2.left),
             top=max(r1.top, r2.top),
             bottom=min(r1.bottom, r2.bottom),
+            front=min(r1.front, r2.front),
+            back=max(r1.back, r2.back),
         )
 
     @property
-    def left(self) -> float:
-        return -self.size.X / 2 + self.shift.X
+    def min(self) -> Vector:
+        return self.shift - 0.5 * self.size
 
     @property
-    def bottom(self) -> float:
-        return -self.size.Y / 2 + self.shift.Y
-
-    @property
-    def right(self) -> float:
-        return self.size.X / 2 + self.shift.X
+    def max(self) -> Vector:
+        return self.shift + 0.5 * self.size
 
     @property
     def top(self) -> float:
-        return self.size.Y / 2 + self.shift.Y
+        return self.max.Y
 
-    def shifted(self, shift: Vector) -> Rc:
-        """
-        Return a new Rc with the same size but shifted by `shift`.
-        """
-        return Rc(size=self.size, shift=shift)
+    @property
+    def bottom(self) -> float:
+        return self.min.Y
 
-    def resized(self, size: Vector) -> Rc:
-        """
-        Return a new Rc with the same shift but resized to `size`.
-        """
-        return Rc(size=size, shift=self.shift)
+    @property
+    def left(self) -> float:
+        return self.min.X
+
+    @property
+    def right(self) -> float:
+        return self.max.X
+
+    @property
+    def front(self) -> float:
+        return self.min.Z
+
+    @property
+    def back(self) -> float:
+        return self.max.Z
+
+    def shifted(self, shift: VectorLike) -> Self:
+        return self.__class__(size=self.size, shift=Vector(shift))
+
+    def shifted_by(self, shift: VectorLike) -> Self:
+        return self.shifted(self.shift + Vector(shift))
+
+
+@dataclass(frozen=True, init=False)
+class Rc(Bx):
+    """
+    Class representing a rectangle in 2d-space which is a special case of 3d Bx.
+    Useful in laying out features of models.
+    """
+
+    def __init__(self, size: VectorLike, shift: VectorLike = Vector(0, 0)):
+        sz = Vector(size)
+        sz.Z = 0
+        sh = Vector(shift)
+        sh.Z = 0
+        super().__init__(sz, sh)
 
     def anchor_shifted(self, anchor: Place | tuple[Align, Align]) -> Rc:
         """
-        Return a new Rc with the same size but shifted so that `anchor` is at the origin.
+        Return a new Rc with the same size but
+        shifted so that the anchor's position is at the rectangle's center
         """
         if isinstance(anchor, tuple):
             anchor = place_from_aligns(anchor)
-        return Rc(size=self.size, shift=-self.anchor_position(anchor))
+        return Rc(size=self.size, shift=self.anchor_position(anchor))
 
     def anchor_position(self, anchor: Place | tuple[Align, Align]) -> Vector:
         """
-        Returns the position (an x, y vector) of the place on the rectangle.
+        Returns the position (an x, y vector) of the 'anchor' on the rectangle.
         """
         if isinstance(anchor, tuple):
             anchor = place_from_aligns(anchor)
@@ -150,6 +189,12 @@ class Rc:
         """
         mirror = Rc(self.size, Vector(-self.shift.X, -self.shift.Y))
         return Rc.union(self, mirror)
+
+    def form_bx(self, front: float, back: float) -> Bx:
+        return Bx(
+            size=Vector(self.size.X, self.size.Y, back - front),
+            shift=Vector(self.shift.X, self.shift.Y, (back + front) / 2),
+        )
 
     @staticmethod
     def arrange(

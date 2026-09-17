@@ -5,5 +5,8 @@
   "document_symbols": "on",
   "semantic_tokens": "combined",
   "languages": {
+    "Python": {
+      "show_completions_on_input": false
+    }
   }
 }

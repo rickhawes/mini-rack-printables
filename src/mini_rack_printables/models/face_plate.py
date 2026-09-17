@@ -17,9 +17,10 @@ from build123d import (
 
 from ..dimensions import RackDims, ShelfTabDims
 from ..rack_holes import sketch_rack_holes
-from ..geometry import Rib
+from ..geometry import Rib, Bx
 from .model import Model
-from ..parts.model_part import ModelPart, Plate
+from ..parts.model_part import PlatePlanes, PartList
+from ..parts.layouts import PartLayout, RowLayout
 
 
 class FacePlate(Model):
@@ -58,7 +59,8 @@ class FacePlate(Model):
         self,
         rack_units: float,
         style: Style = Style(),
-        part: ModelPart | None = None,
+        parts: PartList | None = None,
+        layout: PartLayout = RowLayout(),
     ):
         """
         Create a face plate model
@@ -70,7 +72,8 @@ class FacePlate(Model):
         """
         self.rack_units = rack_units
         self.style = style
-        self.part = part
+        self.parts = parts
+        self.layout = layout
 
     def render(self) -> Compound:
         """
@@ -87,11 +90,7 @@ class FacePlate(Model):
             plate_size.Y - 2 * self.style.rib.width,
             self.style.thickness,
         )
-        plate = Plate(
-            part_area_size,
-            Plane(origin=Vector(0, 0, plate_size.Z)),
-            Plane(origin=Vector(0, 0, 0)),
-        )
+        plate_planes = PlatePlanes(Bx(size=part_area_size))
 
         with BuildPart() as face_plate:
             # base plate
@@ -125,7 +124,8 @@ class FacePlate(Model):
         # Add/subtract parts
         result = face_plate.part
         assert result is not None
-        if self.part:
-            result = self.part.intersect_with(result, plate)
+        if self.parts:
+            pieces = PartLayout.render_pieces(self.parts, plate_planes, self.layout)
+            result = PartLayout.assemble_pieces(result, pieces)
 
         return Compound(label="face_plate", children=[result])

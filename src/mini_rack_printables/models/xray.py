@@ -1,14 +1,13 @@
 from build123d import (
     Color,
     Compound,
-    Location,
     Mode,
-    Plane,
     Vector,
 )
 
-from ..parts.model_part import ModelPart, Plate
+from ..parts.model_part import ModelPart, PlatePlanes
 from .model import Model
+from ..geometry import Bx
 
 
 class XRayModel(Model):
@@ -23,21 +22,19 @@ class XRayModel(Model):
         self.only_adds = only_adds
 
     def render(self) -> Compound:
-        bottom_plane = Plane.XY
-        top_plane = Plane.XY.moved(Location((0, 0, self.size.Z)))
-        plate = Plate(self.size, top_plane, bottom_plane)
+        plate = PlatePlanes(Bx(self.size))
 
-        part_nodes = self.part.render(plate)
+        pieces = self.part.render(plate)
         children = []
-        for node in part_nodes:
-            if node.mode == Mode.ADD:
-                node.part.color = Color("blue")
-                node.part.label = "add"
-                children.append(node.part)
-            elif node.mode == Mode.SUBTRACT and not self.only_adds:
-                node.part.color = Color("red")
-                node.part.label = "subtract"
-                children.append(node.part)
+        for piece in pieces:
+            if piece.mode == Mode.ADD:
+                piece.part.color = Color("blue")
+                piece.part.label = "add"
+                children.append(piece.part)
+            elif piece.mode == Mode.SUBTRACT and not self.only_adds:
+                piece.part.color = Color("red")
+                piece.part.label = "subtract"
+                children.append(piece.part)
             else:
-                assert node.mode == Mode.SUBTRACT, "unhandled rendering mode"
+                assert False, "unhandled rendering mode"
         return Compound(label="xray", children=children)
