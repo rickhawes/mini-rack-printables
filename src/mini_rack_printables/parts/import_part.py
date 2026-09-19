@@ -14,9 +14,7 @@ from build123d import (
 )
 
 from .model_part import ModelPart, PartPiece, Plate
-
-E = 0.02
-"Small tolerance to make the imported part join with its cutout"
+from ..dimensions import E
 
 
 class ImportPart(ModelPart):
@@ -97,8 +95,8 @@ class ImportPart(ModelPart):
         assert bbox.center() == Vector(0, 0, 0), f"Imported part is not centered: {bbox.center()}"
         return bbox.size
 
-    def layout_size(self, plate_size: Vector) -> Vector:
-        return self.size
+    def layout_size(self) -> ModelPart.DesiredSize:
+        return ModelPart.DesiredSize(self.size)
 
     def render(self, plate: Plate) -> list[PartPiece]:
         if self.cutout:

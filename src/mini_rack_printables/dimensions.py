@@ -87,3 +87,14 @@ class Screw1032Dims(float, Enum):
 def rack_units_to_mm(units: float) -> float:
     """Converts rack units to millimeters"""
     return units * RackDims.HEIGHT_1U
+
+
+# ------------------------------------------------
+# Printing Constants
+# ------------------------------------------------
+
+E = 0.02
+"""Small tolerance to make the imported part join with its cutout"""
+
+MIN_SPACING = 2.0
+"""Minimum spacing between features (ie. holes and cutouts) when printing"""

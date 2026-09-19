@@ -14,9 +14,6 @@ from ..elements import (
 )
 
 
-
-
-
 class PuckHolder(ModelPart):
     """
     A device holder for a single device on a face plate.
@@ -28,7 +25,7 @@ class PuckHolder(ModelPart):
         """
         Represents the style of a wall holder, including cutout presence and lip dimensions.
         """
-    
+
         has_cutout: bool = True
         """Does the holder have a cutout for the device?"""
         corner_rounding: float = 1.0
@@ -37,7 +34,6 @@ class PuckHolder(ModelPart):
         """The extra width of the corner edges."""
         wall_thickness: float = 2.5
         """The thickness of the wall. Defaults to 2.5."""
-        
 
     PLAIN = Style(True)
     """A holder style with a rectangular cutout for the device."""
@@ -46,7 +42,7 @@ class PuckHolder(ModelPart):
         self,
         device_size: VectorLike = (0, 0, 0),
         device_rounding: float = 1.0,
-        style: Style = PLAIN
+        style: Style = PLAIN,
     ):
         """
         Initialize a holder with the given style, device size, and optional label, align, shift, and padding.
@@ -70,10 +66,10 @@ class PuckHolder(ModelPart):
             "device_rounding must not exceed the depth of the device"
         )
 
-    def layout_size(self, plate_size: Vector) -> Vector:
-        return Vector(self.device_size.X, self.device_size.Y) + 2 * Vector(
-            self.style.wall_thickness, self.style.wall_thickness
-        )
+    def layout_size(self) -> ModelPart.DesiredSize:
+        wall = 2 * self.style.wall_thickness
+        size = self.device_size + Vector(wall, wall)
+        return ModelPart.DesiredSize(size)
 
     def render(self, plate: Plate) -> list[PartPiece]:
         # geometry

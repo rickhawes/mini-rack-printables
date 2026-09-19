@@ -53,8 +53,9 @@ class CornerHolder(ModelPart):
             "shape height must be greater than 2 * corner_height"
         )
 
-    def layout_size(self, plate_size: Vector) -> Vector:
-        return self.shape.size() + 2 * Vector(self.wall_thickness, self.wall_thickness)
+    def layout_size(self) -> ModelPart.DesiredSize:
+        size = self.shape.size() + 2 * Vector(self.wall_thickness, self.wall_thickness)
+        return ModelPart.DesiredSize(size)
 
     def render(self, plate: Plate) -> list[PartPiece]:
         # dimensions

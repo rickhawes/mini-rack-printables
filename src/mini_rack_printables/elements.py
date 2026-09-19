@@ -65,7 +65,7 @@ class Holes(ABC):
 
 
 class HexHoles(Holes):
-    """Hexagonal holes."""
+    """Hexagonal holes for filling a model's surface."""
 
     def __init__(self, spacing: float = 4.0, width: float = 1.0):
         super().__init__(spacing, width)
@@ -79,7 +79,7 @@ class HexHoles(Holes):
 
 
 class CircleHoles(Holes):
-    """Circular holes."""
+    """Circular holes for filling a model's surface."""
 
     def __init__(self, spacing: float = 3.0, width: float = 1.5):
         super().__init__(spacing, width)
@@ -93,7 +93,7 @@ class CircleHoles(Holes):
 
 
 class SquareHoles(Holes):
-    """Square holes."""
+    """Square holes for filling a model's surface."""
 
     def __init__(self, spacing: float = 4.0, width: float = 1.0):
         super().__init__(spacing, width)
@@ -417,7 +417,7 @@ class TrapezoidElement(Element2D):
             if angle1 is not None and angle2 is None:
                 reduction_left = 0 if angle1 == 90 else height / math.tan(math.radians(angle1))
                 angle2 = math.degrees(math.atan(height / (width - minor_width - reduction_left)))
-            elif angle2 is not None and angle1 is None:
+            elif angle1 is None and angle2 is not None:
                 reduction_right = 0 if angle2 == 90 else height / math.tan(math.radians(angle2))
                 angle1 = math.degrees(math.atan(height / (width - minor_width - reduction_right)))
             else:
