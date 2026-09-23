@@ -1,14 +1,13 @@
+"""
+Enums to select placement, faces and edges on a shape and the basic functions 
+to use these selectors.
+"""
+
 from collections.abc import Sequence
 from enum import Enum, auto
 from typing import Literal
 
 from build123d import Axis, Face, Location, Part, Plane, ShapeList, Align
-
-
-"""
-Enums to select placement, faces and edges on shape and the basic functions 
-to use these selectors.
-"""
 
 
 # -----------------------------------------------------

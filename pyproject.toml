@@ -50,3 +50,6 @@ docstring-code-format = true
 filterwarnings = [
     'ignore::DeprecationWarning'
 ]
+
+[tool.ty]
+

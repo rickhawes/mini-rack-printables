@@ -1,11 +1,8 @@
 from build123d import Sketch, Vector, extrude
 
-from ..elements import (
-    InsetCorners,
-    RectangleElement,
-    Element2D,
-    sketch_ring,
-)
+from ..elements_2d import RectangleElement, Element2D
+from ..elements_3d import sketch_ring
+from ..corners import InsetCorners
 from .model_part import ModelPart, PartPiece, PlatePlanes
 
 

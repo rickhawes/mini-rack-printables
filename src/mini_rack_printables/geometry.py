@@ -213,6 +213,7 @@ class Rc(Bx):
         Returns:
             list[Rc]: The arranged Rcs.
         """
+        output: list[Rc] = []
         if len(items) == 0:
             return []
         if isinstance(align, tuple):
@@ -224,7 +225,6 @@ class Rc(Bx):
                 size=(sum(item.size.X for item in items), max(item.size.Y for item in items))
             )
             edge = bounds.left
-            output: list[Rc] = []
             for item in items:
                 item_bounds = Rc.from_edges(edge, edge + item.size.X, bounds.bottom, bounds.top)
                 arranged_item = item.bounds_shifted(item_bounds, align)
@@ -238,7 +238,6 @@ class Rc(Bx):
                 size=(max(item.size.X for item in items), sum(item.size.Y for item in items))
             )
             edge = bounds.bottom
-            output: list[Rc] = []
             for item in items:
                 item_bounds = Rc.from_edges(bounds.left, bounds.right, edge, edge + item.size.Y)
                 arranged_item = item.bounds_shifted(item_bounds, align)

@@ -1,6 +1,7 @@
 from ..geometry import Rib
 from .model_part import ModelPart, PartPiece, PlatePlanes
-from ..elements import Element2D, extrude_element, extrude_tube
+from ..elements_2d import Element2D
+from ..elements_3d import extrude_element, extrude_tube
 from build123d import Vector, Mode
 
 

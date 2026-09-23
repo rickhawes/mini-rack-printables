@@ -15,26 +15,18 @@ from .parts.puck_holder import PuckHolder
 from .dimensions import RackDims, RackScrewDims, Screw1032Dims
 from .geometry import Rc, Bx, Rib
 from .selectors import Place, Side
-from .elements import (
+from .elements_2d import (
     Element2D,
-    Element3D,
     CircleElement,
     RectangleElement,
     SlotElement,
     RightTriangleElement,
-    Holes,
-    SquareHoles,
-    HexHoles,
-    CircleHoles,
-    Corners,
-    SquareCorners,
-    RoundedCorners,
-    InsetCorners,
-    BeveledCorners,
-    SelectedCorners,
     TrapezoidElement,
 )
+from .elements_3d import Element3D
 from .rack_holes import layout_rack_screw_holes, sketch_rack_holes
+from .corners import Corners, RoundedCorners, SquareCorners, InsetCorners, BeveledCorners, SelectedCorners
+from .fills import Fill, SquareHoles, HexHoles, CircleHoles
 
 
 __all__ = [
@@ -45,12 +37,9 @@ __all__ = [
     "Screw1032Dims",
     "Cutout",
     "Spacer",
-    "CutoutType",
     "CornerHolder",
     "PuckHolder",
     "WallHolder",
-    "WallHolderStyle",
-    "PuckHolderStyle",
     "Keystone",
     "Rc",
     "Bx",
@@ -77,8 +66,7 @@ __all__ = [
     "SlotElement",
     "RightTriangleElement",
     "TrapezoidElement",
-    "RectangleWithCornersElement",
-    "Holes",
+    "Fill",
     "SquareHoles",
     "HexHoles",
     "CircleHoles",

@@ -6,14 +6,10 @@ from ..geometry import Bx
 from ..parts.model_part import PartList, PlatePlanes
 from ..parts.layouts import PartLayout, GridLayout
 from ..selectors import Side, select_plane, Place
-from ..elements import (
-    Element2D,
-    extrude_element,
-    RectangleElement,
-    HexHoles,
-    SquareCorners,
-    TrapezoidElement,
-)
+from ..elements_2d import Element2D, RectangleElement, TrapezoidElement
+from ..elements_3d import extrude_element
+from ..corners import SquareCorners
+from ..fills import HexHoles
 from ..rack_holes import sketch_rack_holes
 from .model import Model
 
