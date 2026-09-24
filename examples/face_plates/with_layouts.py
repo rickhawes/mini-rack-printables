@@ -16,23 +16,15 @@ from mini_rack_printables import (
 # Each cutout has a different alignment and padding and shift amount.
 #
 
-# Define a basic cutout
-partCenter = Cutout(RectangleElement(10.0, 5.0))
-
-# Show what alignment and padding does
+# Cutout
 partLeft = Cutout(CircleElement(5.0))
+partCenter = Cutout(RectangleElement(10.0, 5.0))
+partRight = Cutout(SlotElement(10.0, 5.0), rib=FacePlate.STD_RIB)
 
-# Show that a shift can be used to move the shape outside of its bounding box.
-# In this case, the cutout rib is merged with the plate rib.
-# Shift when used with caution, it can be powerful feature
-#
-partRight = Cutout(SlotElement(10.0, 5.0), rib=FacePlate.STD_RIB,
-)
-
-# A basic Div with horizontal layout and evenly divided sections
-layout = RowLayout(align=Place.BOTTOM)
-
-plate = FacePlate(rack_units=1.0, parts=[partLeft, partCenter, partRight], layout=layout).render()
+# A basic face plate with row layout
+plate = FacePlate(
+    rack_units=1.0, parts=[partLeft, partCenter, partRight], layout=RowLayout(align=Place.BOTTOM)
+).render()
 
 # Show the plate in the OCP viewer
 show(plate)

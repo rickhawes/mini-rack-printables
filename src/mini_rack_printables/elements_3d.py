@@ -1,8 +1,10 @@
 """
-Elements 3D
-
 Elements are the primitives that make up models and parts. They are built to be easily composable.
+
+See Also:
+    Elements2d - for the two equivalent
 """
+
 from abc import abstractmethod
 from build123d import (
     Vector,

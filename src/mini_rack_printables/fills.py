@@ -1,3 +1,6 @@
+"""
+Classes to generate a fill pattern of holes in a plate.
+"""
 from abc import ABC, abstractmethod
 import math
 from build123d import (
@@ -9,6 +12,7 @@ from build123d import (
     GridLocations,
 )
 from build123d.build_common import LocationList
+
 
 class Fill(ABC):
     """Some elements can support fill patterns"""

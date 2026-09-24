@@ -1,5 +1,5 @@
 """
-Enums to select placement, faces and edges on a shape and the basic functions 
+Enums to select placement, faces and edges on a shape and the basic functions
 to use these selectors.
 """
 

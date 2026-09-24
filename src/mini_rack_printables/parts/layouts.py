@@ -1,12 +1,12 @@
 """
 Part Layouts
 
-Layouts place parts on a model's plate
+Place parts on a model's plate. Used by most models.
 """
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from build123d import Compound, Mode, Part
+from build123d import BuildPart, Part, add
 
 from ..geometry import Rc
 from ..selectors import Place
@@ -41,61 +41,16 @@ class PartLayout(ABC):
         return pieces
 
     @staticmethod
-    def assemble_pieces(to_part: Part, pieces: list[PartPiece]) -> Compound:
+    def assemble_pieces(to_part: Part, pieces: list[PartPiece]) -> Part:
         """
         Intersect `pieces` with `to_part` to create the final result.
         """
-        result = to_part
-        for piece in pieces:
-            if piece.mode == Mode.ADD:
-                result = result + piece.part
-            elif piece.mode == Mode.SUBTRACT:
-                result = result - piece.part
-            else:
-                assert False, "unhandled rendering mode"
-        return Compound(result)
-
-
-@dataclass(frozen=True)
-class MeasuredRowsColumns:
-    """Holds the measured rows and columns of a layout collection"""
-
-    min_x: list[float]
-    more_x: list[bool]
-    min_y: list[float]
-    more_y: list[bool]
-
-    @classmethod
-    def measure_parts(cls, parts: RowColumnCollection[ModelPart]) -> MeasuredRowsColumns:
-        min_x = [
-            max(
-                part.desired_size().min_size.X if part is not None else 0
-                for part in parts.get_column(col_idx)
-            )
-            for col_idx in range(parts.col_count)
-        ]
-        min_y = [
-            max(part.desired_size().min_size.Y for part in parts.get_row(row_idx))
-            for row_idx in range(parts.row_count)
-        ]
-        more_x = [
-            any(
-                part.desired_size().more_x if part is not None else False
-                for part in parts.get_column(col_idx)
-            )
-            for col_idx in range(parts.col_count)
-        ]
-        more_y = [
-            any(part.desired_size().more_y for part in parts.get_row(row_idx))
-            for row_idx in range(parts.row_count)
-        ]
-
-        return cls(
-            min_x=min_x,
-            more_x=more_x,
-            min_y=min_y,
-            more_y=more_y,
-        )
+        with BuildPart() as result:
+            add(to_part)
+            for piece in pieces:
+                add(piece.part, mode=piece.mode)
+        assert result.part is not None
+        return result.part
 
 
 class RowLayout(PartLayout):
@@ -113,12 +68,11 @@ class RowLayout(PartLayout):
         spacing: float = 0,
     ):
         """
-
         Args:
             equal_row_heights (bool): if True, all rows will have the same height. Overrides parts' desired heights.
             row_heights (list[float] | None): exact height for each row. If None, uses parts' desired heights.
             align (Place): how to align each cell
-            spacing (float): Spacing around each cell. Defaults to MIN_SPACING.
+            spacing (float): Spacing around each cell.
         """
         if row_heights is not None and equal_heights:
             raise ValueError("Cannot set both row_heights and equal_row_heights")
@@ -144,7 +98,7 @@ class RowLayout(PartLayout):
         excess = plate_height - total_height - s * (rc + 1)
         if excess < 0:
             raise ValueError(
-                f"Minimum total height {total_height} is larger than available space"
+                f"Minimum total height {total_height} is larger than available plate height {plate_height}"
             )
 
         if self.row_heights:
@@ -185,7 +139,7 @@ class RowLayout(PartLayout):
             excess = plate_width - total_width - s * (cc + 1)
             if excess < 0:
                 raise ValueError(
-                    f"Minimum total width {total_width} is larger than available space"
+                    f"Minimum total width ({total_width}) is larger than plate width ({plate_width})."
                 )
             if self.equal_widths:
                 return [(plate_width - s * (cc + 1)) / cc] * cc
@@ -314,3 +268,45 @@ class GridLayout(RowLayout):
             top = bottom - s
             left = plate_planes.bounds.left + s
         return result
+
+
+@dataclass(frozen=True)
+class MeasuredRowsColumns:
+    """Holds the measured rows and columns of a layout collection"""
+
+    min_x: list[float]
+    more_x: list[bool]
+    min_y: list[float]
+    more_y: list[bool]
+
+    @classmethod
+    def measure_parts(cls, parts: RowColumnCollection[ModelPart]) -> MeasuredRowsColumns:
+        min_x = [
+            max(
+                part.desired_size().min_size.X if part is not None else 0
+                for part in parts.get_column(col_idx)
+            )
+            for col_idx in range(parts.col_count)
+        ]
+        min_y = [
+            max(part.desired_size().min_size.Y for part in parts.get_row(row_idx))
+            for row_idx in range(parts.row_count)
+        ]
+        more_x = [
+            any(
+                part.desired_size().more_x if part is not None else False
+                for part in parts.get_column(col_idx)
+            )
+            for col_idx in range(parts.col_count)
+        ]
+        more_y = [
+            any(part.desired_size().more_y for part in parts.get_row(row_idx))
+            for row_idx in range(parts.row_count)
+        ]
+
+        return cls(
+            min_x=min_x,
+            more_x=more_x,
+            min_y=min_y,
+            more_y=more_y,
+        )

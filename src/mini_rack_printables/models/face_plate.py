@@ -83,14 +83,16 @@ class FacePlate(Model):
             A compound shape of the face plate.
         """
         plate_size = Vector(
-            RackDims.WIDTH_10INCH, self.rack_units * RackDims.HEIGHT_1U, self.style.thickness
+            RackDims.WIDTH_10INCH, 
+            self.rack_units * RackDims.HEIGHT_1U, 
+            self.style.thickness
         )
         part_area_size = Vector(
-            plate_size.X - 2 * ShelfTabDims.WIDTH_TECMOJO - 2 * self.style.rib.width,
+            ShelfTabDims.MAX_DX_TABS,
             plate_size.Y - 2 * self.style.rib.width,
             self.style.thickness,
         )
-        plate_planes = PlatePlanes(Bx(size=part_area_size))
+        plate_planes = PlatePlanes(Bx(size=part_area_size, shift=(0, 0, part_area_size.Z / 2)))
 
         with BuildPart() as face_plate:
             # base plate

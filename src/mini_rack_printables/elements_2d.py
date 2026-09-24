@@ -1,6 +1,4 @@
 """
-Elements 2D
-
 Elements are the primitives that make up models and parts. They are built to be easily composable.
 """
 
@@ -296,5 +294,3 @@ class RightTriangleElement(Element2D):
             [(-dx, -dy), (-dx, dy), (dx, -dy)] if self.flip else [(-dx, -dy), (dx, dy), (dx, -dy)]
         )
         return make_face(Polyline(pts, close=True))
-
-

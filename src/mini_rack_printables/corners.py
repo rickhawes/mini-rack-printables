@@ -1,6 +1,14 @@
+"""
+A collection of classes to render the corners of a rectangle. 
+
+See Also:
+    `RectangleElement` for the corner parameter
+"""
+
 from abc import ABC, abstractmethod
 from build123d import Vector, Line, RadiusArc, Polyline
 from .selectors import Place, CornerPlace
+
 
 class Corners(ABC):
     """Base class for classes that draw corners of a rectangle"""

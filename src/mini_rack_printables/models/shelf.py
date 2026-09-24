@@ -162,7 +162,7 @@ class Shelf(Model):
         base_plate = extrude_element(RectangleElement(base_size.X, base_size.Y), base_size.Z)
         shelf = make_shelf()
         if self.shelf_parts:
-            shelf_plate = PlatePlanes(Bx(size=plate_size))
+            shelf_plate = PlatePlanes(Bx(size=plate_size, shift=(0, 0, plate_size.Z / 2)))
             pieces = PartLayout.render_pieces(self.shelf_parts, shelf_plate, self.shelf_layout)
             shelf = PartLayout.assemble_pieces(shelf, pieces)
         return shelf

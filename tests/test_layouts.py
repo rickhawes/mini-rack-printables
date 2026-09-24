@@ -9,7 +9,7 @@ from mini_rack_printables import (
     Bx,
     Place,
 )
-from build123d import Rectangle, Sketch, Circle, Location
+from build123d import Rectangle, Sketch, Circle, Location, Vector
 import pytest
 
 ALIGN_CELL = "Align cell tests"
@@ -97,6 +97,20 @@ def test_too_large_height():
         plate = PlatePlanes(Bx((60, 20, 0)))  # too small of a plate for theses parts
         _ = layout.layout_parts([p1, p2, p3], plate)
 
+def test_sub_plate_planes():
+    p1 = Spacer(10, 10)
+    p2 = Spacer(15, 15)
+    p3 = Spacer(20, 20)
+
+    layout = RowLayout(equal_widths=True, spacing=0)
+    plate = PlatePlanes(Bx((60, 60, 6), (0,0,3)))
+    sub_plates = layout.layout_parts([p1, p2, p3], plate)
+    assert len(sub_plates) == 3
+    assert sub_plates[0].bounds.size == Vector(20, 60, 6)
+    assert sub_plates[1].bounds.size == Vector(20, 60, 6)
+    assert sub_plates[2].bounds.size == Vector(20, 60, 6)
+    assert sub_plates[1].bottom_plane.origin == Vector(0, 0, 0)
+    assert sub_plates[1].top_plane.origin == Vector(0, 0, 6)
 
 def test_align_cell(viewer_logger):
     p1 = Spacer(5, 5)
