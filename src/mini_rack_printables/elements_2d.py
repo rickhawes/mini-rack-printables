@@ -1,7 +1,5 @@
 """
-Elements 2D
-
-Elements are the primitives that make up models and parts. They are built to be easily composable.
+2d Elements for models. Elements are the primitives that make up models and parts. They are built to be easily combined and rendered.
 """
 
 from abc import ABC, abstractmethod
@@ -31,7 +29,7 @@ from .corners import Corners, RoundedCorners, SquareCorners
 
 
 class Element2D(ABC):
-    """ABC for the 2d shapes that are used for parts in the rack."""
+    """ABC for the 2d shapes that are used for parts."""
 
     @abstractmethod
     def size(self) -> Vector:
@@ -83,7 +81,7 @@ class Element2D(ABC):
         """
         locations = Element2D.arrange(elements, axis, anchor)
         sketch = Sketch()
-        for element, location in zip(elements, locations):
+        for element, location in zip(elements, locations):  # TODO: try to replace with build
             sketch += element.sketch().move(location)
         return sketch
 
@@ -296,5 +294,3 @@ class RightTriangleElement(Element2D):
             [(-dx, -dy), (-dx, dy), (dx, -dy)] if self.flip else [(-dx, -dy), (dx, dy), (dx, -dy)]
         )
         return make_face(Polyline(pts, close=True))
-
-

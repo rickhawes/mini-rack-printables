@@ -10,7 +10,7 @@ from ..elements_2d import Element2D, RectangleElement, TrapezoidElement
 from ..elements_3d import extrude_element
 from ..corners import SquareCorners
 from ..fills import HexHoles
-from ..rack_holes import sketch_rack_holes
+from ..holes import sketch_rack_holes
 from .model import Model
 
 
@@ -83,7 +83,7 @@ class Shelf(Model):
         )
 
         # wall
-        def make_wall() -> Part:
+        def make_wall(base_plate: Part) -> Part:
             wall_size = Vector(
                 base_size.Y,
                 rack_units_to_mm(self.rack_units),
@@ -103,30 +103,27 @@ class Shelf(Model):
                 )
                 .rotated((180, 0, 0))
             )
+            wall_base = RectangleElement(inset, 2 * base_size.Z)
+            wall_trans = TrapezoidElement(
+                wall_size.Y,
+                wall_size.X / 2 - inset,
+                angle1=90,
+                minor_width=2 * base_size.Z,
+                rotate=90,
+            )
+            wall_holes = RectangleElement(
+                wall_size.X / 2,
+                wall_size.Y,
+                fill=HexHoles(),
+                corners=SquareCorners(base_size.Z),  # insets the fill area a bit
+            )
             wall_sketch = Element2D.combine(
-                [
-                    RectangleElement(inset, 2 * base_size.Z),
-                    TrapezoidElement(
-                        wall_size.Y,
-                        wall_size.X / 2 - inset,
-                        angle1=90,
-                        minor_width=2 * base_size.Z,
-                        rotate=90,
-                    ),
-                    RectangleElement(
-                        wall_size.X / 2,
-                        wall_size.Y,
-                        fill=HexHoles(),
-                        corners=SquareCorners(base_size.Z),  # insets the fill area a bit
-                    ),
-                ],
-                axis=Axis.X,
-                anchor=Place.BOTTOM,
+                [wall_base, wall_trans, wall_holes], Axis.X, Place.BOTTOM
             )
             return wall_plane * extrude(wall_sketch, wall_size.Z)
 
         # add face
-        def make_face() -> Part:
+        def make_face_plate(base_plate: Part) -> Part:
             face_size = Vector(
                 RackDims.WIDTH_10INCH,
                 rack_units_to_mm(self.rack_units),
@@ -151,18 +148,18 @@ class Shelf(Model):
         # shelf
         def make_shelf() -> Part:
             shelf = Part()
+            base_plate = extrude_element(RectangleElement(base_size.X, base_size.Y), base_size.Z)
             shelf += base_plate
-            wall = make_wall()
+            wall = make_wall(base_plate)
             shelf += wall
             shelf += mirror(wall, about=Plane.YZ)
-            shelf += make_face()
+            shelf += make_face_plate(base_plate)
             shelf.label = "shelf"
             return shelf
 
-        base_plate = extrude_element(RectangleElement(base_size.X, base_size.Y), base_size.Z)
         shelf = make_shelf()
         if self.shelf_parts:
-            shelf_plate = PlatePlanes(Bx(size=plate_size))
+            shelf_plate = PlatePlanes(Bx(size=plate_size, shift=(0, 0, plate_size.Z / 2)))
             pieces = PartLayout.render_pieces(self.shelf_parts, shelf_plate, self.shelf_layout)
             shelf = PartLayout.assemble_pieces(shelf, pieces)
         return shelf

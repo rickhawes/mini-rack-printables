@@ -4,7 +4,7 @@ from build123d import Vector, VectorLike, Part, Box, Pos, extrude, Mode, Sketch
 from .model_part import ModelPart, PartPiece, PlatePlanes
 from ..selectors import Side, select_locations
 from ..geometry import Rib
-from ..elements_2d import  RectangleElement
+from ..elements_2d import RectangleElement
 from ..corners import InsetCorners
 from ..fills import HexHoles
 from ..elements_3d import extrude_element, extrude_sketch, sketch_ring, make_plate

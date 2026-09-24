@@ -1,9 +1,7 @@
-# ------------------------------------------------------------------------------------------------
-# Dimensions
-#
-# Constants for the dimensions of the hardware including 10-inch racks and screws.
-#
-# ------------------------------------------------------------------------------------------------
+"""
+Constants for the dimensions of the hardware including 10-inch racks and screws.
+"""
+
 from enum import Enum
 
 # ------------------------------------------------

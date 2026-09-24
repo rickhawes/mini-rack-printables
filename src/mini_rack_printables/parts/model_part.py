@@ -104,7 +104,7 @@ class PlatePlanes:
         origin = bounds.shift + origin_offset
         self.bottom_plane = Plane.XY.moved(Location((origin.X, origin.Y, bounds.front)))
         self.top_plane = Plane.XY.moved(Location((origin.X, origin.Y, bounds.back)))
-        self.bounds = bounds.shifted(-origin_offset)
+        self.bounds = bounds.shifted((-origin_offset.X, -origin_offset.Y, bounds.shift.Z))
 
 
 type PlateList = list[PlatePlanes] | list[list[PlatePlanes]]

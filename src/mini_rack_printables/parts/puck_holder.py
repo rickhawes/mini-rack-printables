@@ -3,10 +3,11 @@ from build123d import Vector, VectorLike, Part, Box, Pos, extrude, Sketch, Mode,
 
 from .model_part import ModelPart, PartPiece, PlatePlanes
 from ..selectors import Side, select_locations, select_location
-from ..elements_2d import  RectangleElement, RoundedCorners
+from ..elements_2d import RectangleElement, RoundedCorners
 from ..elements_3d import extrude_element, make_plate
 from ..fills import HexHoles
 from ..corners import SelectedCorners, InsetCorners
+
 
 class PuckHolder(ModelPart):
     """

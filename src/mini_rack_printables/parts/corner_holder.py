@@ -1,3 +1,8 @@
+"""
+A device holder for a single device on a shelf. Devices are held by friction from the corners. The corners
+are cut out of holder's shape.
+"""
+
 from build123d import Sketch, Vector, extrude
 
 from ..elements_2d import RectangleElement, Element2D

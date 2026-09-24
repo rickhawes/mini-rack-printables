@@ -1,3 +1,7 @@
+"""
+Functions to draw and layout shapes for the common holes and patterns.
+"""
+
 import math
 from build123d import Locations, SlotOverall, Sketch
 

@@ -24,8 +24,15 @@ from .elements_2d import (
     TrapezoidElement,
 )
 from .elements_3d import Element3D
-from .rack_holes import layout_rack_screw_holes, sketch_rack_holes
-from .corners import Corners, RoundedCorners, SquareCorners, InsetCorners, BeveledCorners, SelectedCorners
+from .holes import layout_rack_screw_holes, sketch_rack_holes
+from .corners import (
+    Corners,
+    RoundedCorners,
+    SquareCorners,
+    InsetCorners,
+    BeveledCorners,
+    SelectedCorners,
+)
 from .fills import Fill, SquareHoles, HexHoles, CircleHoles
 
 

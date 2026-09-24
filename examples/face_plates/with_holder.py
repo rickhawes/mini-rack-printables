@@ -6,7 +6,7 @@ from mini_rack_printables import WallHolder, FacePlate
 #
 # This example demonstrates a face plate with a holder.
 #
-holder = WallHolder(device_size=(212.8, 33.1, 30), style=WallHolder.BACK_LIP)
+holder = WallHolder(device_size=(210.0, 33.1, 30), style=WallHolder.BACK_LIP)
 plate = FacePlate(rack_units=1.0, parts=[holder]).render()
 
 # Show the plate in the OCP viewer
