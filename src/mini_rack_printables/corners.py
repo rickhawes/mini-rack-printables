@@ -1,5 +1,5 @@
 """
-A collection of classes to render the corners of a rectangle. 
+A collection of classes to render the corners of a rectangle.
 
 See Also:
     `RectangleElement` for the corner parameter

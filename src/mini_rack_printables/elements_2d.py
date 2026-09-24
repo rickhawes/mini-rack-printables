@@ -1,5 +1,5 @@
 """
-Elements are the primitives that make up models and parts. They are built to be easily composable.
+2d Elements for models. Elements are the primitives that make up models and parts. They are built to be easily combined and rendered.
 """
 
 from abc import ABC, abstractmethod
@@ -29,7 +29,7 @@ from .corners import Corners, RoundedCorners, SquareCorners
 
 
 class Element2D(ABC):
-    """ABC for the 2d shapes that are used for parts in the rack."""
+    """ABC for the 2d shapes that are used for parts."""
 
     @abstractmethod
     def size(self) -> Vector:

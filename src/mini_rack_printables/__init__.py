@@ -24,7 +24,7 @@ from .elements_2d import (
     TrapezoidElement,
 )
 from .elements_3d import Element3D
-from .rack_holes import layout_rack_screw_holes, sketch_rack_holes
+from .holes import layout_rack_screw_holes, sketch_rack_holes
 from .corners import (
     Corners,
     RoundedCorners,

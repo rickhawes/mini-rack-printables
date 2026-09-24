@@ -7,7 +7,7 @@ from build123d import Vector, Mode
 
 class Cutout(ModelPart):
     """
-    A cutout of a plate can be a circle, a rectangle, or a slot in shape. It can also be outlined with a rib.
+    A cutout of a plate. It can also be outlined with a rib.
     """
 
     shape: Element2D

@@ -1,3 +1,7 @@
+"""
+Structures and functions for computing the geometry of rectangles and boxes.
+"""
+
 from dataclasses import dataclass
 import numpy as np
 from typing import Self

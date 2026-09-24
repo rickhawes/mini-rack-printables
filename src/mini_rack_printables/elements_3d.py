@@ -1,5 +1,5 @@
 """
-Elements are the primitives that make up models and parts. They are built to be easily composable.
+3D Elements for models and parts. Elements are the primitives that are combined together to form a model.
 
 See Also:
     Elements2d - for the two equivalent
@@ -35,7 +35,7 @@ class Element3D(Element2D):
         pass
 
     @abstractmethod
-    def on(self, selector: Place) -> Plane:
+    def plane_on(self, selector: Place) -> Plane:
         """Returns the plane for the element."""
         pass
 

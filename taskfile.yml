@@ -64,14 +64,15 @@ tasks:
       - uv run {{.CLI_ARGS}}
 
   run-all:
-      desc: Run all files in a directory using uv run
+      desc: Run all files in a directory using uv run. Used to run examples.
       vars:
         # Default to current directory if CLI_ARG is not provided
+        DIR: '{{.CLI_ARG | default "examples"}}'
       deps: [viewer]
       cmds:
         # Loops through all files in the target directory and executes them
         - |
-          for file in {{.CLI_ARGS}}/*.py; do
+          for file in {{.DIR}}/**/*.py; do
             if [ -f "$file" ]; then
               echo "Executing: $file"
               uv run "$file"
@@ -80,7 +81,7 @@ tasks:
 
   ci:
     desc: "Run all checks required for CI (linting and tests)"
-    deps: [lint, test]
+    deps: [lint, test, run-all]
 
   clean:
     desc: "Remove virtual environment, build artifacts, and tool caches"

@@ -1,6 +1,5 @@
 """
-Enums to select placement, faces and edges on a shape and the basic functions
-to use these selectors.
+Enums to select placement, faces and edges on a shape and the basic functions to use these selectors.
 """
 
 from collections.abc import Sequence

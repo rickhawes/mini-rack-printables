@@ -16,7 +16,7 @@ from build123d import (
 )
 
 from ..dimensions import RackDims, ShelfTabDims
-from ..rack_holes import sketch_rack_holes
+from ..holes import sketch_rack_holes
 from ..geometry import Rib, Bx
 from .model import Model
 from ..parts.model_part import PlatePlanes, PartList
@@ -25,7 +25,7 @@ from ..parts.layouts import PartLayout, RowLayout
 
 class FacePlate(Model):
     """
-    A face plate model
+    A face plate model with a height and `style`. Parts can be added as well.
     """
 
     @dataclass
@@ -83,9 +83,7 @@ class FacePlate(Model):
             A compound shape of the face plate.
         """
         plate_size = Vector(
-            RackDims.WIDTH_10INCH, 
-            self.rack_units * RackDims.HEIGHT_1U, 
-            self.style.thickness
+            RackDims.WIDTH_10INCH, self.rack_units * RackDims.HEIGHT_1U, self.style.thickness
         )
         part_area_size = Vector(
             ShelfTabDims.MAX_DX_TABS,

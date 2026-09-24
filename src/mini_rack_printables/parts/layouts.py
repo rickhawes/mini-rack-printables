@@ -43,7 +43,7 @@ class PartLayout(ABC):
     @staticmethod
     def assemble_pieces(to_part: Part, pieces: list[PartPiece]) -> Part:
         """
-        Intersect `pieces` with `to_part` to create the final result.
+        Add `pieces` with `to_part` to create the final result.
         """
         with BuildPart() as result:
             add(to_part)
