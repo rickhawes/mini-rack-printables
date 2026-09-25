@@ -81,7 +81,7 @@ class Element2D(ABC):
         """
         locations = Element2D.arrange(elements, axis, anchor)
         sketch = Sketch()
-        for element, location in zip(elements, locations):
+        for element, location in zip(elements, locations):  # TODO: try to replace with build
             sketch += element.sketch().move(location)
         return sketch
 

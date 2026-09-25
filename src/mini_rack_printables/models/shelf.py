@@ -103,25 +103,22 @@ class Shelf(Model):
                 )
                 .rotated((180, 0, 0))
             )
+            wall_base = RectangleElement(inset, 2 * base_size.Z)
+            wall_trans = TrapezoidElement(
+                wall_size.Y,
+                wall_size.X / 2 - inset,
+                angle1=90,
+                minor_width=2 * base_size.Z,
+                rotate=90,
+            )
+            wall_holes = RectangleElement(
+                wall_size.X / 2,
+                wall_size.Y,
+                fill=HexHoles(),
+                corners=SquareCorners(base_size.Z),  # insets the fill area a bit
+            )
             wall_sketch = Element2D.combine(
-                [
-                    RectangleElement(inset, 2 * base_size.Z),
-                    TrapezoidElement(
-                        wall_size.Y,
-                        wall_size.X / 2 - inset,
-                        angle1=90,
-                        minor_width=2 * base_size.Z,
-                        rotate=90,
-                    ),
-                    RectangleElement(
-                        wall_size.X / 2,
-                        wall_size.Y,
-                        fill=HexHoles(),
-                        corners=SquareCorners(base_size.Z),  # insets the fill area a bit
-                    ),
-                ],
-                axis=Axis.X,
-                anchor=Place.BOTTOM,
+                [wall_base, wall_trans, wall_holes], Axis.X, Place.BOTTOM
             )
             return wall_plane * extrude(wall_sketch, wall_size.Z)
 

@@ -90,21 +90,17 @@ class FacePlate(Model):
             plate_size.Y - 2 * self.style.rib.width,
             self.style.thickness,
         )
-        plate_planes = PlatePlanes(Bx(size=part_area_size, shift=(0, 0, part_area_size.Z / 2)))
 
         with BuildPart() as face_plate:
             # base plate
             with BuildSketch():
                 # plate
                 RectangleRounded(plate_size.X, plate_size.Y, self.style.rounding)
-
                 # screw holes
-                add(
-                    sketch_rack_holes(
-                        self.rack_units, self.style.middle_holes, self.style.half_height_bottom
-                    ),
-                    mode=Mode.SUBTRACT,
+                holes = sketch_rack_holes(
+                    self.rack_units, self.style.middle_holes, self.style.half_height_bottom
                 )
+                add(holes, mode=Mode.SUBTRACT)
             extrude(amount=plate_size.Z)
 
             # ribs
@@ -125,7 +121,8 @@ class FacePlate(Model):
         result = face_plate.part
         assert result is not None
         if self.parts:
-            pieces = PartLayout.render_pieces(self.parts, plate_planes, self.layout)
+            part_planes = PlatePlanes(Bx(size=part_area_size, shift=(0, 0, part_area_size.Z / 2)))
+            pieces = PartLayout.render_pieces(self.parts, part_planes, self.layout)
             result = PartLayout.assemble_pieces(result, pieces)
 
         return Compound(label="face_plate", children=[result])
