@@ -30,7 +30,7 @@ tasks:
       Example: task test -- test_face_plate.py
     deps: [init]
     cmds:
-      - uv run pytest {{.CLI_ARGS}}
+      - uv run pytest --durations=5 {{.CLI_ARGS}}
 
   lint:
     desc: "Check linting and formatting with ruff"
@@ -63,9 +63,25 @@ tasks:
     cmds:
       - uv run {{.CLI_ARGS}}
 
+  run-all:
+      desc: Run all files in a directory using uv run. Used to run examples.
+      vars:
+        # Default to current directory if CLI_ARG is not provided
+        DIR: '{{.CLI_ARG | default "examples"}}'
+      deps: [viewer]
+      cmds:
+        # Loops through all files in the target directory and executes them
+        - |
+          for file in {{.DIR}}/**/*.py; do
+            if [ -f "$file" ]; then
+              echo "Executing: $file"
+              uv run "$file"
+            fi
+          done 
+
   ci:
     desc: "Run all checks required for CI (linting and tests)"
-    deps: [lint, test]
+    deps: [lint, test, run-all]
 
   clean:
     desc: "Remove virtual environment, build artifacts, and tool caches"
