@@ -1,4 +1,5 @@
 from .model_part import ModelPart, PlatePlanes, PartPiece
+from ..geometry import Vec2
 
 
 class Spacer(ModelPart):
@@ -11,7 +12,7 @@ class Spacer(ModelPart):
         self.more_y = more_y
 
     def desired_size(self) -> ModelPart.DesiredSize:
-        return ModelPart.DesiredSize((self.width, self.height), self.more_x, self.more_y)
+        return ModelPart.DesiredSize(Vec2(self.width, self.height), self.more_x, self.more_y)
 
     def render(self, plate_planes: PlatePlanes) -> list[PartPiece]:
         return []

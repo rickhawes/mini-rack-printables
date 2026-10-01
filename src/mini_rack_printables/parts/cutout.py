@@ -1,4 +1,4 @@
-from ..geometry import Rib
+from ..geometry import Rib, Vec2
 from .model_part import ModelPart, PartPiece, PlatePlanes
 from ..elements_2d import Element2D
 from ..elements_3d import extrude_element, extrude_tube
@@ -30,7 +30,7 @@ class Cutout(ModelPart):
 
     def desired_size(self) -> ModelPart.DesiredSize:
         rib = 2 * self.rib.width if self.rib else 0
-        size = self.shape.size() + Vector(rib, rib)
+        size = self.shape.size() + Vec2(rib, rib)
         return ModelPart.DesiredSize(size, False)
 
     def render(self, plate_planes: PlatePlanes) -> list[PartPiece]:

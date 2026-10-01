@@ -13,7 +13,7 @@ from .parts.wall_holder import WallHolder
 from .parts.corner_holder import CornerHolder
 from .parts.puck_holder import PuckHolder
 from .dimensions import RackDims, RackScrewDims, Screw1032Dims
-from .geometry import Rc, Bx, Rib
+from .geometry import Rc, Bx, Rib, Vec2, Vec3
 from .selectors import Place, Side
 from .elements_2d import (
     Element2D,
@@ -48,6 +48,8 @@ __all__ = [
     "PuckHolder",
     "WallHolder",
     "Keystone",
+    "Vec2",
+    "Vec3",
     "Rc",
     "Bx",
     "Rib",

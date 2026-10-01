@@ -4,11 +4,12 @@ from mini_rack_printables import (
     PuckHolder,
     CornerHolder,
     RectangleElement,
+    Vec3,
 )
 
 
 def test_default_holder(viewer_logger):
-    holder = WallHolder(device_size=(30, 20, 20))
+    holder = WallHolder(device_size=Vec3(30, 20, 20))
     xray = XRayModel(holder, only_adds=False)
     compound = xray.render()
     assert len(compound.children) == 2
@@ -16,7 +17,7 @@ def test_default_holder(viewer_logger):
 
 
 def test_no_rounding(viewer_logger):
-    holder = WallHolder(device_size=(30, 20, 20), device_rounding=0.0)
+    holder = WallHolder(device_size=Vec3(30, 20, 20), device_rounding=0.0)
     xray = XRayModel(holder, only_adds=False)
     compound = xray.render()
     assert len(compound.children) == 2
@@ -24,7 +25,7 @@ def test_no_rounding(viewer_logger):
 
 
 def test_back_lip(viewer_logger):
-    holder = WallHolder(device_size=(30, 20, 20), style=WallHolder.BACK_LIP)
+    holder = WallHolder(device_size=Vec3(30, 20, 20), style=WallHolder.BACK_LIP)
     xray = XRayModel(holder, only_adds=False)
     compound = xray.render()
     assert len(compound.children) == 2
@@ -32,7 +33,7 @@ def test_back_lip(viewer_logger):
 
 
 def test_no_cutout(viewer_logger):
-    holder = WallHolder(device_size=(30, 20, 20), style=WallHolder.NO_CUTOUT)
+    holder = WallHolder(device_size=Vec3(30, 20, 20), style=WallHolder.NO_CUTOUT)
     xray = XRayModel(holder, only_adds=False)
     compound = xray.render()
     assert len(compound.children) == 1
@@ -40,7 +41,7 @@ def test_no_cutout(viewer_logger):
 
 
 def test_puck_holder(viewer_logger):
-    holder = PuckHolder(device_size=(80, 20, 80), device_rounding=10)
+    holder = PuckHolder(device_size=Vec3(80, 20, 80), device_rounding=10)
     xray = XRayModel(holder, only_adds=False)
     compound = xray.render()
     assert len(compound.children) == 2

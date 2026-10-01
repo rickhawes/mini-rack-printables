@@ -1,9 +1,9 @@
 from dataclasses import dataclass
-from build123d import Vector, VectorLike, Part, Box, Pos, extrude, Mode, Sketch
+from build123d import Part, Box, Pos, extrude, Mode, Sketch
 
 from .model_part import ModelPart, PartPiece, PlatePlanes
 from ..selectors import Side, select_locations
-from ..geometry import Rib
+from ..geometry import Rib, Vec3, Vec2
 from ..elements_2d import RectangleElement
 from ..corners import InsetCorners
 from ..fills import HexHoles
@@ -42,7 +42,7 @@ class WallHolder(ModelPart):
 
     def __init__(
         self,
-        device_size: VectorLike = (0, 0, 0),
+        device_size: Vec3 = Vec3(0, 0, 0),
         device_rounding: float = 1.0,
         style: Style = BACK_LIP,
     ):
@@ -55,23 +55,23 @@ class WallHolder(ModelPart):
             style (WallHolderStyle): The style of the holder. Defaults to BACK_LIP.
         """
         assert device_rounding >= 0, "device_rounding must be non-negative"
-        self.device_size = Vector(device_size)
+        self.device_size = device_size
         self.device_rounding = device_rounding
         self.style = style
-        assert self.device_size.X > 0 and self.device_size.Y > 0 and self.device_size.Z > 0, (
+        assert self.device_size.x > 0 and self.device_size.y > 0 and self.device_size.z > 0, (
             "device_size must be positive"
         )
 
     def desired_size(self) -> ModelPart.DesiredSize:
         wall = 2 * self.style.wall_thickness
-        size = self.device_size + Vector(wall, wall)
+        size = self.device_size.to_2d() + Vec2(wall, wall)
         return ModelPart.DesiredSize(size)
 
     def render(self, plate_planes: PlatePlanes) -> list[PartPiece]:
         # geometry
-        dx, dy, r = self.device_size.X, self.device_size.Y, self.device_rounding
+        dx, dy, r = self.device_size.x, self.device_size.y, self.device_rounding
         holder_depth = (
-            self.device_size.Z
+            self.device_size.z
             - (plate_planes.depth if self.style.has_cutout else 0)
             + (self.style.front_lip.depth if self.style.front_lip else 0)
         )
@@ -93,8 +93,8 @@ class WallHolder(ModelPart):
             """
             Make the walls of the holder as 4 plates with room for the corners.
             """
-            top = make_plate(Vector(holder_depth, dx - 2 * dc, w), HexHoles())
-            side = make_plate(Vector(holder_depth, dy - 2 * dc, w), HexHoles())
+            top = make_plate(Vec3(holder_depth, dx - 2 * dc, w), HexHoles())
+            side = make_plate(Vec3(holder_depth, dy - 2 * dc, w), HexHoles())
             # place around a box the size of the device
             device_box = Pos(0, 0, holder_depth / 2) * Box(dx, dy, holder_depth)
             side_locs = select_locations(device_box, [Side.RIGHT, Side.LEFT])

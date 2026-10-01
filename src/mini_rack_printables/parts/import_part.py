@@ -7,14 +7,16 @@ from build123d import (
     Box,
     Mode,
     Location,
-    Shape,
     Mesher,
     CenterOf,
     Unit,
 )
+from build123d.topology import Shape
+
 
 from .model_part import ModelPart, PartPiece, PlatePlanes
 from ..dimensions import E
+from ..geometry import Vec3
 
 
 class ImportPart(ModelPart):
@@ -87,16 +89,16 @@ class ImportPart(ModelPart):
             raise ValueError("No asset or path specified")
 
     @cached_property
-    def size(self) -> Vector:
+    def size(self) -> Vec3:
         """
         Returns the size of the part. Cached to avoid recomputing.
         """
         bbox = self.shape.bounding_box()
         assert bbox.center() == Vector(0, 0, 0), f"Imported part is not centered: {bbox.center()}"
-        return bbox.size
+        return Vec3(bbox.size.X, bbox.size.Y, bbox.size.Z)
 
     def desired_size(self) -> ModelPart.DesiredSize:
-        return ModelPart.DesiredSize(self.size, False)
+        return ModelPart.DesiredSize(self.size.to_2d(), False)
 
     def render(self, plate_planes: PlatePlanes) -> list[PartPiece]:
         if self.cutout:
@@ -105,12 +107,12 @@ class ImportPart(ModelPart):
                 PartPiece(
                     part=plate_planes.bottom_plane
                     * Location((0, 0, plate_planes.depth / 2))
-                    * Box(self.size.X - E, self.size.Y - E, plate_planes.depth + E).solid(),
+                    * Box(self.size.x - E, self.size.y - E, plate_planes.depth + E).solid(),
                     mode=Mode.SUBTRACT,
                 ),
                 PartPiece(
                     part=plate_planes.bottom_plane
-                    * Location((0, 0, self.size.Z / 2))
+                    * Location((0, 0, self.size.z / 2))
                     * self.shape.solid(),
                     mode=Mode.ADD,
                 ),
@@ -120,7 +122,7 @@ class ImportPart(ModelPart):
             return [
                 PartPiece(
                     part=plate_planes.top_plane
-                    * Location((0, 0, self.size.Z / 2))
+                    * Location((0, 0, self.size.z / 2))
                     * self.shape.solid(),
                     mode=Mode.ADD,
                 ),

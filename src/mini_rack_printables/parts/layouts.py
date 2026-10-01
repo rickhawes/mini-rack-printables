@@ -91,7 +91,7 @@ class RowLayout(PartLayout):
         """Calculate the vertical heights of rows in the top-to-bottom direction"""
         s = self.spacing
         rc = coll.row_count
-        plate_height = plate_planes.bounds.size.Y
+        plate_height = plate_planes.bounds.size.y
         # Calculate the excess space to distribute and how many rows can expand
         total_height = sum(m.min_y)
         expand_count = sum(1 for more in m.more_y if more)
@@ -132,9 +132,9 @@ class RowLayout(PartLayout):
 
         def layout_one(parts: list[ModelPart]) -> list[float]:
             """Calculate the horizontal widths of cells of one row the left-to-right direction"""
-            plate_width = plate_planes.bounds.size.X
+            plate_width = plate_planes.bounds.size.x
             cc = len(parts)
-            total_width = sum(part.desired_size().min_size.X for part in parts)
+            total_width = sum(part.desired_size().min_size.x for part in parts)
             expand_count = sum(1 for part in parts if part.desired_size().more_x)
             excess = plate_width - total_width - s * (cc + 1)
             if excess < 0:
@@ -145,12 +145,12 @@ class RowLayout(PartLayout):
                 return [(plate_width - s * (cc + 1)) / cc] * cc
             if expand_count == 0:
                 # distribute excess space evenly between all columns
-                return [part.desired_size().min_size.X + (excess / cc) for part in parts]
+                return [part.desired_size().min_size.x + (excess / cc) for part in parts]
 
             # distribute excess space evenly between expanding columns
             def expanded_width(part: ModelPart) -> float:
                 ds = part.desired_size()
-                return ds.min_size.X + (excess / expand_count) if ds.more_x else ds.min_size.X
+                return ds.min_size.x + (excess / expand_count) if ds.more_x else ds.min_size.x
 
             return [expanded_width(part) for part in parts]
 
@@ -207,7 +207,7 @@ class GridLayout(RowLayout):
         def layout_horiz() -> list[float]:
             """Calculate the horizontal widths of cells of columns in the left-to-right direction"""
             cc = coll.col_count
-            plate_width = plate_planes.bounds.size.X
+            plate_width = plate_planes.bounds.size.x
 
             # Calculate the excess space to distribute and how many columns can expand
             total_width = sum(m.min_x)
@@ -283,13 +283,13 @@ class MeasuredRowsColumns:
     def measure_parts(cls, parts: RowColumnCollection[ModelPart]) -> MeasuredRowsColumns:
         min_x = [
             max(
-                part.desired_size().min_size.X if part is not None else 0
+                part.desired_size().min_size.x if part is not None else 0
                 for part in parts.get_column(col_idx)
             )
             for col_idx in range(parts.col_count)
         ]
         min_y = [
-            max(part.desired_size().min_size.Y for part in parts.get_row(row_idx))
+            max(part.desired_size().min_size.y for part in parts.get_row(row_idx))
             for row_idx in range(parts.row_count)
         ]
         more_x = [

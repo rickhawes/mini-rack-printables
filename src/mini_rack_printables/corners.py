@@ -8,6 +8,7 @@ See Also:
 from abc import ABC, abstractmethod
 from build123d import Vector, Line, RadiusArc, Polyline
 from .selectors import Place, CornerPlace
+from .geometry import Vec2
 
 
 class Corners(ABC):
@@ -17,8 +18,9 @@ class Corners(ABC):
         self.width = width
         self.height = height if height is not None else width
 
-    def size(self) -> Vector:
-        return Vector(self.width, self.height)
+    @property
+    def size(self) -> Vec2:
+        return Vec2(self.width, self.height)
 
     @abstractmethod
     def draw(self, start: Vector, end: Vector, where: CornerPlace):
@@ -32,8 +34,9 @@ class RoundedCorners(Corners):
     def __init__(self, radius: float):
         self.radius = radius
 
-    def size(self) -> Vector:
-        return Vector(self.radius, self.radius)
+    @property
+    def size(self) -> Vec2:
+        return Vec2(self.radius, self.radius)
 
     def draw(self, start: Vector, end: Vector, where: CornerPlace):
         RadiusArc(start, end, self.radius)
@@ -89,10 +92,11 @@ class SelectedCorners(Corners):
             Place.BOTTOM_LEFT: bottom_left,
             Place.BOTTOM_RIGHT: bottom_right,
         }
-        self.square_corners = SquareCorners(corners.size().X, corners.size().Y)
+        self.square_corners = SquareCorners(corners.size.x, corners.size.y)
 
-    def size(self) -> Vector:
-        return self.corners.size()
+    @property
+    def size(self) -> Vec2:
+        return self.corners.size
 
     def draw(self, start: Vector, end: Vector, where: CornerPlace):
         if self.is_selected.get(where, False):

@@ -1,13 +1,8 @@
-from build123d import (
-    Color,
-    Compound,
-    Mode,
-    Vector,
-)
+from build123d import Color, Compound, Mode
 
 from ..parts.model_part import ModelPart, PlatePlanes
 from .model import Model
-from ..geometry import Bx
+from ..geometry import Bx, Vec3
 
 
 class XRayModel(Model):
@@ -16,13 +11,13 @@ class XRayModel(Model):
     This model is useful for visualizing and debugging the structure of a ModelPart.
     """
 
-    def __init__(self, part: ModelPart, size=Vector(100, 100, 3.5), only_adds=True):
+    def __init__(self, part: ModelPart, size=Vec3(100, 100, 3.5), only_adds=True):
         self.part = part
         self.size = size
         self.only_adds = only_adds
 
     def render(self) -> Compound:
-        plate = PlatePlanes(Bx(self.size, shift=(0, 0, self.size.Z / 2)))
+        plate = PlatePlanes(Bx(size=self.size, shift=Vec3(0, 0, self.size.z / 2)))
 
         pieces = self.part.render(plate)
         children = []

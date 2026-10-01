@@ -5,10 +5,8 @@ See Also:
     Elements2d - for the two equivalent
 """
 
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from build123d import (
-    Vector,
-    VectorLike,
     Sketch,
     extrude,
     offset,
@@ -19,13 +17,14 @@ from build123d import (
 )
 from .selectors import select_plane, Place, Side
 from .elements_2d import Element2D, RectangleElement, Fill
+from .geometry import Vec3
 
 
-class Element3D(Element2D):
+class Element3D(ABC):
     """Element for 3d shapes"""
 
     @abstractmethod
-    def size(self) -> Vector:
+    def size(self) -> Vec3:
         """Returns the size of the shape in 3d."""
         pass
 
@@ -75,9 +74,9 @@ def PrismElement(Element3D):
         self.element = element
         self.amount = amount
 
-    def size(self) -> Vector:
+    def size(self) -> Vec3:
         size2d = self.element.size()
-        return Vector(size2d.X, size2d.Y, self.amount)
+        return Vec3(size2d.X, size2d.Y, self.amount)
 
     def extrude(self) -> Part:
         return self.element.sketch()
@@ -165,7 +164,7 @@ def extrude_sketch(
     return _plane_from_over_under(over, under, amount) * extrude(sketch, amount)
 
 
-def make_plate(size: VectorLike, fill: Fill | None = None) -> Part:
+def make_plate(size: Vec3, fill: Fill | None = None) -> Part:
     """
     Make a plate of the given size and fill pattern.
 
@@ -176,6 +175,5 @@ def make_plate(size: VectorLike, fill: Fill | None = None) -> Part:
     Returns:
         Part: The extruded plate.
     """
-    _size = Vector(size)
-    sketch = RectangleElement(_size.X, _size.Y, fill=fill).sketch()
-    return extrude(sketch, _size.Z)
+    sketch = RectangleElement(size.x, size.y, fill=fill).sketch()
+    return extrude(sketch, size.z)

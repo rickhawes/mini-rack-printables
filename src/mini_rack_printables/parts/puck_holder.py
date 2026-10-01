@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from build123d import Vector, VectorLike, Part, Box, Pos, extrude, Sketch, Mode, Location
+from build123d import Part, Box, Pos, extrude, Sketch, Mode, Location
 
 from .model_part import ModelPart, PartPiece, PlatePlanes
 from ..selectors import Side, select_locations, select_location
@@ -7,6 +7,7 @@ from ..elements_2d import RectangleElement, RoundedCorners
 from ..elements_3d import extrude_element, make_plate
 from ..fills import HexHoles
 from ..corners import SelectedCorners, InsetCorners
+from ..geometry import Vec3, Vec2
 
 
 class PuckHolder(ModelPart):
@@ -35,7 +36,7 @@ class PuckHolder(ModelPart):
 
     def __init__(
         self,
-        device_size: VectorLike = (0, 0, 0),
+        device_size: Vec3,
         device_rounding: float = 1.0,
         style: Style = PLAIN,
     ):
@@ -48,33 +49,29 @@ class PuckHolder(ModelPart):
             style (Style): The style of the holder.
         """
         assert device_rounding >= 0, "device_rounding must be non-negative"
-        self.device_size = Vector(device_size)
+        self.device_size = device_size
         self.device_rounding = device_rounding
         self.style = style
-        assert self.device_size.X > 0 and self.device_size.Y > 0 and self.device_size.Z > 0, (
+        assert self.device_size.x > 0 and self.device_size.y > 0 and self.device_size.z > 0, (
             "device_size must be positive"
         )
-        assert 2 * self.device_rounding < self.device_size.X, (
+        assert 2 * self.device_rounding < self.device_size.x, (
             "device_rounding must not exceed the width of the device"
         )
-        assert self.device_rounding < self.device_size.Z, (
+        assert self.device_rounding < self.device_size.z, (
             "device_rounding must not exceed the depth of the device"
         )
 
     def desired_size(self) -> ModelPart.DesiredSize:
         wall = 2 * self.style.wall_thickness
-        size = self.device_size + Vector(wall, wall)
+        size = self.device_size.to_2d() + Vec2(wall, wall)
         return ModelPart.DesiredSize(size)
 
     def render(self, plate_planes: PlatePlanes) -> list[PartPiece]:
         # geometry
-        dx, dy, dz, r = (
-            self.device_size.X,
-            self.device_size.Y,
-            self.device_size.Z,
-            self.device_rounding,
-        )
-        walls_depth = self.device_size.Z - r
+        dx, dy, dz = self.device_size.to_tuple()
+        r = self.device_rounding
+        walls_depth = self.device_size.z - r
         walls_z = r - (plate_planes.depth if self.style.has_cutout else 0)
         w = self.style.wall_thickness
         e = self.style.corner_edges
@@ -95,8 +92,8 @@ class PuckHolder(ModelPart):
             """
             Make the walls of the holder as 4 plates with room for the corners.
             """
-            top = make_plate(Vector(walls_depth, dx - 2 * dc, w), HexHoles())
-            side = make_plate(Vector(walls_depth, dy - 2 * dc, w), HexHoles())
+            top = make_plate(Vec3(walls_depth, dx - 2 * dc, w), HexHoles())
+            side = make_plate(Vec3(walls_depth, dy - 2 * dc, w), HexHoles())
             # place around a box the size of the device
             device_box = Pos(0, 0, walls_depth / 2 + walls_z) * Box(dx, dy, walls_depth)
             side_locs = select_locations(device_box, [Side.RIGHT, Side.LEFT])

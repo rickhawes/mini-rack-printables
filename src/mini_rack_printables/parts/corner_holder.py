@@ -3,12 +3,13 @@ A device holder for a single device on a shelf. Devices are held by friction fro
 are cut out of holder's shape.
 """
 
-from build123d import Sketch, Vector, extrude
+from build123d import Sketch, extrude
 
 from ..elements_2d import RectangleElement, Element2D
 from ..elements_3d import sketch_ring
 from ..corners import InsetCorners
 from .model_part import ModelPart, PartPiece, PlatePlanes
+from ..geometry import Vec2
 
 
 class CornerHolder(ModelPart):
@@ -48,15 +49,15 @@ class CornerHolder(ModelPart):
         self.wall_depth = wall_depth
         self.corner_width = corner_width
         self.corner_height = corner_height
-        assert self.shape.size().X > 2 * corner_width, (
+        assert self.shape.size().x > 2 * corner_width, (
             "shape width must be greater than 2 * corner_width"
         )
-        assert self.shape.size().Y > 2 * corner_height, (
+        assert self.shape.size().y > 2 * corner_height, (
             "shape height must be greater than 2 * corner_height"
         )
 
     def desired_size(self) -> ModelPart.DesiredSize:
-        size = self.shape.size() + 2 * Vector(self.wall_thickness, self.wall_thickness)
+        size = self.shape.size() + Vec2(self.wall_thickness, self.wall_thickness) * 2
         return ModelPart.DesiredSize(size, False)
 
     def render(self, plate_planes: PlatePlanes) -> list[PartPiece]:
@@ -66,6 +67,6 @@ class CornerHolder(ModelPart):
         size = self.shape.size()
 
         # sketch the holder shape
-        cross = RectangleElement(size.X + 2 * w, size.Y + 2 * w, InsetCorners(cw + 2 * w))
+        cross = RectangleElement(size.x + 2 * w, size.y + 2 * w, InsetCorners(cw + 2 * w))
         sk = Sketch(sketch_ring(self.shape, w) - cross.sketch())
         return [PartPiece(plate_planes.top_plane * extrude(sk, d))]

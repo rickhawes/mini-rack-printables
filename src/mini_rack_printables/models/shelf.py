@@ -1,8 +1,8 @@
 from dataclasses import dataclass
-from build123d import Vector, Compound, Location, mirror, Plane, Part, Sketch, extrude, Axis
+from build123d import Compound, Location, mirror, Plane, Part, Sketch, extrude, Axis
 
 from ..dimensions import ShelfTabDims, RackDims, rack_units_to_mm
-from ..geometry import Bx
+from ..geometry import Bx, Vec3
 from ..parts.model_part import PartList, PlatePlanes
 from ..parts.layouts import PartLayout, GridLayout
 from ..selectors import Side, select_plane, Place
@@ -71,21 +71,21 @@ class Shelf(Model):
 
     def render(self) -> Compound:
         # geometry
-        base_size = Vector(
+        base_size = Vec3(
             ShelfTabDims.MAX_DX_TABS,
             self.style.shelf_depth,
             self.style.base_thickness,
         )
-        plate_size = Vector(
-            base_size.X - 2 * self.style.wall_thickness,
-            base_size.Y - self.style.face_thickness,
-            base_size.Z,
+        plate_size = Vec3(
+            base_size.x - 2 * self.style.wall_thickness,
+            base_size.y - self.style.face_thickness,
+            base_size.z,
         )
 
         # wall
         def make_wall(base_plate: Part) -> Part:
-            wall_size = Vector(
-                base_size.Y,
+            wall_size = Vec3(
+                base_size.y,
                 rack_units_to_mm(self.rack_units),
                 self.style.wall_thickness,
             )
@@ -95,60 +95,60 @@ class Shelf(Model):
                 .moved(
                     Location(
                         (
-                            (wall_size.X - base_size.Y) / 2,
-                            -wall_size.Y / 2 + base_size.Z / 2,
-                            -wall_size.Z,
+                            (wall_size.x - base_size.y) / 2,
+                            -wall_size.y / 2 + base_size.z / 2,
+                            -wall_size.z,
                         )
                     )
                 )
                 .rotated((180, 0, 0))
             )
-            wall_base = RectangleElement(inset, 2 * base_size.Z)
+            wall_base = RectangleElement(inset, 2 * base_size.z)
             wall_trans = TrapezoidElement(
-                wall_size.Y,
-                wall_size.X / 2 - inset,
+                wall_size.y,
+                wall_size.x / 2 - inset,
                 angle1=90,
-                minor_width=2 * base_size.Z,
+                minor_width=2 * base_size.z,
                 rotate=90,
             )
             wall_holes = RectangleElement(
-                wall_size.X / 2,
-                wall_size.Y,
+                wall_size.x / 2,
+                wall_size.y,
                 fill=HexHoles(),
-                corners=SquareCorners(base_size.Z),  # insets the fill area a bit
+                corners=SquareCorners(base_size.z),  # insets the fill area a bit
             )
             wall_sketch = Element2D.combine(
                 [wall_base, wall_trans, wall_holes], Axis.X, Place.BOTTOM
             )
-            return wall_plane * extrude(wall_sketch, wall_size.Z)
+            return wall_plane * extrude(wall_sketch, wall_size.z)
 
         # add face
         def make_face_plate(base_plate: Part) -> Part:
-            face_size = Vector(
+            face_size = Vec3(
                 RackDims.WIDTH_10INCH,
                 rack_units_to_mm(self.rack_units),
                 self.style.face_thickness,
             )
             face_plane = select_plane(base_plate, Side.MIN_Y).moved(
-                Location((0, (face_size.Y - base_size.Z) / 2, -face_size.Z))
+                Location((0, (face_size.y - base_size.z) / 2, -face_size.z))
             )
             face_sketch = RectangleElement(
-                face_size.X, face_size.Y, self.style.face_rounding
+                face_size.x, face_size.y, self.style.face_rounding
             ).sketch()
             face_sketch -= sketch_rack_holes(
                 self.rack_units, self.style.middle_holes, self.style.half_height_bottom
             )
             if self.style.open_face:
                 face_sketch -= RectangleElement(
-                    ShelfTabDims.MAX_DX_TABS - 2 * self.style.wall_thickness, face_size.Y
+                    ShelfTabDims.MAX_DX_TABS - 2 * self.style.wall_thickness, face_size.y
                 ).sketch()
 
-            return face_plane * extrude(Sketch(face_sketch), face_size.Z)
+            return face_plane * extrude(Sketch(face_sketch), face_size.z)
 
         # shelf
         def make_shelf() -> Part:
             shelf = Part()
-            base_plate = extrude_element(RectangleElement(base_size.X, base_size.Y), base_size.Z)
+            base_plate = extrude_element(RectangleElement(base_size.x, base_size.y), base_size.z)
             shelf += base_plate
             wall = make_wall(base_plate)
             shelf += wall
@@ -159,7 +159,7 @@ class Shelf(Model):
 
         shelf = make_shelf()
         if self.shelf_parts:
-            shelf_plate = PlatePlanes(Bx(size=plate_size, shift=(0, 0, plate_size.Z / 2)))
+            shelf_plate = PlatePlanes(Bx(size=plate_size, shift=Vec3(0, 0, plate_size.z / 2)))
             pieces = PartLayout.render_pieces(self.shelf_parts, shelf_plate, self.shelf_layout)
             shelf = PartLayout.assemble_pieces(shelf, pieces)
         return shelf

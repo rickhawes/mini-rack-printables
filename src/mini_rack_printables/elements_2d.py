@@ -6,7 +6,6 @@ from abc import ABC, abstractmethod
 import math
 from build123d import (
     Rectangle,
-    Vector,
     Line,
     Circle,
     RectangleRounded,
@@ -23,7 +22,7 @@ from build123d import (
     Align,
 )
 from .selectors import Place
-from .geometry import Rc
+from .geometry import Rc, Vec2
 from .fills import Fill
 from .corners import Corners, RoundedCorners, SquareCorners
 
@@ -32,7 +31,7 @@ class Element2D(ABC):
     """ABC for the 2d shapes that are used for parts."""
 
     @abstractmethod
-    def size(self) -> Vector:
+    def size(self) -> Vec2:
         """Returns the size of the shape in 2d."""
         pass
 
@@ -60,7 +59,7 @@ class Element2D(ABC):
         """
         elem_rects = [Rc(size=element.size()) for element in elements]
         arranged_rects = Rc.arrange(axis, anchor, *elem_rects)
-        return [Location(position=rect.shift) for rect in arranged_rects]
+        return [Location(position=rect.shift.to_vector()) for rect in arranged_rects]
 
     @staticmethod
     def combine(
@@ -96,8 +95,8 @@ class CircleElement(Element2D):
         """
         self.radius = radius
 
-    def size(self) -> Vector:
-        return Vector(2 * self.radius, 2 * self.radius)
+    def size(self) -> Vec2:
+        return Vec2(2 * self.radius, 2 * self.radius)
 
     def sketch(self) -> Sketch:
         return Circle(self.radius)
@@ -132,8 +131,8 @@ class RectangleElement(Element2D):
             self.corners = corners
         self.fill = fill
 
-    def size(self) -> Vector:
-        return Vector(self.width, self.height)
+    def size(self) -> Vec2:
+        return Vec2(self.width, self.height)
 
     def sketch(self) -> Sketch:
         def solid_fill() -> Sketch:
@@ -150,8 +149,8 @@ class RectangleElement(Element2D):
                     return complex_corners()
 
         def complex_corners() -> Sketch:
-            cs = self.corners.size()
-            cw, ch = cs.X, cs.Y
+            cs = self.corners.size
+            cw, ch = cs.x, cs.y
             dx, dy = (self.width / 2) - cw, (self.height / 2) - ch
             with BuildSketch() as sk:
                 with BuildLine():
@@ -172,8 +171,8 @@ class RectangleElement(Element2D):
             assert self.fill, "fill must be provided"
             # make a sketch of the holes
             #
-            cs = self.corners.size()
-            inner_dx, inner_dy = self.width - 2 * cs.X, self.height - 2 * cs.Y
+            cs = self.corners.size
+            inner_dx, inner_dy = self.width - 2 * cs.x, self.height - 2 * cs.y
             outline = solid_fill().wire()
             holes = self.fill.locations(inner_dx, inner_dy) * self.fill.sketch().wire()
             sk = Sketch()
@@ -198,8 +197,8 @@ class SlotElement(Element2D):
         self.width = width
         self.height = height
 
-    def size(self) -> Vector:
-        return Vector(self.width, self.height)
+    def size(self) -> Vec2:
+        return Vec2(self.width, self.height)
 
     def sketch(self) -> Sketch:
         return SlotOverall(self.width, self.height)
@@ -253,14 +252,14 @@ class TrapezoidElement(Element2D):
         self.angle2 = angle2
         self.rotate = rotate
 
-    def size(self) -> Vector:
+    def size(self) -> Vec2:
         dx = self.height * math.sin(math.radians(self.rotate)) + self.width * math.cos(
             math.radians(self.rotate)
         )
         dy = self.height * math.cos(math.radians(self.rotate)) + self.width * math.sin(
             math.radians(self.rotate)
         )
-        return Vector(dx, dy)
+        return Vec2(dx, dy)
 
     def sketch(self) -> Sketch:
         return Trapezoid(
@@ -285,8 +284,8 @@ class RightTriangleElement(Element2D):
         self.height = height
         self.flip = flip
 
-    def size(self) -> Vector:
-        return Vector(self.width, self.height)
+    def size(self) -> Vec2:
+        return Vec2(self.width, self.height)
 
     def sketch(self) -> Sketch:
         dx, dy = self.width / 2, self.height / 2

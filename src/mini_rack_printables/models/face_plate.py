@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from build123d import (
     BuildSketch,
     BuildPart,
-    Vector,
     Plane,
     Compound,
     RectangleRounded,
@@ -17,7 +16,7 @@ from build123d import (
 
 from ..dimensions import RackDims, ShelfTabDims
 from ..holes import sketch_rack_holes
-from ..geometry import Rib, Bx
+from ..geometry import Rib, Bx, Vec3
 from .model import Model
 from ..parts.model_part import PlatePlanes, PartList
 from ..parts.layouts import PartLayout, RowLayout
@@ -82,12 +81,12 @@ class FacePlate(Model):
         Returns:
             A compound shape of the face plate.
         """
-        plate_size = Vector(
+        plate_size = Vec3(
             RackDims.WIDTH_10INCH, self.rack_units * RackDims.HEIGHT_1U, self.style.thickness
         )
-        part_area_size = Vector(
+        part_area_size = Vec3(
             ShelfTabDims.MAX_DX_TABS,
-            plate_size.Y - 2 * self.style.rib.width,
+            plate_size.y - 2 * self.style.rib.width,
             self.style.thickness,
         )
 
@@ -95,13 +94,13 @@ class FacePlate(Model):
             # base plate
             with BuildSketch():
                 # plate
-                RectangleRounded(plate_size.X, plate_size.Y, self.style.rounding)
+                RectangleRounded(plate_size.x, plate_size.y, self.style.rounding)
                 # screw holes
                 holes = sketch_rack_holes(
                     self.rack_units, self.style.middle_holes, self.style.half_height_bottom
                 )
                 add(holes, mode=Mode.SUBTRACT)
-            extrude(amount=plate_size.Z)
+            extrude(amount=plate_size.z)
 
             # ribs
             if self.style.rib.width > 0:
@@ -110,10 +109,10 @@ class FacePlate(Model):
                     side_plane = (
                         Plane(face_plate.faces().sort_by(Axis.Y)[0])
                         .rotated((180, 180, 0))
-                        .moved(Location((0, (plate_size.Z + self.style.rib.depth) / 2, 0)))
+                        .moved(Location((0, (plate_size.z + self.style.rib.depth) / 2, 0)))
                     )
                     with BuildSketch(side_plane):
-                        Trapezoid(part_area_size.X, self.style.rib.depth, 30)
+                        Trapezoid(part_area_size.x, self.style.rib.depth, 30)
                     extrude(amount=self.style.rib.width)
                 mirror(rib.part, Plane.XZ)  # place on both sides
 
@@ -121,7 +120,9 @@ class FacePlate(Model):
         result = face_plate.part
         assert result is not None
         if self.parts:
-            part_planes = PlatePlanes(Bx(size=part_area_size, shift=(0, 0, part_area_size.Z / 2)))
+            part_planes = PlatePlanes(
+                Bx(size=part_area_size, shift=Vec3(0, 0, part_area_size.z / 2))
+            )
             pieces = PartLayout.render_pieces(self.parts, part_planes, self.layout)
             result = PartLayout.assemble_pieces(result, pieces)
 

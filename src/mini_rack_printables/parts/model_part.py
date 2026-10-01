@@ -3,11 +3,11 @@ Classes for sepecifing parts of a `Model`.
 
 """
 
-from build123d import Mode, Vector, VectorLike, Plane, Solid, Part, Location
+from build123d import Mode, Plane, Solid, Part, Location
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
-from ..geometry import Bx
+from ..geometry import Bx, Vec2, Vec3
 
 
 class ModelPart(ABC):
@@ -15,24 +15,19 @@ class ModelPart(ABC):
     Base class for all parts of a `Model`. `ModelPart` is used to distinguish this from the build123d `Part` classes
     """
 
-    @dataclass(frozen=True, init=False)
+    @dataclass(frozen=True)
     class DesiredSize:
         """
         Represents the desired size of a `ModelPart` on a plate.
         Contains the minimum size and a flag if the parts wants more space than the minimum size.
         """
 
-        min_size: Vector
+        min_size: Vec2
         """The minimum size of the plate for rendering."""
-        more_x: bool
+        more_x: bool = False
         """Whether the part wants more space than the minimum size."""
-        more_y: bool
+        more_y: bool = False
         """Whether the part wants more space than the minimum size."""
-
-        def __init__(self, min_size: VectorLike, more_x: bool = False, more_y: bool = False):
-            object.__setattr__(self, "min_size", Vector(min_size))
-            object.__setattr__(self, "more_x", more_x)
-            object.__setattr__(self, "more_y", more_y)
 
     @abstractmethod
     def desired_size(self) -> DesiredSize:
@@ -76,35 +71,33 @@ class PlatePlanes:
     bottom_plane: Plane
 
     @property
-    def size(self) -> Vector:
+    def size(self) -> Vec3:
         """The size of the plate."""
         return self.bounds.size
 
     @property
     def width(self) -> float:
         """The width of the plate."""
-        return self.bounds.size.X
+        return self.bounds.size.x
 
     @property
     def height(self) -> float:
         """The height of the plate."""
-        return self.bounds.size.Y
+        return self.bounds.size.y
 
     @property
     def depth(self) -> float:
         """The depth of the plate."""
-        return self.bounds.size.Z
+        return self.bounds.size.z
 
-    def __init__(self, bounds: Bx, origin_offset: Vector = Vector(0, 0, 0)):
+    def __init__(self, bounds: Bx, origin_offset: Vec2 = Vec2(0, 0)):
         """
         Initialize the PlatePlanes with the given `bounds` and `origin_offset`.
         """
-        if origin_offset.Z != 0:
-            raise ValueError("origin_offset.Z must be 0")
-        origin = bounds.shift + origin_offset
-        self.bottom_plane = Plane.XY.moved(Location((origin.X, origin.Y, bounds.front)))
-        self.top_plane = Plane.XY.moved(Location((origin.X, origin.Y, bounds.back)))
-        self.bounds = bounds.shifted((-origin_offset.X, -origin_offset.Y, bounds.shift.Z))
+        origin = bounds.shift.to_2d() + origin_offset
+        self.bottom_plane = Plane.XY.moved(Location((origin.x, origin.y, bounds.front)))
+        self.top_plane = Plane.XY.moved(Location((origin.x, origin.y, bounds.back)))
+        self.bounds = bounds.shifted(Vec3(-origin_offset.x, -origin_offset.y, bounds.shift.z))
 
 
 type PlateList = list[PlatePlanes] | list[list[PlatePlanes]]

@@ -1,3 +1,4 @@
+```code
 class ElementBuilder:
     builder: PartBuilder
     element: Element3D
@@ -24,3 +25,4 @@ def example() -> Part:
         bd.add(part3, place=Place.xxx, z_axis=)
         bd.add_mirror()
     return bd.part
+```

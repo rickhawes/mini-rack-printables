@@ -1,13 +1,13 @@
 import build123d as bd
 from ocp_vscode import show
 
-from mini_rack_printables import PuckHolder, FacePlate
+from mini_rack_printables import PuckHolder, FacePlate, Vec3
 
 #
 # This example demonstrates a face plate with a puck holder.
 #
 holder = PuckHolder(
-    device_size=(60, 30, 60), device_rounding=10, style=PuckHolder.Style(has_cutout=True)
+    device_size=Vec3(60, 30, 60), device_rounding=10, style=PuckHolder.Style(has_cutout=True)
 )
 plate = FacePlate(rack_units=1.0, parts=[holder]).render()
 
