@@ -6,13 +6,15 @@ Place parts on a model's plate. Used by most models.
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from build123d import BuildPart, Part, add
+from typing import override
 
-from ..geometry import Rc
-from ..selectors import Place
+from build123d import BuildPart, Part, add  # pyright: ignore[reportUnknownVariableType]
+
 from .model_part import PlatePlanes, PartList, ModelPart, PartPiece
 from .row_column_collection import RowColumnCollection
 from ..dimensions import E
+from ..geometry import Rc, Mm
+from ..selectors import Place
 
 
 class PartLayout(ABC):
@@ -31,9 +33,9 @@ class PartLayout(ABC):
         parts: PartList, plate_planes: PlatePlanes, layout: PartLayout
     ) -> list[PartPiece]:
         """
-        Render all `parts` using the given `plate` and `layout` alogrithm.
+        Render all `parts` using the given `plate` and `layout` algorithm.
         """
-        pieces = []
+        pieces: list[PartPiece] = []
         sub_plates = layout.layout_parts(parts, plate_planes)
         for part, _, _, index in RowColumnCollection(parts):
             part_pieces = part.render(sub_plates[index])
@@ -46,41 +48,31 @@ class PartLayout(ABC):
         Add `pieces` with `to_part` to create the final result.
         """
         with BuildPart() as result:
-            add(to_part)
+            _ = add(to_part)
             for piece in pieces:
-                add(piece.part, mode=piece.mode)
-        assert result.part is not None
+                _ = add(piece.part, mode=piece.mode)
+        if result.part is None:
+            raise ValueError("Part was not created")
+        # noinspection bad-return
         return result.part
 
 
+@dataclass(frozen=True)
 class RowLayout(PartLayout):
     """
     Layout each row independently according to the part's desired size. If desired size
-    is does not fill the plate's width, then allocate space according to part's desires.
+    does not fill the plate's width, then allocate space according to part's desires.
     """
-
-    def __init__(
-        self,
-        equal_heights: bool = False,
-        row_heights: list[float] | None = None,
-        equal_widths: bool = False,
-        align: Place = Place.CENTER,
-        spacing: float = 0,
-    ):
-        """
-        Args:
-            equal_row_heights (bool): if True, all rows will have the same height. Overrides parts' desired heights.
-            row_heights (list[float] | None): exact height for each row. If None, uses parts' desired heights.
-            align (Place): how to align each cell
-            spacing (float): Spacing around each cell.
-        """
-        if row_heights is not None and equal_heights:
-            raise ValueError("Cannot set both row_heights and equal_row_heights")
-        self.equal_heights = equal_heights
-        self.row_heights = row_heights
-        self.equal_widths = equal_widths
-        self.align = align
-        self.spacing = spacing
+    equal_heights: bool = False
+    """ Equal heights """
+    row_heights: list[Mm] | None = None
+    """ Row heights if not equal heights"""
+    equal_widths: bool = False
+    """ Equal widths """
+    align: Place = Place.CENTER
+    """ Alignment of the within a cell"""
+    spacing: Mm = 0
+    """ Spacing between cells """
 
     def _layout_vert(
         self,
@@ -125,17 +117,18 @@ class RowLayout(PartLayout):
 
         return [expanded_height(i) for i in range(rc)]
 
+    @override
     def layout_parts(self, parts: PartList, plate_planes: PlatePlanes) -> list[PlatePlanes]:
         coll = RowColumnCollection(parts)
         m = MeasuredRowsColumns.measure_parts(coll)
         s = self.spacing
 
-        def layout_one(parts: list[ModelPart]) -> list[float]:
+        def layout_one(row_parts: list[ModelPart]) -> list[Mm]:
             """Calculate the horizontal widths of cells of one row the left-to-right direction"""
             plate_width = plate_planes.bounds.size.x
-            cc = len(parts)
-            total_width = sum(part.desired_size().min_size.x for part in parts)
-            expand_count = sum(1 for part in parts if part.desired_size().more_x)
+            cc = len(row_parts)
+            total_width = sum(p.desired_size().min_size.x for p in row_parts)
+            expand_count = sum(1 for p in row_parts if p.desired_size().more_x)
             excess = plate_width - total_width - s * (cc + 1)
             if excess < 0:
                 raise ValueError(
@@ -145,14 +138,14 @@ class RowLayout(PartLayout):
                 return [(plate_width - s * (cc + 1)) / cc] * cc
             if expand_count == 0:
                 # distribute excess space evenly between all columns
-                return [part.desired_size().min_size.x + (excess / cc) for part in parts]
+                return [p.desired_size().min_size.x + (excess / cc) for p in row_parts]
 
             # distribute excess space evenly between expanding columns
-            def expanded_width(part: ModelPart) -> float:
-                ds = part.desired_size()
+            def expanded_width(p: ModelPart) -> Mm:
+                ds = p.desired_size()
                 return ds.min_size.x + (excess / expand_count) if ds.more_x else ds.min_size.x
 
-            return [expanded_width(part) for part in parts]
+            return [expanded_width(p) for p in row_parts]
 
         # Iterate over rows and columns to form sub_plates for each part.
         # Increment top and left with spacing to position each sub_plate correctly.
@@ -180,39 +173,31 @@ class RowLayout(PartLayout):
         return result
 
 
+@dataclass(frozen=True)
 class GridLayout(RowLayout):
     """
     Layout the rows and columns of parts according to the parts desired and minimum size. If desired size
-    is does not fill a row or column, then allocated space evenly. The layout so that all rows and columns
+    does not fill a row or column, then allocated space evenly. The layout so that all rows and columns
     to align.
     """
+    col_widths: list[Mm] | None = None
+    """ Column widths """
 
-    def __init__(
-        self,
-        row_heights: list[float] | None = None,
-        equal_heights: bool = False,
-        col_widths: list[float] | None = None,
-        equal_widths: bool = False,
-        align: Place = Place.CENTER,
-        spacing: float = 0,
-    ):
-        super().__init__(equal_heights, row_heights, equal_widths, align, spacing)
-        self.col_widths = col_widths
-
+    @override
     def layout_parts(self, parts: PartList, plate_planes: PlatePlanes) -> list[PlatePlanes]:
         coll = RowColumnCollection(parts)
         m = MeasuredRowsColumns.measure_parts(coll)
         s = self.spacing
 
-        def layout_horiz() -> list[float]:
+        def layout_horz() -> list[float]:
             """Calculate the horizontal widths of cells of columns in the left-to-right direction"""
             cc = coll.col_count
-            plate_width = plate_planes.bounds.size.x
+            plate_width: Mm = plate_planes.bounds.size.x
 
             # Calculate the excess space to distribute and how many columns can expand
-            total_width = sum(m.min_x)
+            total_width: Mm = sum(m.min_x)
             expand_count = sum(1 for more in m.more_x if more)
-            excess = plate_width - total_width - s * (cc + 1)
+            excess: Mm = plate_width - total_width - s * (cc + 1)
             if excess < 0:
                 raise ValueError(
                     f"Minimum total width {total_width} is larger than available space"
@@ -238,9 +223,9 @@ class GridLayout(RowLayout):
                 return [w + (excess / cc) for w in m.min_x]
 
             # distribute excess space evenly between expanding columns
-            def expanded_width(col_idx: int) -> float:
-                w = m.min_x[col_idx]
-                return w + (excess / expand_count) if m.more_x[col_idx] else w
+            def expanded_width(idx: int) -> Mm:
+                w = m.min_x[idx]
+                return w + (excess / expand_count) if m.more_x[idx] else w
 
             return [expanded_width(i) for i in range(cc)]
 
@@ -250,7 +235,7 @@ class GridLayout(RowLayout):
         left = plate_planes.bounds.left + s
         top = plate_planes.bounds.top - s
         vert_layout = self._layout_vert(coll, m, plate_planes)
-        horz_layout = layout_horiz()
+        horz_layout = layout_horz()
         for row_idx, row_height in enumerate(vert_layout):
             bottom = top - row_height
             for col_idx, item_width in enumerate(horz_layout):

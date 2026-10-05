@@ -1,11 +1,11 @@
 from .model_part import ModelPart, PlatePlanes, PartPiece
-from ..geometry import Vec2
+from ..geometry import Vec2, Mm
 
 
 class Spacer(ModelPart):
     """A spacer that does nothing fill space to help with the layout of a plate."""
 
-    def __init__(self, width: float, height: float, more_x: bool = False, more_y: bool = False):
+    def __init__(self, width: Mm, height: Mm, more_x: bool = False, more_y: bool = False):
         self.width = width
         self.height = height
         self.more_x = more_x

@@ -1,11 +1,12 @@
 """
-3D Elements for models and parts. Elements are the primitives that are combined together to form a model.
+3D Elements for models and parts. Elements are the primitives that are to form a model.
 
 See Also:
     Elements2d - for the two equivalent
 """
 
 from abc import ABC, abstractmethod
+from typing import override
 from build123d import (
     Sketch,
     extrude,
@@ -16,8 +17,9 @@ from build123d import (
     Location,
 )
 from .selectors import select_plane, Place, Side
-from .elements_2d import Element2D, RectangleElement, Fill
-from .geometry import Vec3
+from .elements_2d import Element2D, RectangleElement
+from .fills import Fill
+from .geometry import Vec3, Mm
 
 
 class Element3D(ABC):
@@ -40,7 +42,7 @@ class Element3D(ABC):
 
 
 def _plane_from_over_under(
-    over: Part | Face | None, under: Part | Face | None, amount: float
+    over: Part | Face | None, under: Part | Face | None, amount: Mm
 ) -> Plane:
     """
     Helper to get the plane from the on_top_of argument.
@@ -48,7 +50,7 @@ def _plane_from_over_under(
     Args:
         over (Part | Face | None): The part or face to place the element over.
         under (Part | Face | None): The part or face to place the element under.
-        amount (float): The amount to extrude the element.
+        amount (Mm): The amount to extrude the element.
 
     Returns:
         Plane: The plane to extrude the element on.
@@ -67,24 +69,33 @@ def _plane_from_over_under(
         assert False, "Invalid over and under combination"
 
 
-def PrismElement(Element3D):
+class PrismElement(Element3D):
     """A prism element."""
 
-    def __init__(self, element: Element2D, amount: float):
+    element: Element2D
+    amount: Mm
+
+    def __init__(self, element: Element2D, amount: Mm) -> None:
         self.element = element
         self.amount = amount
 
+    @override
+    def plane_on(self, selector: Place) -> Plane:
+        raise NotImplementedError
+
+    @override
     def size(self) -> Vec3:
         size2d = self.element.size()
-        return Vec3(size2d.X, size2d.Y, self.amount)
+        return Vec3(size2d.x, size2d.y, self.amount)
 
+    @override
     def extrude(self) -> Part:
-        return self.element.sketch()
+        return extrude(self.element.sketch())
 
 
 def extrude_element(
     element: Element2D,
-    amount: float,
+    amount: Mm,
     over: Part | Face | None = None,
     under: Part | Face | None = None,
 ) -> Part:
@@ -93,9 +104,10 @@ def extrude_element(
     The extrusion is done from the XY plane or the MAX_Z of the on_top_of part.
 
     Args:
-        shape (PrimativeShape): The shape of the prism.
-        amount (float): The amount to extrude the prism in the Z direction.
-        on_top_of (Part | Face | None, optional): The plane to extrude on top of. Defaults to XY.
+        element (Element2D): The shape of the prism.
+        amount (Mm): The amount to extrude the prism in the Z direction.
+        over (Part | Face | None, optional): The plane to extrude on top of. Defaults to XY.
+        under (Part | Face | None, optional): The plane to extrude under. Defaults to None.
 
     Returns:
         Part: The extruded prism of the basic shape.
@@ -103,14 +115,13 @@ def extrude_element(
     return _plane_from_over_under(over, under, amount) * extrude(element.sketch(), amount)
 
 
-def sketch_ring(element: Element2D, wall_thickness: float) -> Sketch:
+def sketch_ring(element: Element2D, wall_thickness: Mm) -> Sketch:
     """
     Make a 2d ring from the element shape.
 
     Args:
-        shape (PrimativeShape): The shape of the ring.
-        wall_thickness (float): The thickness of the ring wall.
-        on_top_of (Part | Face | None, optional): The plane to extrude on top of. Defaults to XY.
+        element (Element2D): The shape of the ring.
+        wall_thickness (Mm): The thickness of the ring wall.
 
     Returns:
         Part: The extruded ring of the basic shape.
@@ -122,8 +133,8 @@ def sketch_ring(element: Element2D, wall_thickness: float) -> Sketch:
 
 def extrude_tube(
     element: Element2D,
-    wall_thickness: float,
-    amount: float,
+    wall_thickness: Mm,
+    amount: Mm,
     over: Part | Face | None = None,
     under: Part | Face | None = None,
 ) -> Part:
@@ -131,9 +142,9 @@ def extrude_tube(
     Make a 3d tube from the element shape by outsetting the shape and extruding it along the Z axis.
 
     Args:
-        shape (PrimativeShape): The shape of the tube.
-        wall_thickness (float): The thickness of the tube wall.
-        amount (float): The amount to extrude the tube in the Z direction.
+        element (Element2D): The shape of the tube.
+        wall_thickness (Mm): The thickness of the tube wall.
+        amount (Mm): The amount to extrude the tube in the Z direction.
         over (Part | Face | None, optional): The plane to place the tube over. Defaults to XY.
         under (Part | Face | None, optional): The plane to place the tube under. Cannot be specified with `over`.
     Returns:
@@ -146,7 +157,7 @@ def extrude_tube(
 
 def extrude_sketch(
     sketch: Sketch,
-    amount: float,
+    amount: Mm,
     over: Part | Face | None = None,
     under: Part | Face | None = None,
 ) -> Part:
@@ -155,7 +166,7 @@ def extrude_sketch(
 
     Args:
         sketch (Sketch): The sketch to extrude.
-        amount (float): The amount to extrude the sketch in the Z direction.
+        amount (Mm): The amount to extrude the sketch in the Z direction.
         over (Part | Face | None, optional): The plane to place the sketch over. Defaults to XY.
         under (Part | Face | None, optional): The plane to place the sketch under. Cannot be specified with `over`.
     Returns:

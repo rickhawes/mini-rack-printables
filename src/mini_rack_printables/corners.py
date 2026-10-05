@@ -6,15 +6,19 @@ See Also:
 """
 
 from abc import ABC, abstractmethod
+from typing import override
 from build123d import Vector, Line, RadiusArc, Polyline
 from .selectors import Place, CornerPlace
-from .geometry import Vec2
+from .geometry import Vec2, Mm
 
 
 class Corners(ABC):
     """Base class for classes that draw corners of a rectangle"""
 
-    def __init__(self, width: float, height: float | None = None):
+    width: Mm
+    height: Mm
+
+    def __init__(self, width: Mm, height: Mm | None = None) -> None:
         self.width = width
         self.height = height if height is not None else width
 
@@ -23,7 +27,7 @@ class Corners(ABC):
         return Vec2(self.width, self.height)
 
     @abstractmethod
-    def draw(self, start: Vector, end: Vector, where: CornerPlace):
+    def draw(self, start: Vector, end: Vector, where: CornerPlace) -> None:
         """draw the lines or arcs in the context of `BuildLine`"""
         pass
 
@@ -31,15 +35,15 @@ class Corners(ABC):
 class RoundedCorners(Corners):
     """Rounded corners"""
 
-    def __init__(self, radius: float):
+    radius: Mm
+
+    def __init__(self, radius: Mm) -> None:
+        super().__init__(radius, radius)
         self.radius = radius
 
-    @property
-    def size(self) -> Vec2:
-        return Vec2(self.radius, self.radius)
-
-    def draw(self, start: Vector, end: Vector, where: CornerPlace):
-        RadiusArc(start, end, self.radius)
+    @override
+    def draw(self, start: Vector, end: Vector, where: CornerPlace) -> None:
+        _ = RadiusArc(start_point=start, end_point=end, radius=self.radius)
 
 
 class SquareCorners(Corners):
@@ -48,34 +52,41 @@ class SquareCorners(Corners):
     affect the insets in fills.
     """
 
-    def draw(self, start: Vector, end: Vector, where: CornerPlace):
+    @override
+    def draw(self, start: Vector, end: Vector, where: CornerPlace) -> None:
         match where:
             case Place.TOP_LEFT | Place.BOTTOM_RIGHT:
-                Polyline(start, (start.X, end.Y), end)
+                _ = Polyline(start, (start.X, end.Y), end)
             case Place.TOP_RIGHT | Place.BOTTOM_LEFT:
-                Polyline(start, (end.X, start.Y), end)
+                _ = Polyline(start, (end.X, start.Y), end)
 
 
 class InsetCorners(Corners):
     """Inset corners make the rectangle a cross"""
 
-    def draw(self, start: Vector, end: Vector, where: CornerPlace):
+    @override
+    def draw(self, start: Vector, end: Vector, where: CornerPlace) -> None:
         match where:
             case Place.TOP_LEFT | Place.BOTTOM_RIGHT:
-                Polyline([start, (end.X, start.Y), end])
+                _ = Polyline([start, (end.X, start.Y), end])
             case Place.TOP_RIGHT | Place.BOTTOM_LEFT:
-                Polyline([start, (start.X, end.Y), end])
+                _ = Polyline([start, (start.X, end.Y), end])
 
 
 class BeveledCorners(Corners):
     """Beveled corners"""
 
-    def draw(self, start: Vector, end: Vector, where: Place):
-        Line(start, end)
+    @override
+    def draw(self, start: Vector, end: Vector, where: Place) -> None:
+        _ = Line(start, end)
 
 
 class SelectedCorners(Corners):
-    """Only draw the selected corners. Use a square corner for the unslected corners"""
+    """Only draw the selected corners. Use a square corner for the unselected corners"""
+
+    corners: Corners
+    is_selected: dict[Place, bool]
+    square_corners: SquareCorners
 
     def __init__(
         self,
@@ -84,7 +95,8 @@ class SelectedCorners(Corners):
         top_right: bool = False,
         bottom_left: bool = False,
         bottom_right: bool = False,
-    ):
+    ) -> None:
+        super().__init__(corners.size.x, corners.size.y)
         self.corners = corners
         self.is_selected = {
             Place.TOP_LEFT: top_left,
@@ -94,11 +106,8 @@ class SelectedCorners(Corners):
         }
         self.square_corners = SquareCorners(corners.size.x, corners.size.y)
 
-    @property
-    def size(self) -> Vec2:
-        return self.corners.size
-
-    def draw(self, start: Vector, end: Vector, where: CornerPlace):
+    @override
+    def draw(self, start: Vector, end: Vector, where: CornerPlace) -> None:
         if self.is_selected.get(where, False):
             self.corners.draw(start, end, where)
         else:

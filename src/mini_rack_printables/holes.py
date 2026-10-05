@@ -6,21 +6,22 @@ import math
 from build123d import Locations, SlotOverall, Sketch
 
 from .dimensions import RackDims, RackScrewDims, ShelfTabDims, Screw1032Dims, rack_units_to_mm
+from .geometry import Mm
 
 
 def layout_rack_screw_holes(
-    rack_units: float,
+    rack_units: float | int,
     middle_holes: bool = True,
     half_height_bottom: bool = False,
-) -> list[float]:
+) -> list[Mm]:
     """
     Layout the screw holes for a faceplate on a rack according to the pattern established
-    in the dimensions module.
+    in the dimensions' module.
 
     Args:
         rack_units: Number of rack units of the plate with half units being acceptable
         middle_holes: draw middle screw holes
-        bottom_is_half_height: The bottom will start on the middle hole
+        half_height_bottom: The bottom will start on the middle hole
 
     Returns:
             A list of offsets (y values) from the bottom of the rack. A single rack unit will have a
@@ -71,7 +72,7 @@ def layout_rack_screw_holes(
 
 
 def sketch_rack_holes(
-    rack_units: float,
+    rack_units: float | int,
     middle_holes: bool = True,
     half_height_bottom: bool = False,
 ) -> Sketch:

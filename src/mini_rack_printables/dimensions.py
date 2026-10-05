@@ -3,12 +3,13 @@ Constants for the dimensions of the hardware including 10-inch racks and screws.
 """
 
 from enum import Enum
+from .geometry import Mm
 
 # ------------------------------------------------
 # Rack Dimensions
 # ------------------------------------------------
 
-# For the 10 inch rack specification see this file
+# For the 10-inch rack specification see this file
 # https://upload.wikimedia.org/wikipedia/commons/8/84/19_inch_vs_10_inch_rack_dimensions.svg
 #
 
@@ -20,17 +21,17 @@ class RackDims(float, Enum):
 
     WIDTH_10INCH = 254.0
     """Width of a 10 inch"""
-    DEPTH_8INCH = 200
+    DEPTH_8INCH = 200.0
     """Depth of a 8 inch (tecmojo variety"""
-    DEPTH_10INCH = 260
-    """Depth of a 10 inch (techmojo variety)"""
+    DEPTH_10INCH = 260.0
+    """Depth of a 10 inch (tecmojo variety)"""
     HEIGHT_1U = 44.50
     """Height of a 1u rack"""
 
 
 class RackScrewDims(float, Enum):
     """
-    Dimmensions for the rack holes and the
+    Dimensions for the rack holes and the
     """
 
     DX = 236.525
@@ -39,13 +40,13 @@ class RackScrewDims(float, Enum):
     """Distance between the rack slot to bottom screw"""
     BOTTOM_TO_MIDDLE = 15.875
     """Distance between middle and bottom screw hole"""
-    MIDDLE = BOTTOM + BOTTOM_TO_MIDDLE
+    MIDDLE = float(BOTTOM + BOTTOM_TO_MIDDLE)
     """Distance between the slot to middle screw hole"""
-    TOP = RackDims.HEIGHT_1U - 6.35
+    TOP = float(RackDims.HEIGHT_1U - 6.35)
     """Distance between the rack slot to top screw holes"""
-    MIDDLE_TO_TOP = TOP - MIDDLE
+    MIDDLE_TO_TOP = float(TOP - MIDDLE)
     """Distance between top and middle screw holes"""
-    BOTTOM_TO_TOP = BOTTOM_TO_MIDDLE + MIDDLE_TO_TOP
+    BOTTOM_TO_TOP = float(BOTTOM_TO_MIDDLE + MIDDLE_TO_TOP)
     """Distance between bottom to top screw holes"""
     TOP_LOWER_TO_BOTTOM_UPPER = 12.70
     """Distance between the top of a lower slot and the bottom of a upper slot"""
@@ -53,7 +54,7 @@ class RackScrewDims(float, Enum):
 
 class ShelfTabDims(float, Enum):
     """
-    Dimensions for the tabs on a rack face plate or shelf
+    Dimensions for the tabs on a rack faceplate or shelf
     """
 
     WIDTH_TECMOJO = 19.53
@@ -82,7 +83,7 @@ class Screw1032Dims(float, Enum):
     """Head for a 10-32 screw"""
 
 
-def rack_units_to_mm(units: float) -> float:
+def rack_units_to_mm(units: float | int) -> Mm:
     """Converts rack units to millimeters"""
     return units * RackDims.HEIGHT_1U
 

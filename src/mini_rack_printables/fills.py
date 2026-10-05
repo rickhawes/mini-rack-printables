@@ -4,6 +4,7 @@ Classes to generate a fill pattern of holes in a plate.
 
 from abc import ABC, abstractmethod
 import math
+from typing import override
 from build123d import (
     Rectangle,
     Circle,
@@ -13,18 +14,22 @@ from build123d import (
     GridLocations,
 )
 from build123d.build_common import LocationList
+from .geometry import Mm
 
 
 class Fill(ABC):
     """Some elements can support fill patterns"""
 
-    def __init__(self, spacing, width):
+    spacing: Mm
+    width: Mm
+
+    def __init__(self, spacing: Mm, width: Mm) -> None:
         """Initialize with `spacing` between holes and `width` of the fill between holes."""
-        self.s = spacing
-        self.w = width
+        self.spacing = spacing
+        self.width = width
 
     @abstractmethod
-    def locations(self, dx, dy) -> LocationList:
+    def locations(self, dx: Mm, dy: Mm) -> LocationList:
         """Return the locations of the holes for the given dimensions."""
         pass
 
@@ -37,40 +42,56 @@ class Fill(ABC):
 class HexHoles(Fill):
     """Hexagonal holes for filling a model's surface."""
 
-    def __init__(self, spacing: float = 4.0, width: float = 1.0):
+    def __init__(self, spacing: Mm = 4.0, width: Mm = 1.0) -> None:
         super().__init__(spacing, width)
 
-    def locations(self, dx, dy) -> LocationList:
-        cx, cy = math.floor(dx / (2 * self.s)), math.floor((dy - self.s) / (2 * self.s))
-        return HexLocations(self.s, cx, cy) if cx > 0 and cy > 0 else LocationList([])
+    @override
+    def locations(self, dx: Mm, dy: Mm) -> LocationList:
+        cx, cy = (
+            math.floor(dx / (2 * self.spacing)),
+            math.floor((dy - self.spacing) / (2 * self.spacing)),
+        )
+        return HexLocations(self.spacing, cx, cy) if cx > 0 and cy > 0 else LocationList([])
 
+    @override
     def sketch(self) -> Sketch:
-        return RegularPolygon(self.w - self.s, 6)
+        return RegularPolygon(self.width - self.spacing, 6)
 
 
 class CircleHoles(Fill):
     """Circular holes for filling a model's surface."""
 
-    def __init__(self, spacing: float = 3.0, width: float = 1.5):
+    def __init__(self, spacing: Mm = 3.0, width: Mm = 1.5) -> None:
         super().__init__(spacing, width)
 
-    def locations(self, dx, dy) -> LocationList:
-        cx, cy = math.floor(dx / (2 * self.s)), math.floor((dy - self.s) / (2 * self.s))
-        return HexLocations(self.s, cx, cy) if cx > 0 and cy > 0 else LocationList([])
+    @override
+    def locations(self, dx: Mm, dy: Mm) -> LocationList:
+        cx, cy = (
+            math.floor(dx / (2 * self.spacing)),
+            math.floor((dy - self.spacing) / (2 * self.spacing)),
+        )
+        return HexLocations(self.spacing, cx, cy) if cx > 0 and cy > 0 else LocationList([])
 
+    @override
     def sketch(self) -> Sketch:
-        return Circle(self.s - self.w / 2)
+        return Circle(self.spacing - self.width / 2)
 
 
 class SquareHoles(Fill):
     """Square holes for filling a model's surface."""
 
-    def __init__(self, spacing: float = 4.0, width: float = 1.0):
+    def __init__(self, spacing: Mm = 4.0, width: Mm = 1.0) -> None:
         super().__init__(spacing, width)
 
-    def locations(self, dx, dy) -> LocationList:
-        cx, cy = math.floor(dx / self.s), math.floor(dy / self.s)
-        return GridLocations(self.s, self.s, cx, cy) if cx > 0 and cy > 0 else LocationList([])
+    @override
+    def locations(self, dx: Mm, dy: Mm) -> LocationList:
+        cx, cy = math.floor(dx / self.spacing), math.floor(dy / self.spacing)
+        return (
+            GridLocations(self.spacing, self.spacing, cx, cy)
+            if cx > 0 and cy > 0
+            else LocationList([])
+        )
 
+    @override
     def sketch(self) -> Sketch:
-        return Rectangle(self.s - self.w, self.s - self.w)
+        return Rectangle(width=self.spacing - self.width, height=self.spacing - self.width)

@@ -214,3 +214,19 @@ def place_from_aligns(align: tuple[Align, Align]) -> Place:
 
 CornerPlace = Literal[Place.TOP_LEFT, Place.TOP_RIGHT, Place.BOTTOM_LEFT, Place.BOTTOM_RIGHT]
 """The subset of Place that represent corners"""
+
+
+# -----------------------------------------------------
+# Direction or Axis
+# -----------------------------------------------------
+
+
+class Ax(Enum):
+    """Axis or direction for place or align objects"""
+
+    X = auto()
+    """ X axis """
+    Y = auto()
+    """ Y axis """
+    Z = auto()
+    """ Z axis """

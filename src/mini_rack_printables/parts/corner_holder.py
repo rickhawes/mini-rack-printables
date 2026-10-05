@@ -9,7 +9,7 @@ from ..elements_2d import RectangleElement, Element2D
 from ..elements_3d import sketch_ring
 from ..corners import InsetCorners
 from .model_part import ModelPart, PartPiece, PlatePlanes
-from ..geometry import Vec2
+from ..geometry import Vec2, Mm
 
 
 class CornerHolder(ModelPart):
@@ -21,23 +21,20 @@ class CornerHolder(ModelPart):
     def __init__(
         self,
         shape: Element2D,
-        corner_width: float = 10.0,
-        corner_height: float = 10.0,
-        wall_depth: float = 5.0,
-        wall_thickness: float = 3.0,
+        corner_width: Mm = 10.0,
+        corner_height: Mm = 10.0,
+        wall_depth: Mm = 5.0,
+        wall_thickness: Mm = 3.0,
     ):
         """
         Initialize a holder with the given style, device size, and optional label, align, shift, and padding.
 
         Args:
-            shape (PrimativeShape): The shape of the device to hold.
+            shape (Element2D): The shape of the device to hold.
             corner_width (float): The width of the corner cutout. Defaults to 5.0.
             corner_height (float): The height of the corner cutout. Defaults to 5.0.
             wall_depth (float): The depth of the holder's corner. Defaults to 5.0.
             wall_thickness (float): The thickness of the holder's wall. Defaults to 3.0.
-            align (Selector): The alignment of the holder on the plate. Defaults to Selector.CENTER.
-            shift (Vector): The shift of the holder on the plate. Defaults to Vector(0, 0).
-            padding (float): The padding around the holder. Defaults to 0.0.
         """
         assert corner_height >= 0 and corner_width >= 0, (
             "corner_height and corner_width must be non-negative"

@@ -1,5 +1,5 @@
 """
-Classes for sepecifing parts of a `Model`.
+Classes for specifying parts of a `Model`.
 
 """
 
@@ -108,7 +108,7 @@ type PlateList = list[PlatePlanes] | list[list[PlatePlanes]]
 class PartPiece:
     """
     Represents the output of rendering a ModelPart, containing the solid and
-    how to add the solid to the plate (ie. location and combination mode).
+    how to add the solid to the plate (i.e. location and combination mode).
 
     Attributes:
         part: The solid for the part located by the part

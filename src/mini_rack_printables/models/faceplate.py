@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+from typing import final, override
+
 from build123d import (
     BuildSketch,
     BuildPart,
@@ -16,24 +18,25 @@ from build123d import (
 
 from ..dimensions import RackDims, ShelfTabDims
 from ..holes import sketch_rack_holes
-from ..geometry import Rib, Bx, Vec3
+from ..geometry import Rib, Bx, Vec3, Mm
 from .model import Model
 from ..parts.model_part import PlatePlanes, PartList
 from ..parts.layouts import PartLayout, RowLayout
 
 
+@final
 class FacePlate(Model):
     """
-    A face plate model with a height and `style`. Parts can be added as well.
+    A faceplate model with a height and `style`. Parts can be added as well.
     """
 
-    @dataclass
+    @dataclass(frozen=True)
     class Style:
-        """Style parameters for the face plate"""
+        """Style parameters for the faceplate"""
 
-        thickness: float = 3.0
+        thickness: Mm = 3.0
         """Thickness of the plate"""
-        rounding: float = 3.0
+        rounding: Mm = 3.0
         """Rounding applied to corners of a face_plate"""
         middle_holes: bool = True
         """Draw middle screw holes"""
@@ -54,32 +57,39 @@ class FacePlate(Model):
     PLAIN = Style(rib=Rib(0, 0))
     """Standard style without rib"""
 
+    rack_units: float
+    """Rack units of the plate"""
+    style: Style
+    parts: PartList | None = None
+    layout: PartLayout = RowLayout()
+
     def __init__(
         self,
         rack_units: float,
         style: Style = Style(),
         parts: PartList | None = None,
         layout: PartLayout = RowLayout(),
-    ):
+    ) -> None:
         """
-        Create a face plate model
+        Create a faceplate model
 
         Args:
             rack_units: Number of rack units of the plate with half units being acceptable
             style: Style options for the plate
-            part: The feature to use for the plate. Defaults to None.
+            parts: The feature to use for the plate. Defaults to None.
         """
         self.rack_units = rack_units
         self.style = style
         self.parts = parts
         self.layout = layout
 
+    @override
     def render(self) -> Compound:
         """
-        Render the face plate
+        Render the faceplate
 
         Returns:
-            A compound shape of the face plate.
+            A compound shape of the faceplate.
         """
         plate_size = Vec3(
             RackDims.WIDTH_10INCH, self.rack_units * RackDims.HEIGHT_1U, self.style.thickness
@@ -91,16 +101,16 @@ class FacePlate(Model):
         )
 
         with BuildPart() as face_plate:
-            # base plate
+            # baseplate
             with BuildSketch():
                 # plate
-                RectangleRounded(plate_size.x, plate_size.y, self.style.rounding)
+                _ = RectangleRounded(plate_size.x, plate_size.y, self.style.rounding)
                 # screw holes
                 holes = sketch_rack_holes(
                     self.rack_units, self.style.middle_holes, self.style.half_height_bottom
                 )
-                add(holes, mode=Mode.SUBTRACT)
-            extrude(amount=plate_size.z)
+                _ = add(holes, mode=Mode.SUBTRACT)
+            _ = extrude(amount=plate_size.z)
 
             # ribs
             if self.style.rib.width > 0:
@@ -112,9 +122,9 @@ class FacePlate(Model):
                         .moved(Location((0, (plate_size.z + self.style.rib.depth) / 2, 0)))
                     )
                     with BuildSketch(side_plane):
-                        Trapezoid(part_area_size.x, self.style.rib.depth, 30)
-                    extrude(amount=self.style.rib.width)
-                mirror(rib.part, Plane.XZ)  # place on both sides
+                        _ = Trapezoid(part_area_size.x, self.style.rib.depth, 30)
+                    _ = extrude(amount=self.style.rib.width)
+                _ = mirror(rib.part, Plane.XZ)  # place on both sides
 
         # Add/subtract parts
         result = face_plate.part

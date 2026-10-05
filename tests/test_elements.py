@@ -1,6 +1,6 @@
-from build123d import Axis
 from mini_rack_printables import (
     Place,
+    Ax,
     Element2D,
     InsetCorners,
     HexHoles,
@@ -103,5 +103,5 @@ def test_combine_elements(viewer_logger):
     e1 = RectangleElement(5, 2)
     e2 = TrapezoidElement(10, 15, minor_width=2, angle1=90, rotate=90)
     e3 = RectangleElement(20, 10)
-    sk = Element2D.combine([e1, e2, e3], axis=Axis.X, anchor=Place.BOTTOM)
+    sk = Element2D.combine([e1, e2, e3], axis=Ax.X, anchor=Place.BOTTOM)
     viewer_logger.log(sk, SHAPE)

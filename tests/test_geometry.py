@@ -1,5 +1,4 @@
-from mini_rack_printables import Rc, Place, Vec2
-from build123d import Axis
+from mini_rack_printables import Rc, Place, Vec2, Ax
 
 
 def test_edge_functions():
@@ -17,23 +16,6 @@ def test_from_edges():
     rc1 = Rc(4, 6, 1, 1)
     rc2 = Rc.from_edges(left=rc1.left, right=rc1.right, bottom=rc1.bottom, top=rc1.top)
     assert rc1 == rc2
-
-
-def test_divide_horizontally():
-    rc1 = Rc(4, 6)
-    div1 = rc1.divide_evenly(2)
-    assert div1[0] == Rc(2, 6, -1, 0)
-    assert div1[1] == Rc(size=Vec2(2, 6), shift=Vec2(1, 0))
-
-    rc2 = Rc(4, 6)
-    div2 = rc2.divide_evenly(1)
-    assert div2[0] == rc2
-
-    rc3 = Rc(6, 6)
-    div3 = rc3.divide_evenly(3)
-    assert div3[0] == Rc(2, 6, -2, 0)
-    assert div3[1] == Rc(size=Vec2(2, 6), shift=Vec2(0, 0))
-    assert div3[2] == Rc(size=Vec2(2, 6), shift=Vec2(2, 0))
 
 
 def test_apply_padding():
@@ -92,16 +74,16 @@ def test_alignment_shift():
 def test_split():
     rc = Rc(8, 8, 4, 4)
 
-    split1 = rc.split(amount=1, axis=Axis.X)
+    split1 = rc.split(amount=1, along=Ax.X)
     assert split1 == [Rc(1, 8, 0.5, 4), Rc(7, 8, 4.5, 4)]
 
-    split2 = rc.split(amount=-2, axis=Axis.X)
+    split2 = rc.split(amount=-2, along=Ax.X)
     assert split2 == [Rc(6, 8, 3, 4), Rc(2, 8, 7, 4)]
 
-    split3 = rc.split(amount=1, axis=Axis.Y)
+    split3 = rc.split(amount=1, along=Ax.Y)
     assert split3 == [Rc(8, 1, 4, 0.5), Rc(8, 7, 4, 4.5)]
 
-    split4 = rc.split(amount=-2, axis=Axis.Y)
+    split4 = rc.split(amount=-2, along=Ax.Y)
     assert split4 == [Rc(8, 6, 4, 3), Rc(8, 2, 4, 7)]
 
 
@@ -109,22 +91,22 @@ def test_arrange_horizontal():
     rc1 = Rc(4, 4)
     rc2 = Rc(2, 2)
     rc3 = Rc(2, 4)
-    l1 = Rc.arrange(Axis.X, Place.CENTER, rc1, rc2)
+    l1 = Rc.arrange(Ax.X, Place.CENTER, rc1, rc2)
     assert l1[0] == Rc(4, 4, -1, 0)
     assert l1[1] == Rc(2, 2, 2, 0)
-    l2 = Rc.arrange(Axis.X, Place.BOTTOM, rc1, rc2)
+    l2 = Rc.arrange(Ax.X, Place.BOTTOM, rc1, rc2)
     assert l2[0] == Rc(4, 4, -1, 0)
     assert l2[1] == Rc(2, 2, 2, -1)
-    l3 = Rc.arrange(Axis.X, Place.TOP, rc1, rc2)
+    l3 = Rc.arrange(Ax.X, Place.TOP, rc1, rc2)
     assert l3[0] == Rc(4, 4, -1, 0)
     assert l3[1] == Rc(2, 2, 2, 1)
-    l4 = Rc.arrange(Axis.X, Place.BOTTOM, rc1, rc2, rc3)
+    l4 = Rc.arrange(Ax.X, Place.BOTTOM, rc1, rc2, rc3)
     assert l4[0] == Rc(4, 4, -2, 0)
     assert l4[1] == Rc(2, 2, 1, -1)
     assert l4[2] == Rc(2, 4, 3, 0)
-    l5 = Rc.arrange(Axis.X, Place.CENTER, rc1)
+    l5 = Rc.arrange(Ax.X, Place.CENTER, rc1)
     assert l5[0] == Rc(4, 4, 0, 0)
-    l6 = Rc.arrange(Axis.X, Place.CENTER)
+    l6 = Rc.arrange(Ax.X, Place.CENTER)
     assert len(l6) == 0
 
 
@@ -132,12 +114,12 @@ def test_arrange_vertical():
     rc1 = Rc(4, 4)
     rc2 = Rc(2, 2)
     rc3 = Rc(4, 2)
-    l1 = Rc.arrange(Axis.Y, Place.CENTER, rc1, rc2)
+    l1 = Rc.arrange(Ax.Y, Place.CENTER, rc1, rc2)
     assert l1[0] == Rc(4, 4, 0, -1)
     assert l1[1] == Rc(2, 2, 0, 2)
-    l2 = Rc.arrange(Axis.Y, Place.LEFT, rc1, rc2, rc3)
+    l2 = Rc.arrange(Ax.Y, Place.LEFT, rc1, rc2, rc3)
     assert l2[0] == Rc(4, 4, 0, -2)
     assert l2[1] == Rc(2, 2, -1, 1)
     assert l2[2] == Rc(4, 2, 0, 3)
-    l5 = Rc.arrange(Axis.Y, Place.RIGHT, rc1)
+    l5 = Rc.arrange(Ax.Y, Place.RIGHT, rc1)
     assert l5[0] == Rc(4, 4, 0, 0)

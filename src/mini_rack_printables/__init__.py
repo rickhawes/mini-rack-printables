@@ -1,4 +1,4 @@
-from .models.face_plate import FacePlate
+from .models.faceplate import FacePlate
 from .models.xray import XRayModel
 from .models.shelf import Shelf
 from .parts.model_part import ModelPart, PartPiece, PlatePlanes
@@ -14,7 +14,7 @@ from .parts.corner_holder import CornerHolder
 from .parts.puck_holder import PuckHolder
 from .dimensions import RackDims, RackScrewDims, Screw1032Dims
 from .geometry import Rc, Bx, Rib, Vec2, Vec3
-from .selectors import Place, Side
+from .selectors import Place, Side, Ax
 from .elements_2d import (
     Element2D,
     CircleElement,
@@ -68,6 +68,7 @@ __all__ = [
     "WallHolder",
     "Place",
     "Side",
+    "Ax",
     "Element2D",
     "Element3D",
     "CircleElement",

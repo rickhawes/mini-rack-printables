@@ -3,7 +3,7 @@ from build123d import Part, Box, Pos, extrude, Mode, Sketch
 
 from .model_part import ModelPart, PartPiece, PlatePlanes
 from ..selectors import Side, select_locations
-from ..geometry import Rib, Vec3, Vec2
+from ..geometry import Rib, Vec3, Vec2, Mm
 from ..elements_2d import RectangleElement
 from ..corners import InsetCorners
 from ..fills import HexHoles
@@ -43,7 +43,7 @@ class WallHolder(ModelPart):
     def __init__(
         self,
         device_size: Vec3 = Vec3(0, 0, 0),
-        device_rounding: float = 1.0,
+        device_rounding: Mm = 1.0,
         style: Style = BACK_LIP,
     ):
         """

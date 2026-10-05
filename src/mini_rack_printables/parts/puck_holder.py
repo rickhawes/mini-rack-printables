@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from build123d import Part, Box, Pos, extrude, Sketch, Mode, Location
+from build123d import Part, Box, Pos, extrude, Mode, Location, BuildSketch, add, BuildPart
 
 from .model_part import ModelPart, PartPiece, PlatePlanes
 from ..selectors import Side, select_locations, select_location
@@ -7,12 +7,12 @@ from ..elements_2d import RectangleElement, RoundedCorners
 from ..elements_3d import extrude_element, make_plate
 from ..fills import HexHoles
 from ..corners import SelectedCorners, InsetCorners
-from ..geometry import Vec3, Vec2
+from ..geometry import Vec3, Vec2, Mm
 
 
 class PuckHolder(ModelPart):
     """
-    A device holder for a single device on a face plate.
+    A device holder for a single device on a faceplate.
     Devices are held by friction from side, top and bottom plates.
     """
 
@@ -24,11 +24,11 @@ class PuckHolder(ModelPart):
 
         has_cutout: bool = True
         """Does the holder have a cutout for the device?"""
-        corner_rounding: float = 1.0
+        corner_rounding: Mm = 1.0
         """The rounding of the holder's corners."""
-        corner_edges: float = 1.0
+        corner_edges: Mm = 1.0
         """The extra width of the corner edges."""
-        wall_thickness: float = 2.5
+        wall_thickness: Mm = 2.5
         """The thickness of the wall. Defaults to 2.5."""
 
     PLAIN = Style(True)
@@ -37,15 +37,15 @@ class PuckHolder(ModelPart):
     def __init__(
         self,
         device_size: Vec3,
-        device_rounding: float = 1.0,
+        device_rounding: Mm = 1.0,
         style: Style = PLAIN,
     ):
         """
         Initialize a holder with the given style, device size, and optional label, align, shift, and padding.
 
         Args:
-            device_size (Vector): The size of the device to hold. Defaults to Vector(0, 0, 0).
-            device_rounding (float): The rounding of the device edges. Defaults to 1.0.
+            device_size (Vec3): The size of the device to hold. Defaults to Vector(0, 0, 0).
+            device_rounding (Mm): The rounding of the device edges. Defaults to 1.0.
             style (Style): The style of the holder.
         """
         assert device_rounding >= 0, "device_rounding must be non-negative"
@@ -81,12 +81,11 @@ class PuckHolder(ModelPart):
             """
             Make the block of the holder by sketching the device block + extra for the corners.
             """
-            sk = Sketch(
-                RectangleElement(dx + 2 * w, dy + 2 * w, self.style.corner_rounding).sketch()
-                - RectangleElement(dx + 2 * w, dy + 2 * w, InsetCorners(w + e)).sketch()
-                + RectangleElement(dx, dy).sketch()
-            )
-            return Location((0, 0, walls_z)) * extrude(sk, amount=walls_depth)
+            with BuildSketch() as sk:
+                add(RectangleElement(dx + 2 * w, dy + 2 * w, self.style.corner_rounding).sketch())
+                add(RectangleElement(dx + 2 * w, dy + 2 * w, InsetCorners(w + e)).sketch(), mode=Mode.SUBTRACT)
+                add(RectangleElement(dx, dy).sketch())
+            return Location((0, 0, walls_z)) * extrude(sk.sketch, amount=walls_depth)
 
         def make_walls() -> Part:
             """
@@ -98,9 +97,13 @@ class PuckHolder(ModelPart):
             device_box = Pos(0, 0, walls_depth / 2 + walls_z) * Box(dx, dy, walls_depth)
             side_locs = select_locations(device_box, [Side.RIGHT, Side.LEFT])
             top_locs = select_locations(device_box, [Side.TOP, Side.BOTTOM])
-            return Part(
-                top_locs[0] * top + side_locs[0] * side + top_locs[1] * top + side_locs[1] * side
-            )
+            with BuildPart() as pb:
+                add(top_locs[0] * top)
+                add(side_locs[0] * side)
+                add(top_locs[1] * top)
+                add(side_locs[1] * side)
+            assert pb.part is not None
+            return pb.part
 
         def make_puck_cutout() -> Part:
             device_dz = dz / 2 if self.style.has_cutout else dz / 2 + plate_planes.depth

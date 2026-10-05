@@ -3,11 +3,16 @@ Structures and functions for computing the geometry of rectangles and boxes.
 """
 
 from dataclasses import dataclass
-import numpy as np
 from typing import Self, overload
-from build123d import Axis, Align, Vector
+from build123d import Vector
 
-from .selectors import Place, place_from_aligns
+from .selectors import Place, Ax
+
+
+type Mm = float | int
+"""
+A millimeter measurement value
+"""
 
 
 @dataclass(frozen=True)
@@ -16,9 +21,9 @@ class Vec3:
     3D-space vector
     """
 
-    x: float
-    y: float
-    z: float
+    x: Mm
+    y: Mm
+    z: Mm
 
     def __add__(self, other: Self) -> Self:
         return self.__class__(self.x + other.x, self.y + other.y, self.z + other.z)
@@ -26,17 +31,17 @@ class Vec3:
     def __sub__(self, other: Self) -> Self:
         return self.__class__(self.x - other.x, self.y - other.y, self.z - other.z)
 
-    def __mul__(self, other: float) -> Self:
+    def __mul__(self, other: Mm) -> Self:
         return self.__class__(self.x * other, self.y * other, self.z * other)
 
-    def __truediv__(self, other: float) -> Self:
+    def __rmul__(self, other: Mm) -> Self:
+        return self.__class__(self.x * other, self.y * other, self.z * other)
+
+    def __truediv__(self, other: Mm) -> Self:
         return self.__class__(self.x / other, self.y / other, self.z / other)
 
     def __neg__(self) -> Self:
         return self.__class__(-self.x, -self.y, -self.z)
-
-    def __repr__(self) -> str:
-        return f"Vec3({self.x}, {self.y}, {self.z})"
 
     def to_2d(self) -> Vec2:
         return Vec2(self.x, self.y)
@@ -44,8 +49,8 @@ class Vec3:
     def to_vector(self) -> Vector:
         return Vector(self.x, self.y, self.z)
 
-    def to_tuple(self) -> tuple[float, float, float]:
-        return (self.x, self.y, self.z)
+    def to_tuple(self) -> tuple[Mm, Mm, Mm]:
+        return self.x, self.y, self.z
 
 
 @dataclass(frozen=True)
@@ -54,8 +59,8 @@ class Vec2:
     2d space vector
     """
 
-    x: float
-    y: float
+    x: Mm
+    y: Mm
 
     def __add__(self, other: Self) -> Self:
         return self.__class__(self.x + other.x, self.y + other.y)
@@ -63,26 +68,26 @@ class Vec2:
     def __sub__(self, other: Self) -> Self:
         return self.__class__(self.x - other.x, self.y - other.y)
 
-    def __mul__(self, other: float) -> Self:
+    def __mul__(self, other: Mm) -> Self:
         return self.__class__(self.x * other, self.y * other)
 
-    def __truediv__(self, other: float) -> Self:
+    def __rmul__(self, other: Mm) -> Self:
+        return self.__class__(self.x * other, self.y * other)
+
+    def __truediv__(self, other: Mm) -> Self:
         return self.__class__(self.x / other, self.y / other)
 
     def __neg__(self) -> Self:
         return self.__class__(-self.x, -self.y)
 
-    def __repr__(self) -> str:
-        return f"Vec2({self.x}, {self.y})"
-
-    def to_3d(self, z: float = 0) -> Vec3:
+    def to_3d(self, z: Mm = 0) -> Vec3:
         return Vec3(self.x, self.y, z)
 
     def to_vector(self) -> Vector:
         return Vector(self.x, self.y)
 
-    def to_tuple(self) -> tuple[float, float]:
-        return (self.x, self.y)
+    def to_tuple(self) -> tuple[Mm, Mm]:
+        return self.x, self.y
 
 
 @dataclass(frozen=True, init=False)
@@ -101,9 +106,17 @@ class Bx:
     @overload
     def __init__(self, size: Vec3, shift: Vec3) -> None: ...
     @overload
-    def __init__(self, dx: float, dy: float, dz: float) -> None: ...
+    def __init__(self, dx: Mm, dy: Mm, dz: Mm) -> None: ...
     @overload
-    def __init__(self, dx: float, dy: float, dz: float, x: float, y: float, z: float) -> None: ...
+    def __init__(
+        self,
+        dx: Mm,
+        dy: Mm,
+        dz: Mm,
+        x: Mm,
+        y: Mm,
+        z: Mm,
+    ) -> None: ...
 
     def __init__(self, *args, **kwargs) -> None:
         """
@@ -131,18 +144,19 @@ class Bx:
         # Size from dx/dy/dz and shift from x/y/z
         if "dx" in kwargs and "dy" in kwargs and "dz" in kwargs:
 
-            def get_float(name: str, default: float | None = None) -> float:
-                v = kwargs.get(name)
+            def get_value(name: str, default: Mm | None = None) -> Mm:
+                v = kwargs.get(name, None)
                 if v is None and default is None:
                     raise ValueError(f"{name} must be supplied")
                 elif v is None and default is not None:
                     v = default
-                elif not isinstance(v, (int, float)):
-                    raise TypeError(f"{name} must be a float")
-                return v
+                if isinstance(v, (int, float)):
+                    return v
+                else:
+                    raise TypeError(f"{name} must be supplied")
 
-            dx, dy, dz = get_float("dx"), get_float("dy"), get_float("dz")
-            x, y, z = get_float("x", 0), get_float("y", 0), get_float("z", 0)
+            dx, dy, dz = get_value("dx"), get_value("dy"), get_value("dz")
+            x, y, z = get_value("x", 0), get_value("y", 0), get_value("z", 0)
             object.__setattr__(self, "size", Vec3(dx, dy, dz))
             object.__setattr__(self, "shift", Vec3(x, y, z))
             return
@@ -281,9 +295,9 @@ class Rc:
     @overload
     def __init__(self, size: Vec2) -> None: ...
     @overload
-    def __init__(self, dx: float, dy: float, x: float, y: float) -> None: ...
+    def __init__(self, dx: Mm, dy: Mm, x: Mm, y: Mm) -> None: ...
     @overload
-    def __init__(self, dx: float, dy: float) -> None: ...
+    def __init__(self, dx: Mm, dy: Mm) -> None: ...
 
     def __init__(self, *args, **kwargs) -> None:
         """
@@ -309,7 +323,7 @@ class Rc:
         # Size from dx/dy/dz and shift from x/y/z
         if "dx" in kwargs and "dy" in kwargs and "dz" in kwargs:
 
-            def get_float(name: str, default: float | None = None) -> float:
+            def get_value(name: str, default: Mm | None = None) -> float:
                 v = kwargs.get(name)
                 if v is None and default is None:
                     raise ValueError(f"{name} must be supplied")
@@ -319,8 +333,8 @@ class Rc:
                     raise TypeError(f"{name} must be a float")
                 return v
 
-            dx, dy = get_float("dx"), get_float("dy")
-            x, y = get_float("x", 0), get_float("y", 0)
+            dx, dy = get_value("dx"), get_value("dy")
+            x, y = get_value("x", 0), get_value("y", 0)
             object.__setattr__(self, "size", Vec2(dx, dy))
             object.__setattr__(self, "shift", Vec2(x, y))
             return
@@ -377,13 +391,7 @@ class Rc:
         raise ValueError(f"Init error with parameters {[*args]}")
 
     @classmethod
-    def from_edges(
-        cls,
-        left: float,
-        right: float,
-        bottom: float,
-        top: float,
-    ) -> Self:
+    def from_edges(cls, left: Mm, right: Mm, bottom: Mm, top: Mm) -> Self:
         return cls(
             size=Vec2(right - left, top - bottom),
             shift=Vec2((right + left) / 2, (top + bottom) / 2),
@@ -428,52 +436,44 @@ class Rc:
     def shifted_by(self, shift: Vec2) -> Self:
         return self.shifted(self.shift + shift)
 
-    def anchor_shifted(self, anchor: Place | tuple[Align, Align]) -> Rc:
+    def anchor_shifted(self, anchor: Place) -> Rc:
         """
         Return a new Rc with the same size but
         shifted so that the anchor's position is at the rectangle's center
         """
-        if isinstance(anchor, tuple):
-            anchor = place_from_aligns(anchor)
         return Rc(size=self.size, shift=self.anchor_position(anchor))
 
-    def anchor_position(self, anchor: Place | tuple[Align, Align]) -> Vec2:
+    def anchor_position(self, anchor: Place) -> Vec2:
         """
         Returns the position (an x, y vector) of the 'anchor' on the rectangle.
         """
-        if isinstance(anchor, tuple):
-            anchor = place_from_aligns(anchor)
         place_x, place_y = anchor.as_units()
         return Vec2(
             (self.size.x / 2) * place_x + self.shift.x,
             (self.size.y / 2) * place_y + self.shift.y,
         )
 
-    def bounds_shifted(self, bounds: Rc, anchor: Place | tuple[Align, Align]) -> Rc:
+    def bounds_shifted(self, bounds: Rc, anchor: Place) -> Rc:
         """
         Return a new Rc with the same size but shifted so that `align` is at the origin.
         """
-        if isinstance(anchor, tuple):
-            anchor = place_from_aligns(anchor)
         return Rc(size=self.size, shift=self.bounds_shift(bounds, anchor))
 
-    def bounds_shift(self, bounds: Rc, anchor: Place | tuple[Align, Align]) -> Vec2:
+    def bounds_shift(self, bounds: Rc, anchor: Place) -> Vec2:
         """
         The amount of shift to apply to this Rc to place it within the `bounds` according to
         the `place`. Useful in layout calculations.
         """
-        if isinstance(anchor, tuple):
-            anchor = place_from_aligns(anchor)
         return bounds.anchor_position(anchor) - self.anchor_position(anchor)
 
-    def apply_padding(self, padding: float) -> Rc:
+    def apply_padding(self, padding: Mm) -> Rc:
         """
         Apply padding to the Rc, expanding its size by `padding` amount but not shifting its center.
         """
         return Rc(size=self.size + Vec2(2 * padding, 2 * padding), shift=self.shift)
 
-    def split(self, amount: float, axis: Axis = Axis.X) -> list[Rc]:
-        if axis == Axis.X:
+    def split(self, amount: Mm, along: Ax = Ax.X) -> list[Rc]:
+        if along == Ax.X:
             mid = self.left + amount if amount > 0 else self.right + amount
             return [
                 Rc.from_edges(self.left, mid, self.bottom, self.top),
@@ -486,31 +486,6 @@ class Rc:
                 Rc.from_edges(self.left, self.right, mid, self.top),
             ]
 
-    def divide_evenly(self, by: int, axis: Axis = Axis.X) -> list[Rc]:
-        """
-        Divide the rectangle into `by` equal rectangles in `dir` direction.
-        """
-        if axis == Axis.X:
-            dx = self.size.x / by
-            size_x = self.size.x
-            return [
-                Rc(
-                    size=Vec2(dx, self.size.y),
-                    shift=Vec2(self.shift.x + x, self.shift.y),
-                )
-                for x in np.linspace((-size_x + dx) / 2, (size_x - dx) / 2, by)
-            ]
-        else:
-            dy = self.size.y / by
-            size_y = self.size.y
-            return [
-                Rc(
-                    size=Vec2(self.size.x, dy),
-                    shift=Vec2(self.shift.x, self.shift.y + y),
-                )
-                for y in np.linspace((-size_y + dy) / 2, (size_y - dy) / 2, by)
-            ]
-
     def centered_bounding(self) -> Rc:
         """
         return a rectangle in opposite direction of the offset by the amount needed to center a rect.
@@ -518,7 +493,7 @@ class Rc:
         mirror = Rc(self.size, Vec2(-self.shift.x, -self.shift.y))
         return Rc.union(self, mirror)
 
-    def form_bx(self, front: float, back: float) -> Bx:
+    def form_bx(self, front: Mm, back: Mm) -> Bx:
         return Bx(
             size=Vec3(self.size.x, self.size.y, back - front),
             shift=Vec3(self.shift.x, self.shift.y, (back + front) / 2),
@@ -526,17 +501,17 @@ class Rc:
 
     @staticmethod
     def arrange(
-        axis: Axis,
-        align: Place | tuple[Align, Align],
+        axis: Ax,
+        align: Place,
         *items: Rc,
     ) -> list[Rc]:
         """
         Arrange a collection of Rcs along an axis, aligning the collection according to the given alignment.
 
         Args:
-            axis (Axis): The axis to arrange along.
-            anchor (tuple[Align, Align]): The origin point for the whole collection.
-            *items (Rc): The Rcs to arrange.
+            axis (Ax): The axis to arrange along.
+            align (Place): The edge to align to
+            *items (Rc): The Rc list to arrange.
 
         Returns:
             list[Rc]: The arranged Rcs.
@@ -544,9 +519,7 @@ class Rc:
         output: list[Rc] = []
         if len(items) == 0:
             return []
-        if isinstance(align, tuple):
-            align = place_from_aligns(align)
-        if axis == Axis.X:
+        if axis == Ax.X:
             if align not in (Place.CENTER, Place.BOTTOM, Place.TOP):
                 raise ValueError(f"Invalid align for axis X: {align}")
             bounds = Rc(sum(item.size.x for item in items), max(item.size.y for item in items))
@@ -557,9 +530,9 @@ class Rc:
                 output.append(arranged_item)
                 edge = item_bounds.right
             return output
-        else:
+        elif axis == Ax.Y:
             if align not in (Place.CENTER, Place.LEFT, Place.RIGHT):
-                raise ValueError(f"Invalid align for axis Y: {align}")
+                raise ValueError(f"Invalid place for axis Y: {align}")
             bounds = Rc(max(item.size.x for item in items), sum(item.size.y for item in items))
             edge = bounds.bottom
             for item in items:
@@ -568,6 +541,8 @@ class Rc:
                 output.append(arranged_item)
                 edge = item_bounds.top
             return output
+        else:
+            raise ValueError(f"Invalid value for axis: {axis}")
 
 
 @dataclass(frozen=True)
@@ -576,5 +551,5 @@ class Rib:
     Represents a rib (width x depth) on a part or shape
     """
 
-    width: float
-    depth: float
+    width: Mm
+    depth: Mm

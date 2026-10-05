@@ -11,10 +11,12 @@ requires-python = ">=3.14"
 dependencies = [
     "build123d>=0.11.1",
     "ocp-vscode>=4.0.1",
+    "pyrefly>=0.60.0",
 ]
 
 [dependency-groups]
 dev = [
+    "basedpyright>=1.40.2",
     "pytest>=9.1.1",
     "ruff",
     "ty>=0.0.73",

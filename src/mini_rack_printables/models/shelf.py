@@ -1,11 +1,11 @@
 from dataclasses import dataclass
-from build123d import Compound, Location, mirror, Plane, Part, Sketch, extrude, Axis
+from build123d import Compound, Location, mirror, Plane, Part, Sketch, extrude
 
 from ..dimensions import ShelfTabDims, RackDims, rack_units_to_mm
-from ..geometry import Bx, Vec3
+from ..geometry import Bx, Vec3, Mm
 from ..parts.model_part import PartList, PlatePlanes
 from ..parts.layouts import PartLayout, GridLayout
-from ..selectors import Side, select_plane, Place
+from ..selectors import Side, select_plane, Place, Ax
 from ..elements_2d import Element2D, RectangleElement, TrapezoidElement
 from ..elements_3d import extrude_element
 from ..corners import SquareCorners
@@ -21,15 +21,15 @@ class Shelf(Model):
         Parameters for the style of the rack shelf.
         """
 
-        base_thickness: float = 4.0
+        base_thickness: Mm = 4.0
         """Thickness of the base of the rack shelf."""
-        wall_thickness: float = 3.0
+        wall_thickness: Mm = 3.0
         """Thickness of the wall of the rack shelf."""
-        face_thickness: float = 3.0
+        face_thickness: Mm = 3.0
         """Thickness of the face of the rack shelf."""
-        face_rounding: float = 3.0
+        face_rounding: Mm = 3.0
         """Rounding of the face of the rack shelf."""
-        shelf_depth: float = RackDims.DEPTH_8INCH
+        shelf_depth: Mm = RackDims.DEPTH_8INCH
         """Whether the rack shelf has a ten inch depth."""
         wall_inset: float = 20
         """Inset of the from the back of the rack shelf."""
@@ -59,7 +59,8 @@ class Shelf(Model):
         Args:
             rack_units: The number of rack units the shelf spans.
             style: The style of the rack shelf.
-            part: The part to render on the rack shelf.
+            shelf_parts: The part to render on the rack shelf.
+            shelf_layout: The layout of the rack shelf.
         """
         self.rack_units = rack_units
         self.style = style
@@ -118,7 +119,7 @@ class Shelf(Model):
                 corners=SquareCorners(base_size.z),  # insets the fill area a bit
             )
             wall_sketch = Element2D.combine(
-                [wall_base, wall_trans, wall_holes], Axis.X, Place.BOTTOM
+                [wall_base, wall_trans, wall_holes], Ax.X, Place.BOTTOM
             )
             return wall_plane * extrude(wall_sketch, wall_size.z)
 
@@ -147,15 +148,15 @@ class Shelf(Model):
 
         # shelf
         def make_shelf() -> Part:
-            shelf = Part()
+            s = Part()
             base_plate = extrude_element(RectangleElement(base_size.x, base_size.y), base_size.z)
-            shelf += base_plate
+            s += base_plate
             wall = make_wall(base_plate)
-            shelf += wall
-            shelf += mirror(wall, about=Plane.YZ)
-            shelf += make_face_plate(base_plate)
-            shelf.label = "shelf"
-            return shelf
+            s += wall
+            s += mirror(wall, about=Plane.YZ)
+            s += make_face_plate(base_plate)
+            s.label = "shelf"
+            return s
 
         shelf = make_shelf()
         if self.shelf_parts:
