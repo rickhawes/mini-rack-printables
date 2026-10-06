@@ -2,6 +2,8 @@
 Fixture to display on OCP Viewer the output of each test
 """
 
+from typing import final
+
 import pytest
 import sys
 from ocp_vscode import push_object, show_objects, reset_show, Camera
@@ -14,7 +16,9 @@ TEXT_BOX_HEIGHT = 10
 MAX_ELEMENTS_PER_ROW = 6
 
 
+@final
 class Logger:
+    @final
     class LogEntry:
         def __init__(self, group_name: str, function_name: str, part: Compound | Part):
             self.group_name = group_name
@@ -25,7 +29,7 @@ class Logger:
     entries: dict[str, list[LogEntry]] = {}
 
     def log(self, part: Compound | Part, group: str | None = None):
-        frame = sys._getframe(1)  # Get the caller's frame
+        frame = sys._getframe(1)  # pyright: ignore[reportPrivateUsage]
         assert frame is not None
         group_name = group if group is not None else frame.f_globals["__name__"]
         function_name = frame.f_code.co_name
@@ -74,5 +78,6 @@ def viewer_logger():
                 x += STD_SPACING if entry.size.X < STD_SPACING else entry.size.X + MIN_SPACING
             y -= STD_SPACING
             row += 1
-    show_objects(reset_camera=Camera.TOP)
+    _ = show_objects(reset_camera=Camera.TOP)  # pyright: ignore[reportUnknownVariableType]
+
     #

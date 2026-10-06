@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from build123d import Part, Box, Pos, extrude, Mode, Sketch
+from typing import override
 
 from .model_part import ModelPart, PartPiece, PlatePlanes
 from ..selectors import Side, select_locations
@@ -16,6 +17,10 @@ class WallHolder(ModelPart):
     Devices are held by friction from side, top and bottom plates.
     """
 
+    device_rounding: Mm
+    device_size: Vec3
+    style: Style
+
     @dataclass
     class Style:
         """
@@ -31,18 +36,18 @@ class WallHolder(ModelPart):
         wall_thickness: float = 2.5
         """The thickness of the wall. Defaults to 2.5."""
 
-    FRONT_LIP = Style(True, Rib(0.5, 1.0), None)
+    FRONT_LIP: Style = Style(True, Rib(0.5, 1.0), None)
     """A wall holder style with a front lip to prevent the device from falling through."""
-    BACK_LIP = Style(True, None, Rib(0.5, 1.0))
+    BACK_LIP: Style = Style(True, None, Rib(0.5, 1.0))
     """A wall holder style with a back lip to prevent the device from falling through. Default."""
-    NO_LIP = Style(True, None, None)
+    NO_LIP: Style = Style(True, None, None)
     """A wall holder style without a lip."""
-    NO_CUTOUT = Style(False, None, None)
+    NO_CUTOUT: Style = Style(False, None, None)
     """A wall holder style without a cutout in the plate."""
 
     def __init__(
         self,
-        device_size: Vec3 = Vec3(0, 0, 0),
+        device_size: Vec3 | None = None,
         device_rounding: Mm = 1.0,
         style: Style = BACK_LIP,
     ):
@@ -55,18 +60,20 @@ class WallHolder(ModelPart):
             style (WallHolderStyle): The style of the holder. Defaults to BACK_LIP.
         """
         assert device_rounding >= 0, "device_rounding must be non-negative"
-        self.device_size = device_size
+        self.device_size = device_size if device_size is not None else Vec3(0, 0, 0)
         self.device_rounding = device_rounding
         self.style = style
         assert self.device_size.x > 0 and self.device_size.y > 0 and self.device_size.z > 0, (
             "device_size must be positive"
         )
 
+    @override
     def desired_size(self) -> ModelPart.DesiredSize:
         wall = 2 * self.style.wall_thickness
         size = self.device_size.to_2d() + Vec2(wall, wall)
         return ModelPart.DesiredSize(size)
 
+    @override
     def render(self, plate_planes: PlatePlanes) -> list[PartPiece]:
         # geometry
         dx, dy, r = self.device_size.x, self.device_size.y, self.device_rounding

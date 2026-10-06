@@ -3,6 +3,8 @@ A device holder for a single device on a shelf. Devices are held by friction fro
 are cut out of holder's shape.
 """
 
+from typing import override
+
 from build123d import Sketch, extrude
 
 from ..elements_2d import RectangleElement, Element2D
@@ -17,6 +19,12 @@ class CornerHolder(ModelPart):
     A device holder for a single device on a shelf. Devices are held by friction from the corners. The corners
     are cut out of holder's shape.
     """
+
+    shape: Element2D
+    corner_width: Mm
+    corner_height: Mm
+    wall_depth: Mm
+    wall_thickness: Mm
 
     def __init__(
         self,
@@ -53,10 +61,12 @@ class CornerHolder(ModelPart):
             "shape height must be greater than 2 * corner_height"
         )
 
+    @override
     def desired_size(self) -> ModelPart.DesiredSize:
         size = self.shape.size() + Vec2(self.wall_thickness, self.wall_thickness) * 2
         return ModelPart.DesiredSize(size, False)
 
+    @override
     def render(self, plate_planes: PlatePlanes) -> list[PartPiece]:
         # dimensions
         w, d = self.wall_thickness, self.wall_depth

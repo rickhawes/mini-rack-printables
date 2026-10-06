@@ -8,7 +8,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import override
 
-from build123d import BuildPart, Part, add  # pyright: ignore[reportUnknownVariableType]
+from build123d import BuildPart, Part, add
 
 from .model_part import PlatePlanes, PartList, ModelPart, PartPiece
 from .row_column_collection import RowColumnCollection
@@ -108,17 +108,18 @@ class RowLayout(PartLayout):
                     f"Sum of specified row_heights {specified_height} does not equal the plate height {plate_height}"
                 )
             return self.row_heights
+
         if self.equal_heights:
             # distribute plate height evenly between rows
             return [(plate_height - s * (rc + 1)) / rc] * rc
+
         if expand_count == 0:
             # distribute excess space evenly between all rows
             return [h + (excess / rc) for h in m.min_y]
 
         # distribute excess space evenly between expanding rows
-        def expanded_height(row_idx: int) -> float:
-            h = m.min_y[row_idx]
-            return h + (excess / expand_count) if m.more_y[row_idx] else h
+        def expanded_height(row: int) -> Mm:
+            return m.min_y[row] + (excess / expand_count) if m.more_y[row] else m.min_y[row]
 
         return [expanded_height(i) for i in range(rc)]
 
@@ -136,11 +137,11 @@ class RowLayout(PartLayout):
             expand_count = sum(1 for p in row_parts if p.desired_size().more_x)
             excess = plate_width - total_width - s * (cc + 1)
             if excess < 0:
-                raise ValueError(
-                    f"Minimum total width ({total_width}) is larger than plate width ({plate_width})."
-                )
+                raise ValueError(f"Part width {total_width} is too large)")
+
             if self.equal_widths:
                 return [(plate_width - s * (cc + 1)) / cc] * cc
+
             if expand_count == 0:
                 # distribute excess space evenly between all columns
                 return [p.desired_size().min_size.x + (excess / cc) for p in row_parts]
@@ -205,33 +206,28 @@ class GridLayout(RowLayout):
             expand_count = sum(1 for more in m.more_x if more)
             excess: Mm = plate_width - total_width - s * (cc + 1)
             if excess < 0:
-                raise ValueError(
-                    f"Minimum total width {total_width} is larger than available space"
-                )
+                raise ValueError(f"Part total width {total_width} is larger than available space")
 
             if self.col_widths:
                 # use caller-defined column widths, check the supplied widths
                 if len(self.col_widths) != cc:
-                    raise ValueError(
-                        "col_widths must have the same length as the number of columns"
-                    )
+                    raise ValueError("col_widths does not match number of columns")
                 specified_width = sum(self.col_widths) + (cc + 1) * s
                 if not (plate_width - E <= specified_width <= plate_width + E):
-                    raise ValueError(
-                        f"Sum of specified col_widths {specified_width} does not equal the plate width {plate_width}"
-                    )
+                    raise ValueError(f"Specified {specified_width} != plate width {plate_width}")
                 return self.col_widths
+
             if self.equal_widths:
                 # distribute plate widths evenly between columns
                 return [(plate_width - s * (cc + 1)) / cc] * cc
+
             if expand_count == 0:
                 # distribute excess space evenly between all columns
                 return [w + (excess / cc) for w in m.min_x]
 
             # distribute excess space evenly between expanding columns
-            def expanded_width(idx: int) -> Mm:
-                w = m.min_x[idx]
-                return w + (excess / expand_count) if m.more_x[idx] else w
+            def expanded_width(col: int) -> Mm:
+                return m.min_x[col] + (excess / expand_count) if m.more_x[col] else m.min_x[col]
 
             return [expanded_width(i) for i in range(cc)]
 

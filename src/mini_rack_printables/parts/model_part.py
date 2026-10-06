@@ -90,10 +90,12 @@ class PlatePlanes:
         """The depth of the plate."""
         return self.bounds.size.z
 
-    def __init__(self, bounds: Bx, origin_offset: Vec2 = Vec2(0, 0)):
+    def __init__(self, bounds: Bx, origin_offset: Vec2 | None = None):
         """
         Initialize the PlatePlanes with the given `bounds` and `origin_offset`.
         """
+        if origin_offset is None:
+            origin_offset = Vec2(0, 0)
         origin = bounds.shift.to_2d() + origin_offset
         self.bottom_plane = Plane.XY.moved(Location((origin.x, origin.y, bounds.front)))
         self.top_plane = Plane.XY.moved(Location((origin.x, origin.y, bounds.back)))

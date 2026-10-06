@@ -1,9 +1,11 @@
 from dataclasses import dataclass
+from typing import override
 from build123d import Part, Box, Pos, extrude, Mode, Location, BuildSketch, add, BuildPart
 
 from .model_part import ModelPart, PartPiece, PlatePlanes
 from ..selectors import Side, select_locations, select_location
-from ..elements_2d import RectangleElement, RoundedCorners
+from ..elements_2d import RectangleElement
+from ..corners import RoundedCorners
 from ..elements_3d import extrude_element, make_plate
 from ..fills import HexHoles
 from ..corners import SelectedCorners, InsetCorners
@@ -15,6 +17,10 @@ class PuckHolder(ModelPart):
     A device holder for a single device on a faceplate.
     Devices are held by friction from side, top and bottom plates.
     """
+
+    device_size: Vec3
+    device_rounding: Mm
+    style: Style
 
     @dataclass
     class Style:
@@ -31,7 +37,7 @@ class PuckHolder(ModelPart):
         wall_thickness: Mm = 2.5
         """The thickness of the wall. Defaults to 2.5."""
 
-    PLAIN = Style(True)
+    PLAIN: Style = Style(True)
     """A holder style with a rectangular cutout for the device."""
 
     def __init__(
@@ -62,11 +68,13 @@ class PuckHolder(ModelPart):
             "device_rounding must not exceed the depth of the device"
         )
 
+    @override
     def desired_size(self) -> ModelPart.DesiredSize:
         wall = 2 * self.style.wall_thickness
         size = self.device_size.to_2d() + Vec2(wall, wall)
         return ModelPart.DesiredSize(size)
 
+    @override
     def render(self, plate_planes: PlatePlanes) -> list[PartPiece]:
         # geometry
         dx, dy, dz = self.device_size.to_tuple()
@@ -82,12 +90,14 @@ class PuckHolder(ModelPart):
             Make the block of the holder by sketching the device block + extra for the corners.
             """
             with BuildSketch() as sk:
-                add(RectangleElement(dx + 2 * w, dy + 2 * w, self.style.corner_rounding).sketch())
-                add(
+                _ = add(
+                    RectangleElement(dx + 2 * w, dy + 2 * w, self.style.corner_rounding).sketch()
+                )
+                _ = add(
                     RectangleElement(dx + 2 * w, dy + 2 * w, InsetCorners(w + e)).sketch(),
                     mode=Mode.SUBTRACT,
                 )
-                add(RectangleElement(dx, dy).sketch())
+                _ = add(RectangleElement(dx, dy).sketch())
             return Location((0, 0, walls_z)) * extrude(sk.sketch, amount=walls_depth)
 
         def make_walls() -> Part:
@@ -101,10 +111,10 @@ class PuckHolder(ModelPart):
             side_locs = select_locations(device_box, [Side.RIGHT, Side.LEFT])
             top_locs = select_locations(device_box, [Side.TOP, Side.BOTTOM])
             with BuildPart() as pb:
-                add(top_locs[0] * top)
-                add(side_locs[0] * side)
-                add(top_locs[1] * top)
-                add(side_locs[1] * side)
+                _ = add(top_locs[0] * top)
+                _ = add(side_locs[0] * side)
+                _ = add(top_locs[1] * top)
+                _ = add(side_locs[1] * side)
             assert pb.part is not None
             return pb.part
 

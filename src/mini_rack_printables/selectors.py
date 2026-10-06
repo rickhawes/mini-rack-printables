@@ -51,8 +51,6 @@ def select_face(faces: ShapeList[Face], side: Side) -> Face:
             return faces.sort_by(Axis.Z)[-1]
         case Side.FRONT:
             return faces.sort_by(Axis.Z)[0]
-        case _:
-            assert False, f"Invalid face selector: {side}"
 
 
 def select_faces(part: Part, sides: Sequence[Side]) -> ShapeList[Face]:

@@ -175,6 +175,7 @@ def test_bx_props():
     assert bx.front == -0.5
     assert bx.back == 2.5
 
+
 def test_bx_shift():
     bx = Bx(4, 6, 3, 1, 1, 1)
     assert bx.size == Vec3(4, 6, 3)
@@ -183,4 +184,3 @@ def test_bx_shift():
     bx2 = bx.shifted_by(Vec3(-1, -1, -1))
     assert bx2.size == Vec3(4, 6, 3)
     assert bx2.shift == Vec3(0, 0, 0)
-    

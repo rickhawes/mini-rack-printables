@@ -11,7 +11,7 @@ from .selectors import Place, Ax
 
 type Mm = float | int
 """
-A millimeter measurement value
+A millimeter measurement value. Used for all length measurements in the library.
 """
 
 
@@ -147,8 +147,8 @@ class Bx:
 
         # Size and shift
         if "size" in kwargs:
-            size = kwargs["size"]
-            shift = kwargs.get("shift", Vec3(0, 0, 0))
+            size = kwargs["size"]  # pyright: ignore[reportUnknownVariableType]
+            shift = kwargs.get("shift", Vec3(0, 0, 0))  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
             if not isinstance(size, Vec3) or not isinstance(shift, Vec3):
                 raise TypeError("size and shift must be a Vec3")
             set(size, shift)
@@ -158,7 +158,7 @@ class Bx:
         if "dx" in kwargs and "dy" in kwargs and "dz" in kwargs:
 
             def get_value(name: str, default: Mm | None = None) -> Mm:
-                v = kwargs.get(name, None)
+                v = kwargs.get(name)  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
                 if v is None and default is None:
                     raise ValueError(f"{name} must be supplied")
                 elif v is None and default is not None:
@@ -175,30 +175,30 @@ class Bx:
 
         # Other
         if "other" in kwargs:
-            other = kwargs["other"]
+            other = kwargs["other"]  # pyright: ignore[reportUnknownVariableType]
             if not isinstance(other, Bx):
                 raise TypeError("other must be a Bx")
             set(other.size, other.shift)
             return
 
-        if len(args) == 1 and isinstance(args[0], Bx):
+        if len(args) == 1 and isinstance(args[0], Bx):  # pyright: ignore[reportUnknownArgumentType]
             other = args[0]
             set(other.size, other.shift)
             return
 
-        if len(args) == 1 and isinstance(args[0], Vec3):
+        if len(args) == 1 and isinstance(args[0], Vec3):  # pyright: ignore[reportUnknownArgumentType]
             size = args[0]
             set(size, Vec3(0, 0, 0))
             return
 
-        if len(args) == 2 and isinstance(args[0], Vec3) and isinstance(args[1], Vec3):
+        if len(args) == 2 and isinstance(args[0], Vec3) and isinstance(args[1], Vec3):  # pyright: ignore[reportUnknownArgumentType]
             size = args[0]
             shift = args[1]
             set(size, shift)
             return
 
         if (
-            len(args) == 3
+            len(args) == 3  # pyright: ignore[reportUnknownArgumentType]
             and isinstance(args[0], (int, float))
             and isinstance(args[1], (int, float))
             and isinstance(args[2], (int, float))
@@ -208,10 +208,13 @@ class Bx:
             return
 
         if (
-            len(args) == 6
+            len(args) == 6  # pyright: ignore[reportUnknownArgumentType]
             and isinstance(args[0], (int, float))
             and isinstance(args[1], (int, float))
             and isinstance(args[2], (int, float))
+            and isinstance(args[3], (int, float))
+            and isinstance(args[4], (int, float))
+            and isinstance(args[5], (int, float))
         ):
             size = Vec3(args[0], args[1], args[2])
             shift = Vec3(args[3], args[4], args[5])
@@ -327,18 +330,17 @@ class Rc:
 
         # Size and shift
         if "size" in kwargs:
-            size = kwargs["size"]
-            shift = kwargs.get("shift", Vec2(0, 0))
+            size = kwargs["size"]  # pyright: ignore[reportUnknownVariableType]
+            shift = kwargs.get("shift", Vec2(0, 0))  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
             if not isinstance(size, Vec2) or not isinstance(shift, Vec2):
                 raise TypeError("size and shift must be a Vec3")
             set(size, shift)
             return
-
-        # Size from dx/dy/dz and shift from x/y/z
+        # Size from dx, dy and shift from x, y
         if "dx" in kwargs and "dy" in kwargs:
 
             def get_value(name: str, default: Mm | None = None) -> float:
-                v = kwargs.get(name)
+                v = kwargs.get(name)  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
                 if v is None and default is None:
                     raise ValueError(f"{name} must be supplied")
                 elif v is None and default is not None:
@@ -354,30 +356,30 @@ class Rc:
 
         # Other
         if "other" in kwargs:
-            other = kwargs["other"]
+            other = kwargs["other"]  # pyright: ignore[reportUnknownVariableType]
             if not isinstance(other, Rc):
                 raise TypeError("other must be a Rc")
             set(other.size, other.shift)
             return
 
-        if len(args) == 1 and isinstance(args[0], Rc):
+        if len(args) == 1 and isinstance(args[0], Rc):  # pyright: ignore[reportUnknownArgumentType]
             other = args[0]
             set(other.size, other.shift)
             return
 
-        if len(args) == 1 and isinstance(args[0], Vec2):
+        if len(args) == 1 and isinstance(args[0], Vec2):  # pyright: ignore[reportUnknownArgumentType]
             size = args[0]
             set(size, Vec2(0, 0))
             return
 
-        if len(args) == 2 and isinstance(args[0], Vec2) and isinstance(args[1], Vec2):
+        if len(args) == 2 and isinstance(args[0], Vec2) and isinstance(args[1], Vec2):  # pyright: ignore[reportUnknownArgumentType]
             size = args[0]
             shift = args[1]
             set(size, shift)
             return
 
         if (
-            len(args) == 2
+            len(args) == 2  # pyright: ignore[reportUnknownArgumentType]
             and isinstance(args[0], (int, float))
             and isinstance(args[1], (int, float))
         ):
@@ -386,9 +388,11 @@ class Rc:
             return
 
         if (
-            len(args) == 4
+            len(args) == 4  # pyright: ignore[reportUnknownArgumentType]
             and isinstance(args[0], (int, float))
             and isinstance(args[1], (int, float))
+            and isinstance(args[2], (int, float))
+            and isinstance(args[3], (int, float))
         ):
             size = Vec2(args[0], args[1])
             shift = Vec2(args[2], args[3])

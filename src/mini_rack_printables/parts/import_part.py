@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import override
 from importlib.resources import as_file, files
 from functools import cached_property
 from build123d import (
@@ -11,7 +12,7 @@ from build123d import (
     CenterOf,
     Unit,
 )
-from build123d.topology import Shape
+from build123d.topology import Shape, Solid
 
 
 from .model_part import ModelPart, PartPiece, PlatePlanes
@@ -27,9 +28,13 @@ class ImportPart(ModelPart):
     Imported shapes should have a rectangular outline, if `cutout` is True.
     """
 
-    BREP_SUFFIX = ".brep"
-    STL_SUFFIX = ".stl"
-    ASSET_PATH = "mini_rack_printables.assets"
+    BREP_SUFFIX: str = ".brep"
+    STL_SUFFIX: str = ".stl"
+    ASSET_PATH: str = "mini_rack_printables.assets"
+
+    path: Path | None = None
+    asset: str | None = None
+    cutout: bool = True
 
     def __init__(
         self,
@@ -57,25 +62,25 @@ class ImportPart(ModelPart):
         self.cutout = cutout
 
     @cached_property
-    def shape(self) -> Shape:
+    def shape(self) -> Shape[Solid]:
         """
         Returns the shape of the part. Cached to avoid recomputing.
         """
 
-        def convert_stl(path: Path) -> Shape:
+        def convert_stl(path: Path) -> Shape[Solid]:
             # Import the STL file and center it around the bounding box
             importer = Mesher(unit=Unit.MM)
             full_mesh = importer.read(path)[0]
             center = Shape.combined_center([full_mesh], center_of=CenterOf.BOUNDING_BOX)
             centered_mesh = full_mesh.move(Location((-center.X, -center.Y, -center.Z)))
-            return centered_mesh
+            return centered_mesh  # pyright: ignore[reportUnknownVariableType]
 
-        def import_path(path: Path) -> Shape:
+        def import_path(path: Path) -> Shape[Solid]:
             match path.suffix:
                 case self.STL_SUFFIX:
                     return convert_stl(path)
                 case self.BREP_SUFFIX:
-                    return import_brep(path)
+                    return import_brep(path)  # pyright: ignore[reportUnknownVariableType]
                 case _:
                     raise ValueError(f"Unexpected file suffix: {path.suffix}")
 
@@ -97,9 +102,11 @@ class ImportPart(ModelPart):
         assert bbox.center() == Vector(0, 0, 0), f"Imported part is not centered: {bbox.center()}"
         return Vec3(bbox.size.X, bbox.size.Y, bbox.size.Z)
 
+    @override
     def desired_size(self) -> ModelPart.DesiredSize:
         return ModelPart.DesiredSize(self.size.to_2d(), False)
 
+    @override
     def render(self, plate_planes: PlatePlanes) -> list[PartPiece]:
         if self.cutout:
             # Cutout: Cutout the bottom plane and place the imported part in the cutout

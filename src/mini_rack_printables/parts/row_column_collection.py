@@ -3,7 +3,8 @@ A Collection of either list of items or a list of lists of items. In all cases, 
 be treated as a 2d row-column collection.
 """
 
-from typing import cast, Iterator, Callable
+from typing import cast, Callable
+from collections.abc import Iterator
 
 
 class RowColumnCollection[T]:
@@ -44,11 +45,9 @@ class RowColumnCollection[T]:
             assert isinstance(items[0], list)
             self.rows = cast(list[list[T]], items)
             self.row_count = len(items)
-            self.col_count = max(len(row) for row in items if isinstance(row, list))
-            self.is_full = all(
-                len(row) == self.col_count for row in items if isinstance(row, list)
-            )
-            self.length = sum(len(row) for row in items if isinstance(row, list))
+            self.col_count = max(len(row) for row in self.rows)
+            self.is_full = all(len(row) == self.col_count for row in self.rows)
+            self.length = sum(len(row) for row in self.rows)
 
     def __iter__(self) -> Iterator[tuple[T, int, int, int]]:
         """Return an iterator over the rows and columns of this collection."""

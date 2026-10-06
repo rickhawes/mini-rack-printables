@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from build123d import Compound, Location, mirror, Plane, Part, Sketch, extrude
+from typing import override, final
 
 from ..dimensions import ShelfTabDims, RackDims, rack_units_to_mm
 from ..geometry import Bx, Vec3, Mm
@@ -14,8 +15,9 @@ from ..holes import sketch_rack_holes
 from .model import Model
 
 
+@final
 class Shelf(Model):
-    @dataclass
+    @dataclass(frozen=True)
     class Style:
         """
         Parameters for the style of the rack shelf.
@@ -51,7 +53,7 @@ class Shelf(Model):
         rack_units: float = 1.0,
         style: Style = OPEN_FACE,
         shelf_parts: PartList | None = None,
-        shelf_layout: PartLayout = GridLayout(),
+        shelf_layout: PartLayout | None = None,
     ):
         """
         A rack shelf with either an open or closed face.
@@ -65,11 +67,12 @@ class Shelf(Model):
         self.rack_units = rack_units
         self.style = style
         self.shelf_parts = shelf_parts
-        self.shelf_layout = shelf_layout
+        self.shelf_layout = shelf_layout if shelf_layout is not None else GridLayout()
         assert 4 * style.wall_inset < style.shelf_depth, (
             "wall_inset must be less than shelf_depth / 4"
         )
 
+    @override
     def render(self) -> Compound:
         # geometry
         base_size = Vec3(

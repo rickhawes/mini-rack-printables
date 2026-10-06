@@ -20,8 +20,10 @@ tasks:
       - pyproject.toml
     generates:
       - uv.lock
+      - outputs 
     cmds:
       - uv sync --python {{.PYTHON_VERSION}}
+      - mkdir -p outputs
 
   test:
     desc: "Run pytest test suite (pass flags using --)"
@@ -38,6 +40,7 @@ tasks:
     cmds:
       - uv run ruff check .
       - uv run ruff format --check .
+      - uv run basedpyright src/mini_rack_printables
 
   format:
     desc: "Fix linting issues and auto-format code with ruff"

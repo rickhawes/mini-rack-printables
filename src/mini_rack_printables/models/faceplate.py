@@ -66,9 +66,9 @@ class FacePlate(Model):
     def __init__(
         self,
         rack_units: float,
-        style: Style = Style(),
+        style: Style | None = None,
         parts: PartList | None = None,
-        layout: PartLayout = RowLayout(),
+        layout: PartLayout | None = None,
     ) -> None:
         """
         Create a faceplate model
@@ -79,9 +79,9 @@ class FacePlate(Model):
             parts: The feature to use for the plate. Defaults to None.
         """
         self.rack_units = rack_units
-        self.style = style
+        self.style = style if style is not None else FacePlate.Style()
         self.parts = parts
-        self.layout = layout
+        self.layout = layout if layout is not None else RowLayout()
 
     @override
     def render(self) -> Compound:

@@ -12,6 +12,7 @@ from mini_rack_printables import (
 )
 from build123d import Rectangle, Sketch, Circle, Location
 import pytest
+from .conftest import Logger
 
 ALIGN_CELL = "Align cell tests"
 SINGLE_ROW = "single row tests"
@@ -119,7 +120,7 @@ def test_sub_plate_planes():
     assert sub_plates[1].top_plane.origin == Vec3(0, 0, 6).to_vector()
 
 
-def test_align_cell(viewer_logger):
+def test_align_cell(viewer_logger: Logger):
     p1 = Spacer(5, 5)
     p2 = Spacer(15, 15)
     plate = PlatePlanes(Bx(40, 40, 0))
@@ -141,7 +142,7 @@ def test_align_cell(viewer_logger):
     viewer_logger.log(sketch_sub_plates(sub_plates), ALIGN_CELL)
 
 
-def test_even_col_layout(viewer_logger):
+def test_even_col_layout(viewer_logger: Logger):
     p1 = Spacer(10, 10)
     p2 = Spacer(15, 15)
     p3 = Spacer(20, 20)
@@ -153,7 +154,7 @@ def test_even_col_layout(viewer_logger):
     viewer_logger.log(sketch_sub_plates(sub_plates), SINGLE_ROW)
 
 
-def test_proportional_col_layout(viewer_logger):
+def test_proportional_col_layout(viewer_logger: Logger):
     p1 = Spacer(10, 10)
     p2 = Spacer(15, 15)
     p3 = Spacer(20, 20)
@@ -165,7 +166,7 @@ def test_proportional_col_layout(viewer_logger):
     viewer_logger.log(sketch_sub_plates(sub_plates), SINGLE_ROW)
 
 
-def test_expand_col_layout(viewer_logger):
+def test_expand_col_layout(viewer_logger: Logger):
     p1 = Spacer(5, 5)
     p2 = Spacer(10, 10)
     p3 = Spacer(15, 15, more_x=True)
@@ -177,7 +178,7 @@ def test_expand_col_layout(viewer_logger):
     viewer_logger.log(sketch_sub_plates(sub_plates), SINGLE_ROW)
 
 
-def test_expand_two_col_layout(viewer_logger):
+def test_expand_two_col_layout(viewer_logger: Logger):
     p1 = Spacer(5, 5, more_x=True)
     p2 = Spacer(10, 10)
     p3 = Spacer(15, 15, more_x=True)
@@ -189,7 +190,7 @@ def test_expand_two_col_layout(viewer_logger):
     viewer_logger.log(sketch_sub_plates(sub_plates), SINGLE_ROW)
 
 
-def test_proportional_layout(viewer_logger):
+def test_proportional_layout(viewer_logger: Logger):
     p1 = Spacer(5, 5)
     p2 = Spacer(10, 10)
     p3 = Spacer(15, 15)
@@ -201,7 +202,7 @@ def test_proportional_layout(viewer_logger):
     viewer_logger.log(sketch_sub_plates(sub_plates), ROW_LAYOUT)
 
 
-def test_equal_cols_layout(viewer_logger):
+def test_equal_cols_layout(viewer_logger: Logger):
     p1 = Spacer(5, 5)
     p2 = Spacer(10, 10)
     p3 = Spacer(15, 15)
@@ -213,7 +214,7 @@ def test_equal_cols_layout(viewer_logger):
     viewer_logger.log(sketch_sub_plates(sub_plates), ROW_LAYOUT)
 
 
-def test_equal_rows_layout(viewer_logger):
+def test_equal_rows_layout(viewer_logger: Logger):
     p1 = Spacer(5, 5)
     p2 = Spacer(10, 10)
     p3 = Spacer(15, 15)
@@ -225,7 +226,7 @@ def test_equal_rows_layout(viewer_logger):
     viewer_logger.log(sketch_sub_plates(sub_plates), ROW_LAYOUT)
 
 
-def test_equal_rows_cols_layout(viewer_logger):
+def test_equal_rows_cols_layout(viewer_logger: Logger):
     p1 = Spacer(5, 5)
     p2 = Spacer(10, 10)
     p3 = Spacer(15, 15)
@@ -237,7 +238,7 @@ def test_equal_rows_cols_layout(viewer_logger):
     viewer_logger.log(sketch_sub_plates(sub_plates), ROW_LAYOUT)
 
 
-def test_expanding_cols_layout(viewer_logger):
+def test_expanding_cols_layout(viewer_logger: Logger):
     p1 = Spacer(5, 5)
     e1 = Spacer(5, 5, more_x=True)
     p2 = Spacer(10, 10)
@@ -251,7 +252,7 @@ def test_expanding_cols_layout(viewer_logger):
     viewer_logger.log(sketch_sub_plates(sub_plates), ROW_LAYOUT)
 
 
-def test_expanding_row_layout(viewer_logger):
+def test_expanding_row_layout(viewer_logger: Logger):
     p1 = Spacer(5, 5)
     e1 = Spacer(5, 5, more_y=True)
     p2 = Spacer(10, 10)
@@ -264,7 +265,7 @@ def test_expanding_row_layout(viewer_logger):
     viewer_logger.log(sketch_sub_plates(sub_plates), ROW_LAYOUT)
 
 
-def test_explict_row_heights(viewer_logger):
+def test_explict_row_heights(viewer_logger: Logger):
     p1 = Spacer(5, 5)
     p2 = Spacer(10, 10)
     p3 = Spacer(15, 15)
@@ -277,7 +278,7 @@ def test_explict_row_heights(viewer_logger):
     viewer_logger.log(sketch_sub_plates(sub_plates), ROW_LAYOUT)
 
 
-def test_one_row_grid(viewer_logger):
+def test_one_row_grid(viewer_logger: Logger):
     p1 = Spacer(5, 5)
     p2 = Spacer(10, 10)
     p3 = Spacer(15, 15)
@@ -288,7 +289,7 @@ def test_one_row_grid(viewer_logger):
     viewer_logger.log(sketch_sub_plates(sub_plates), GRID_LAYOUT)
 
 
-def test_one_equal_row_grid(viewer_logger):
+def test_one_equal_row_grid(viewer_logger: Logger):
     p1 = Spacer(5, 5)
     p2 = Spacer(10, 10)
     p3 = Spacer(15, 15)
@@ -299,7 +300,7 @@ def test_one_equal_row_grid(viewer_logger):
     viewer_logger.log(sketch_sub_plates(sub_plates), GRID_LAYOUT)
 
 
-def test_one_specified_row_grid(viewer_logger):
+def test_one_specified_row_grid(viewer_logger: Logger):
     p1 = Spacer(5, 5)
     p2 = Spacer(10, 10)
     p3 = Spacer(15, 15)
@@ -310,7 +311,7 @@ def test_one_specified_row_grid(viewer_logger):
     viewer_logger.log(sketch_sub_plates(sub_plates), GRID_LAYOUT)
 
 
-def test_one_expanded_row_grid(viewer_logger):
+def test_one_expanded_row_grid(viewer_logger: Logger):
     p1 = Spacer(5, 5)
     p2 = Spacer(10, 10, more_x=True)
     p3 = Spacer(15, 15)
@@ -321,7 +322,7 @@ def test_one_expanded_row_grid(viewer_logger):
     viewer_logger.log(sketch_sub_plates(sub_plates), GRID_LAYOUT)
 
 
-def test_sparse_grid(viewer_logger):
+def test_sparse_grid(viewer_logger: Logger):
     p1 = Spacer(5, 5)
     p2 = Spacer(10, 10)
     p3 = Spacer(15, 15)
@@ -332,7 +333,7 @@ def test_sparse_grid(viewer_logger):
     viewer_logger.log(sketch_sub_plates(sub_plates), GRID_LAYOUT)
 
 
-def test_sparse_equal_row_grid(viewer_logger):
+def test_sparse_equal_row_grid(viewer_logger: Logger):
     p1 = Spacer(5, 5)
     p2 = Spacer(10, 10)
     p3 = Spacer(15, 15)
@@ -343,7 +344,7 @@ def test_sparse_equal_row_grid(viewer_logger):
     viewer_logger.log(sketch_sub_plates(sub_plates), GRID_LAYOUT)
 
 
-def test_sparse_equal_grid(viewer_logger):
+def test_sparse_equal_grid(viewer_logger: Logger):
     p1 = Spacer(5, 5)
     p2 = Spacer(10, 10)
     p3 = Spacer(15, 15)
