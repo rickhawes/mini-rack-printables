@@ -62,17 +62,21 @@ def test_row_heights_values():
     p2 = Spacer(15, 15)
     p3 = Spacer(20, 20)
 
+    # equal_height and specified heights at the same time
     with pytest.raises(ValueError):
         _ = RowLayout(equal_heights=True, row_heights=[2, 3], spacing=2)
 
+    # Specified row count is less than the number of rows
     with pytest.raises(ValueError):
         l1 = RowLayout(row_heights=[10], spacing=2)
         _ = l1.layout_parts([[p1], [p2, p3]], PlatePlanes(Bx(60, 20, 0)))
 
+    # Specified heights is more than plate size
     with pytest.raises(ValueError):
         l2 = RowLayout(row_heights=[10, 40], spacing=2)
         _ = l2.layout_parts([[p1], [p2, p3]], PlatePlanes(Bx(60, 20, 0)))
 
+    # specified height should be right
     l3 = RowLayout(row_heights=[10, 40], spacing=2)
     _ = l3.layout_parts([[p1], [p2, p3]], PlatePlanes(Bx(60, 56, 0)))
 

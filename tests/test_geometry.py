@@ -1,4 +1,25 @@
-from mini_rack_printables import Rc, Place, Vec2, Ax
+from mini_rack_printables import Rc, Place, Vec2, Vec3, Ax, Bx
+import pytest
+
+
+def test_init():
+    with pytest.raises(ValueError):
+        _ = Rc(-1, -1)
+
+    rc1 = Rc(size=Vec2(1, 1))
+    assert rc1.size == Vec2(1, 1)
+    assert rc1.shift == Vec2(0, 0)
+
+    rc2 = Rc(Vec2(2, 2))
+    assert rc2.size == Vec2(2, 2)
+
+    rc3 = Rc(dx=3, dy=3, x=-1, y=-1)
+    assert rc3.size.x == 3
+    assert rc3.size.y == 3
+
+    rc4 = Rc(rc3)
+    assert rc4.shift.x == -1
+    assert rc4.shift.y == -1
 
 
 def test_edge_functions():
@@ -123,3 +144,43 @@ def test_arrange_vertical():
     assert l2[2] == Rc(4, 2, 0, 3)
     l5 = Rc.arrange(Ax.Y, Place.RIGHT, rc1)
     assert l5[0] == Rc(4, 4, 0, 0)
+
+
+def test_bx_init():
+    with pytest.raises(ValueError):
+        _ = Bx(-1, -1, 1)
+
+    bx1 = Bx(size=Vec3(1, 1, 1))
+    assert bx1.size == Vec3(1, 1, 1)
+    assert bx1.shift == Vec3(0, 0, 0)
+
+    bx2 = Bx(Vec3(2, 2, 3))
+    assert bx2.size == Vec3(2, 2, 3)
+
+    bx3 = Bx(dx=3, dy=3, dz=1, x=-1, y=-1, z=-1)
+    assert bx3.size == Vec3(3, 3, 1)
+
+    bx4 = Bx(bx3)
+    assert bx4.shift == Vec3(-1, -1, -1)
+
+
+def test_bx_props():
+    bx = Bx(4, 6, 3, 1, 1, 1)
+    assert bx.size == Vec3(4, 6, 3)
+    assert bx.shift == Vec3(1, 1, 1)
+    assert bx.top == 4
+    assert bx.bottom == -2
+    assert bx.left == -1
+    assert bx.right == 3
+    assert bx.front == -0.5
+    assert bx.back == 2.5
+
+def test_bx_shift():
+    bx = Bx(4, 6, 3, 1, 1, 1)
+    assert bx.size == Vec3(4, 6, 3)
+    assert bx.shift == Vec3(1, 1, 1)
+
+    bx2 = bx.shifted_by(Vec3(-1, -1, -1))
+    assert bx2.size == Vec3(4, 6, 3)
+    assert bx2.shift == Vec3(0, 0, 0)
+    

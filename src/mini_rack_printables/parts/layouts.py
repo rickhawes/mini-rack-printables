@@ -63,6 +63,7 @@ class RowLayout(PartLayout):
     Layout each row independently according to the part's desired size. If desired size
     does not fill the plate's width, then allocate space according to part's desires.
     """
+
     equal_heights: bool = False
     """ Equal heights """
     row_heights: list[Mm] | None = None
@@ -73,6 +74,10 @@ class RowLayout(PartLayout):
     """ Alignment of the within a cell"""
     spacing: Mm = 0
     """ Spacing between cells """
+
+    def __post_init__(self) -> None:
+        if self.row_heights is not None and self.equal_heights:
+            raise ValueError("Cannot set both row_heights and equal_row_heights")
 
     def _layout_vert(
         self,
@@ -180,6 +185,7 @@ class GridLayout(RowLayout):
     does not fill a row or column, then allocated space evenly. The layout so that all rows and columns
     to align.
     """
+
     col_widths: list[Mm] | None = None
     """ Column widths """
 

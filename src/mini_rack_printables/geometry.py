@@ -22,8 +22,11 @@ class Vec3:
     """
 
     x: Mm
+    """x value"""
     y: Mm
+    """y value"""
     z: Mm
+    """z value"""
 
     def __add__(self, other: Self) -> Self:
         return self.__class__(self.x + other.x, self.y + other.y, self.z + other.z)
@@ -60,7 +63,9 @@ class Vec2:
     """
 
     x: Mm
+    """x value"""
     y: Mm
+    """y value"""
 
     def __add__(self, other: Self) -> Self:
         return self.__class__(self.x + other.x, self.y + other.y)
@@ -97,7 +102,9 @@ class Bx:
     """
 
     size: Vec3
+    """Size of the box"""
     shift: Vec3
+    """Center of the box"""
 
     @overload
     def __init__(self, other: Bx) -> None: ...
@@ -131,14 +138,20 @@ class Bx:
             y: The y shift of the box. Default 0.
             z: The z shift of the box. Default 0.
         """
+
+        def set(size: Vec3, shift: Vec3) -> None:
+            if size.x < 0 or size.y < 0 or size.z < 0:
+                raise ValueError("Size must be positive")
+            object.__setattr__(self, "size", size)
+            object.__setattr__(self, "shift", shift)
+
         # Size and shift
         if "size" in kwargs:
             size = kwargs["size"]
             shift = kwargs.get("shift", Vec3(0, 0, 0))
             if not isinstance(size, Vec3) or not isinstance(shift, Vec3):
                 raise TypeError("size and shift must be a Vec3")
-            object.__setattr__(self, "size", size)
-            object.__setattr__(self, "shift", shift)
+            set(size, shift)
             return
 
         # Size from dx/dy/dz and shift from x/y/z
@@ -157,8 +170,7 @@ class Bx:
 
             dx, dy, dz = get_value("dx"), get_value("dy"), get_value("dz")
             x, y, z = get_value("x", 0), get_value("y", 0), get_value("z", 0)
-            object.__setattr__(self, "size", Vec3(dx, dy, dz))
-            object.__setattr__(self, "shift", Vec3(x, y, z))
+            set(Vec3(dx, dy, dz), Vec3(x, y, z))
             return
 
         # Other
@@ -166,27 +178,23 @@ class Bx:
             other = kwargs["other"]
             if not isinstance(other, Bx):
                 raise TypeError("other must be a Bx")
-            object.__setattr__(self, "size", other.size)
-            object.__setattr__(self, "shift", other.shift)
+            set(other.size, other.shift)
             return
 
         if len(args) == 1 and isinstance(args[0], Bx):
             other = args[0]
-            object.__setattr__(self, "size", other.size)
-            object.__setattr__(self, "shift", other.shift)
+            set(other.size, other.shift)
             return
 
         if len(args) == 1 and isinstance(args[0], Vec3):
             size = args[0]
-            object.__setattr__(self, "size", size)
-            object.__setattr__(self, "shift", Vec3(0, 0, 0))
+            set(size, Vec3(0, 0, 0))
             return
 
         if len(args) == 2 and isinstance(args[0], Vec3) and isinstance(args[1], Vec3):
             size = args[0]
             shift = args[1]
-            object.__setattr__(self, "size", size)
-            object.__setattr__(self, "shift", shift)
+            set(size, shift)
             return
 
         if (
@@ -196,8 +204,7 @@ class Bx:
             and isinstance(args[2], (int, float))
         ):
             size = Vec3(args[0], args[1], args[2])
-            object.__setattr__(self, "size", size)
-            object.__setattr__(self, "shift", Vec3(0, 0, 0))
+            set(size, Vec3(0, 0, 0))
             return
 
         if (
@@ -208,11 +215,10 @@ class Bx:
         ):
             size = Vec3(args[0], args[1], args[2])
             shift = Vec3(args[3], args[4], args[5])
-            object.__setattr__(self, "size", size)
-            object.__setattr__(self, "shift", shift)
+            set(size, shift)
             return
 
-        raise ValueError(f"Init error with parameters {[*args]}")
+        raise ValueError(f"Missing parameters {[*args], [*kwargs]}")
 
     @classmethod
     def from_edges(
@@ -249,27 +255,27 @@ class Bx:
         return self.shift + (self.size / 2)
 
     @property
-    def top(self) -> float:
+    def top(self) -> Mm:
         return self.max.y
 
     @property
-    def bottom(self) -> float:
+    def bottom(self) -> Mm:
         return self.min.y
 
     @property
-    def left(self) -> float:
+    def left(self) -> Mm:
         return self.min.x
 
     @property
-    def right(self) -> float:
+    def right(self) -> Mm:
         return self.max.x
 
     @property
-    def front(self) -> float:
+    def front(self) -> Mm:
         return self.min.z
 
     @property
-    def back(self) -> float:
+    def back(self) -> Mm:
         return self.max.z
 
     def shifted(self, shift: Vec3) -> Self:
@@ -286,7 +292,9 @@ class Rc:
     """
 
     size: Vec2
+    """Size of the rectangle"""
     shift: Vec2
+    """The center of the rectangle"""
 
     @overload
     def __init__(self, other: Rc) -> None: ...
@@ -310,18 +318,24 @@ class Rc:
             x: The x shift of the box. Default 0.
             y: The y shift of the box. Default 0.
         """
+
+        def set(size: Vec2, shift: Vec2) -> None:
+            if size.x < 0 or size.y < 0:
+                raise ValueError("Size must be positive")
+            object.__setattr__(self, "size", size)
+            object.__setattr__(self, "shift", shift)
+
         # Size and shift
         if "size" in kwargs:
             size = kwargs["size"]
             shift = kwargs.get("shift", Vec2(0, 0))
             if not isinstance(size, Vec2) or not isinstance(shift, Vec2):
                 raise TypeError("size and shift must be a Vec3")
-            object.__setattr__(self, "size", size)
-            object.__setattr__(self, "shift", shift)
+            set(size, shift)
             return
 
         # Size from dx/dy/dz and shift from x/y/z
-        if "dx" in kwargs and "dy" in kwargs and "dz" in kwargs:
+        if "dx" in kwargs and "dy" in kwargs:
 
             def get_value(name: str, default: Mm | None = None) -> float:
                 v = kwargs.get(name)
@@ -335,8 +349,7 @@ class Rc:
 
             dx, dy = get_value("dx"), get_value("dy")
             x, y = get_value("x", 0), get_value("y", 0)
-            object.__setattr__(self, "size", Vec2(dx, dy))
-            object.__setattr__(self, "shift", Vec2(x, y))
+            set(Vec2(dx, dy), Vec2(x, y))
             return
 
         # Other
@@ -344,27 +357,23 @@ class Rc:
             other = kwargs["other"]
             if not isinstance(other, Rc):
                 raise TypeError("other must be a Rc")
-            object.__setattr__(self, "size", other.size)
-            object.__setattr__(self, "shift", other.shift)
+            set(other.size, other.shift)
             return
 
         if len(args) == 1 and isinstance(args[0], Rc):
             other = args[0]
-            object.__setattr__(self, "size", other.size)
-            object.__setattr__(self, "shift", other.shift)
+            set(other.size, other.shift)
             return
 
         if len(args) == 1 and isinstance(args[0], Vec2):
             size = args[0]
-            object.__setattr__(self, "size", size)
-            object.__setattr__(self, "shift", Vec2(0, 0))
+            set(size, Vec2(0, 0))
             return
 
         if len(args) == 2 and isinstance(args[0], Vec2) and isinstance(args[1], Vec2):
             size = args[0]
             shift = args[1]
-            object.__setattr__(self, "size", size)
-            object.__setattr__(self, "shift", shift)
+            set(size, shift)
             return
 
         if (
@@ -373,8 +382,7 @@ class Rc:
             and isinstance(args[1], (int, float))
         ):
             size = Vec2(args[0], args[1])
-            object.__setattr__(self, "size", size)
-            object.__setattr__(self, "shift", Vec2(0, 0))
+            set(size, Vec2(0, 0))
             return
 
         if (
@@ -384,11 +392,10 @@ class Rc:
         ):
             size = Vec2(args[0], args[1])
             shift = Vec2(args[2], args[3])
-            object.__setattr__(self, "size", size)
-            object.__setattr__(self, "shift", shift)
+            set(size, shift)
             return
 
-        raise ValueError(f"Init error with parameters {[*args]}")
+        raise ValueError(f"Missing parameters {[*args], [*kwargs]}")
 
     @classmethod
     def from_edges(cls, left: Mm, right: Mm, bottom: Mm, top: Mm) -> Self:
@@ -415,19 +422,19 @@ class Rc:
         return self.shift + (self.size / 2)
 
     @property
-    def top(self) -> float:
+    def top(self) -> Mm:
         return self.max.y
 
     @property
-    def bottom(self) -> float:
+    def bottom(self) -> Mm:
         return self.min.y
 
     @property
-    def left(self) -> float:
+    def left(self) -> Mm:
         return self.min.x
 
     @property
-    def right(self) -> float:
+    def right(self) -> Mm:
         return self.max.x
 
     def shifted(self, shift: Vec2) -> Self:

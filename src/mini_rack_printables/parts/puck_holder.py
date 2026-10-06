@@ -83,7 +83,10 @@ class PuckHolder(ModelPart):
             """
             with BuildSketch() as sk:
                 add(RectangleElement(dx + 2 * w, dy + 2 * w, self.style.corner_rounding).sketch())
-                add(RectangleElement(dx + 2 * w, dy + 2 * w, InsetCorners(w + e)).sketch(), mode=Mode.SUBTRACT)
+                add(
+                    RectangleElement(dx + 2 * w, dy + 2 * w, InsetCorners(w + e)).sketch(),
+                    mode=Mode.SUBTRACT,
+                )
                 add(RectangleElement(dx, dy).sketch())
             return Location((0, 0, walls_z)) * extrude(sk.sketch, amount=walls_depth)
 
