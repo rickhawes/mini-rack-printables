@@ -12,6 +12,7 @@ from build123d import Axis, Face, Location, Part, Plane, ShapeList, Align
 # -----------------------------------------------------
 # Side selectors
 # -----------------------------------------------------
+
 class Side(Enum):
     """
     Enum for selecting a face of a cube or an edge of a square.
@@ -99,7 +100,7 @@ def select_locations(part: Part, sides: Sequence[Side]) -> list[Location]:
 
 class Place(Enum):
     """
-    Enum for selecting edges and corners of a square.
+    Enum for selecting edges and corners of a rectangle. 2D only.
     """
 
     # Face/edge
