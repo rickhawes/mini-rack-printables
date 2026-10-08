@@ -16,12 +16,12 @@ from build123d import (
     add,
 )
 
-from ..dimensions import RackDims, ShelfTabDims
-from ..holes import sketch_rack_holes
-from ..geometry import Rib, Bx, Vec3, Mm
-from .model import Model
-from ..parts.model_feature import PlatePlanes, FeatureList
-from ..parts.layouts import FeatureLayout, RowLayout
+from ..core.dimensions import RackDims, ShelfTabDims
+from ..core.holes import sketch_rack_holes
+from ..core.geometry import Rib, Bx, Vec3, Mm
+from ..core.model import Model
+from ..core.model_feature import PlatePlanes, FeatureList
+from ..core.layouts import FeatureLayout, RowLayout
 
 
 @final

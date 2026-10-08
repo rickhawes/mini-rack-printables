@@ -1,21 +1,21 @@
 from .models.faceplate import FacePlate
 from .models.xray import XRayModel
 from .models.shelf import Shelf
-from .parts.model_feature import ModelFeature, FeaturePiece, PlatePlanes
-from .parts.layouts import FeatureLayout, GridLayout, RowLayout, MeasuredRowsColumns
-from .parts.row_column_collection import RowColumnCollection
-from .parts.cutout import Cutout
-from .parts.spacer import Spacer
-from .parts.import_feature import ImportFeature
-from .parts.keystone import Keystone
-from .parts.jetkvm import JetKVM
-from .parts.wall_holder import WallHolder
-from .parts.corner_holder import CornerHolder
-from .parts.puck_holder import PuckHolder
-from .dimensions import RackDims, RackScrewDims, Screw1032Dims
-from .geometry import Rc, Bx, Rib, Vec2, Vec3
-from .selectors import Place, Side, Ax
-from .elements_2d import (
+from .models.cutout import Cutout
+from .models.import_feature import ImportFeature
+from .models.keystone import Keystone
+from .models.jetkvm import JetKVM
+from .models.wall_holder import WallHolder
+from .models.corner_holder import CornerHolder
+from .models.puck_holder import PuckHolder
+from .models.spacer import Spacer
+from .core.model_feature import ModelFeature, FeaturePiece, PlatePlanes
+from .core.layouts import FeatureLayout, GridLayout, RowLayout, MeasuredRowsColumns
+from .core.dimensions import RackDims, RackScrewDims, Screw1032Dims
+from .core.geometry import Rc, Bx, Rib, Vec2, Vec3
+from .core.selectors import Place, Side, Ax
+from .core.row_column_collection import RowColumnCollection
+from .core.elements_2d import (
     Element2D,
     CircleElement,
     RectangleElement,
@@ -23,9 +23,9 @@ from .elements_2d import (
     RightTriangleElement,
     TrapezoidElement,
 )
-from .elements_3d import Element3D
-from .holes import layout_rack_screw_holes, sketch_rack_holes
-from .corners import (
+from .core.elements_3d import Element3D
+from .core.holes import layout_rack_screw_holes, sketch_rack_holes
+from .core.corners import (
     Corners,
     RoundedCorners,
     SquareCorners,
@@ -33,7 +33,7 @@ from .corners import (
     BeveledCorners,
     SelectedCorners,
 )
-from .fills import Fill, SquareHoles, HexHoles, CircleHoles
+from .core.fills import Fill, SquareHoles, HexHoles, CircleHoles
 
 
 __all__ = [

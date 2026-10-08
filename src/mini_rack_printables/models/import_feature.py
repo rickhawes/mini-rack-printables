@@ -15,9 +15,9 @@ from build123d import (
 from build123d.topology import Shape, Solid
 
 
-from .model_feature import ModelFeature, FeaturePiece, PlatePlanes
-from ..dimensions import E
-from ..geometry import Vec3
+from ..core.model_feature import ModelFeature, FeaturePiece, PlatePlanes
+from ..core.dimensions import E
+from ..core.geometry import Vec3
 
 
 class ImportFeature(ModelFeature):

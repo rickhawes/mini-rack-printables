@@ -2,14 +2,14 @@ from dataclasses import dataclass
 from typing import override
 from build123d import Part, Box, Pos, extrude, Mode, Location, BuildSketch, add, BuildPart
 
-from .model_feature import ModelFeature, FeaturePiece, PlatePlanes
-from ..selectors import Side, select_locations, select_location
-from ..elements_2d import RectangleElement
-from ..corners import RoundedCorners
-from ..elements_3d import extrude_element, make_plate
-from ..fills import HexHoles
-from ..corners import SelectedCorners, InsetCorners
-from ..geometry import Vec3, Vec2, Mm
+from ..core.model_feature import ModelFeature, FeaturePiece, PlatePlanes
+from ..core.selectors import Side, select_locations, select_location
+from ..core.elements_2d import RectangleElement
+from ..core.corners import RoundedCorners
+from ..core.elements_3d import extrude_element, make_plate
+from ..core.fills import HexHoles
+from ..core.corners import SelectedCorners, InsetCorners
+from ..core.geometry import Vec3, Vec2, Mm
 
 
 class PuckHolder(ModelFeature):

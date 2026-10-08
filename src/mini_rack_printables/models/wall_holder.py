@@ -2,13 +2,13 @@ from dataclasses import dataclass
 from build123d import Part, Box, Pos, extrude, Mode, Sketch
 from typing import override
 
-from .model_feature import ModelFeature, FeaturePiece, PlatePlanes
-from ..selectors import Side, select_locations
-from ..geometry import Rib, Vec3, Vec2, Mm
-from ..elements_2d import RectangleElement
-from ..corners import InsetCorners
-from ..fills import HexHoles
-from ..elements_3d import extrude_element, extrude_sketch, sketch_ring, make_plate
+from ..core.model_feature import ModelFeature, FeaturePiece, PlatePlanes
+from ..core.selectors import Side, select_locations
+from ..core.geometry import Rib, Vec3, Vec2, Mm
+from ..core.elements_2d import RectangleElement
+from ..core.corners import InsetCorners
+from ..core.fills import HexHoles
+from ..core.elements_3d import extrude_element, extrude_sketch, sketch_ring, make_plate
 
 
 class WallHolder(ModelFeature):

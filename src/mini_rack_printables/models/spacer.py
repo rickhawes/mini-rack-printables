@@ -1,5 +1,5 @@
-from .model_feature import ModelFeature, PlatePlanes, FeaturePiece
-from ..geometry import Vec2, Mm
+from ..core.model_feature import ModelFeature, PlatePlanes, FeaturePiece
+from ..core.geometry import Vec2, Mm
 from typing import override
 
 

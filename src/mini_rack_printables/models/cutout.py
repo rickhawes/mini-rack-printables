@@ -1,9 +1,9 @@
 from typing import override
 
-from ..geometry import Rib, Vec2
-from .model_feature import ModelFeature, FeaturePiece, PlatePlanes
-from ..elements_2d import Element2D
-from ..elements_3d import extrude_element, extrude_tube
+from ..core.geometry import Rib, Vec2
+from ..core.model_feature import ModelFeature, FeaturePiece, PlatePlanes
+from ..core.elements_2d import Element2D
+from ..core.elements_3d import extrude_element, extrude_tube
 from build123d import Mode
 
 
@@ -15,7 +15,7 @@ class Cutout(ModelFeature):
     shape: Element2D
     rib: Rib | None
 
-    def __init__(self, shape: Element2D, rib: Rib | None = None):
+    def __init__(self, shape: Element2D, rib: Rib | None = None) -> None:
         """
         Args:
             shape (Element): The 2D shape to cut out.

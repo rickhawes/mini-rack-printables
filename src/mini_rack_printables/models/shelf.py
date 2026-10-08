@@ -2,17 +2,17 @@ from dataclasses import dataclass
 from build123d import Compound, Location, mirror, Plane, Part, Sketch, extrude
 from typing import override, final
 
-from ..dimensions import ShelfTabDims, RackDims, rack_units_to_mm
-from ..geometry import Bx, Vec3, Mm
-from ..parts.model_feature import FeatureList, PlatePlanes
-from ..parts.layouts import FeatureLayout, GridLayout
-from ..selectors import Side, select_plane, Place, Ax
-from ..elements_2d import Element2D, RectangleElement, TrapezoidElement
-from ..elements_3d import extrude_element
-from ..corners import SquareCorners
-from ..fills import HexHoles
-from ..holes import sketch_rack_holes
-from .model import Model
+from ..core.dimensions import ShelfTabDims, RackDims, rack_units_to_mm
+from ..core.geometry import Bx, Vec3, Mm
+from ..core.model_feature import FeatureList, PlatePlanes
+from ..core.layouts import FeatureLayout, GridLayout
+from ..core.selectors import Side, select_plane, Place, Ax
+from ..core.elements_2d import Element2D, RectangleElement, TrapezoidElement
+from ..core.elements_3d import extrude_element
+from ..core.corners import SquareCorners
+from ..core.fills import HexHoles
+from ..core.holes import sketch_rack_holes
+from ..core.model import Model
 
 
 @final

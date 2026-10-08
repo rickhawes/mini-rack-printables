@@ -7,11 +7,11 @@ from typing import override
 
 from build123d import Sketch, extrude
 
-from ..elements_2d import RectangleElement, Element2D
-from ..elements_3d import sketch_ring
-from ..corners import InsetCorners
-from .model_feature import ModelFeature, FeaturePiece, PlatePlanes
-from ..geometry import Vec2, Mm
+from ..core.elements_2d import RectangleElement, Element2D
+from ..core.elements_3d import sketch_ring
+from ..core.corners import InsetCorners
+from ..core.model_feature import ModelFeature, FeaturePiece, PlatePlanes
+from ..core.geometry import Vec2, Mm
 
 
 class CornerHolder(ModelFeature):
@@ -33,7 +33,7 @@ class CornerHolder(ModelFeature):
         corner_height: Mm = 10.0,
         wall_depth: Mm = 5.0,
         wall_thickness: Mm = 3.0,
-    ):
+    ) -> None:
         """
         Initialize a holder with the given style, device size, and optional label, align, shift, and padding.
 

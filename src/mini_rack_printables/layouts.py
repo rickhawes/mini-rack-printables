@@ -12,9 +12,9 @@ from build123d import BuildPart, Part, add
 
 from .model_feature import PlatePlanes, FeatureList, ModelFeature, FeaturePiece
 from .row_column_collection import RowColumnCollection
-from ..dimensions import E
-from ..geometry import Rc, Mm
-from ..selectors import Place
+from .dimensions import E
+from .geometry import Rc, Mm
+from .selectors import Place
 
 
 class FeatureLayout(ABC):

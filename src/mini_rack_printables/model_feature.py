@@ -6,7 +6,7 @@ from build123d import Mode, Plane, Solid, Part, Location
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
-from ..geometry import Bx, Vec2, Vec3
+from .geometry import Bx, Vec2, Vec3
 
 
 class ModelFeature(ABC):

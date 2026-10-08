@@ -4,9 +4,9 @@ from build123d import Color, Compound, Mode
 from build123d.topology.composite import Part
 from build123d.topology.three_d import Solid
 
-from ..parts.model_feature import ModelFeature, PlatePlanes
-from .model import Model
-from ..geometry import Bx, Vec3
+from ..core.model_feature import ModelFeature, PlatePlanes
+from ..core.model import Model
+from ..core.geometry import Bx, Vec3
 
 
 class XRayModel(Model):
