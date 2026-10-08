@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import override
 from build123d import Part, Box, Pos, extrude, Mode, Location, BuildSketch, add, BuildPart
 
-from .model_part import ModelPart, PartPiece, PlatePlanes
+from .model_feature import ModelFeature, FeaturePiece, PlatePlanes
 from ..selectors import Side, select_locations, select_location
 from ..elements_2d import RectangleElement
 from ..corners import RoundedCorners
@@ -12,7 +12,7 @@ from ..corners import SelectedCorners, InsetCorners
 from ..geometry import Vec3, Vec2, Mm
 
 
-class PuckHolder(ModelPart):
+class PuckHolder(ModelFeature):
     """
     A device holder for a single device on a faceplate.
     Devices are held by friction from side, top and bottom plates.
@@ -69,13 +69,13 @@ class PuckHolder(ModelPart):
         )
 
     @override
-    def desired_size(self) -> ModelPart.DesiredSize:
+    def desired_size(self) -> ModelFeature.DesiredSize:
         wall = 2 * self.style.wall_thickness
         size = self.device_size.to_2d() + Vec2(wall, wall)
-        return ModelPart.DesiredSize(size)
+        return ModelFeature.DesiredSize(size)
 
     @override
-    def render(self, plate_planes: PlatePlanes) -> list[PartPiece]:
+    def render(self, plate_planes: PlatePlanes) -> list[FeaturePiece]:
         # geometry
         dx, dy, dz = self.device_size.to_tuple()
         r = self.device_rounding
@@ -136,6 +136,6 @@ class PuckHolder(ModelPart):
         holder += make_walls()
 
         return [
-            PartPiece(plate_planes.top_plane * holder),
-            PartPiece(plate_planes.bottom_plane * make_puck_cutout(), Mode.SUBTRACT),
+            FeaturePiece(plate_planes.top_plane * holder),
+            FeaturePiece(plate_planes.bottom_plane * make_puck_cutout(), Mode.SUBTRACT),
         ]

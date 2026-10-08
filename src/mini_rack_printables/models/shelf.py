@@ -4,8 +4,8 @@ from typing import override, final
 
 from ..dimensions import ShelfTabDims, RackDims, rack_units_to_mm
 from ..geometry import Bx, Vec3, Mm
-from ..parts.model_part import PartList, PlatePlanes
-from ..parts.layouts import PartLayout, GridLayout
+from ..parts.model_feature import FeatureList, PlatePlanes
+from ..parts.layouts import FeatureLayout, GridLayout
 from ..selectors import Side, select_plane, Place, Ax
 from ..elements_2d import Element2D, RectangleElement, TrapezoidElement
 from ..elements_3d import extrude_element
@@ -52,8 +52,8 @@ class Shelf(Model):
         self,
         rack_units: float = 1.0,
         style: Style = OPEN_FACE,
-        shelf_parts: PartList | None = None,
-        shelf_layout: PartLayout | None = None,
+        shelf_features: FeatureList | None = None,
+        shelf_layout: FeatureLayout | None = None,
     ):
         """
         A rack shelf with either an open or closed face.
@@ -66,7 +66,7 @@ class Shelf(Model):
         """
         self.rack_units = rack_units
         self.style = style
-        self.shelf_parts = shelf_parts
+        self.shelf_features = shelf_features
         self.shelf_layout = shelf_layout if shelf_layout is not None else GridLayout()
         assert 4 * style.wall_inset < style.shelf_depth, (
             "wall_inset must be less than shelf_depth / 4"
@@ -162,8 +162,10 @@ class Shelf(Model):
             return s
 
         shelf = make_shelf()
-        if self.shelf_parts:
+        if self.shelf_features:
             shelf_plate = PlatePlanes(Bx(size=plate_size, shift=Vec3(0, 0, plate_size.z / 2)))
-            pieces = PartLayout.render_pieces(self.shelf_parts, shelf_plate, self.shelf_layout)
-            shelf = PartLayout.assemble_pieces(shelf, pieces)
+            pieces = FeatureLayout.render_pieces(
+                self.shelf_features, shelf_plate, self.shelf_layout
+            )
+            shelf = FeatureLayout.assemble_pieces(shelf, pieces)
         return shelf

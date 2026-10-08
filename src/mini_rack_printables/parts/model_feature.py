@@ -1,6 +1,5 @@
 """
-Classes for specifying parts of a `Model`.
-
+Classes for specifying features of a `Model`. Features may be related to specific devices or general concepts like cutouts.
 """
 
 from build123d import Mode, Plane, Solid, Part, Location
@@ -10,16 +9,16 @@ from dataclasses import dataclass
 from ..geometry import Bx, Vec2, Vec3
 
 
-class ModelPart(ABC):
+class ModelFeature(ABC):
     """
-    Base class for all parts of a `Model`. `ModelPart` is used to distinguish this from the build123d `Part` classes
+    Base class for all features of a `Model`.
     """
 
     @dataclass(frozen=True)
     class DesiredSize:
         """
         Represents the desired size of a `ModelPart` on a plate.
-        Contains the minimum size and a flag if the parts wants more space than the minimum size.
+        Contains the minimum size and a flag if the feature wants more space than the minimum size.
         """
 
         min_size: Vec2
@@ -41,7 +40,7 @@ class ModelPart(ABC):
         pass
 
     @abstractmethod
-    def render(self, plate_planes: PlatePlanes) -> list[PartPiece]:
+    def render(self, plate_planes: PlatePlanes) -> list[FeaturePiece]:
         """
         Render the feature
 
@@ -51,14 +50,14 @@ class ModelPart(ABC):
         pass
 
 
-type PartList = list[ModelPart] | list[list[ModelPart]]
-"""A row-column list of ModelParts."""
+type FeatureList = list[ModelFeature] | list[list[ModelFeature]]
+"""A row-column list of features."""
 
 
 @dataclass
 class PlatePlanes:
     """
-    Represents a plate on which parts are placed during rendering.
+    Represents a plate on which features are placed during rendering.
 
     Attributes:
         bounds: The bounds of the plate for that a part can use.
@@ -106,11 +105,11 @@ type PlateList = list[PlatePlanes] | list[list[PlatePlanes]]
 """A 2d list of plates"""
 
 
-@dataclass
-class PartPiece:
+@dataclass(frozen=True)
+class FeaturePiece:
     """
-    Represents the output of rendering a ModelPart, containing the solid and
-    how to add the solid to the plate (i.e. location and combination mode).
+    Represents the output of rendering a `ModelFeature`, containing the solid and
+    the add mode (i.e. location and combination mode).
 
     Attributes:
         part: The solid for the part located by the part
@@ -118,8 +117,4 @@ class PartPiece:
     """
 
     part: Solid | Part
-    mode: Mode
-
-    def __init__(self, part: Solid | Part, mode: Mode = Mode.ADD):
-        self.part = part
-        self.mode = mode
+    mode: Mode = Mode.ADD

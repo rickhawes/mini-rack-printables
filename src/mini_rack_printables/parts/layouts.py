@@ -10,18 +10,20 @@ from typing import override
 
 from build123d import BuildPart, Part, add
 
-from .model_part import PlatePlanes, PartList, ModelPart, PartPiece
+from .model_feature import PlatePlanes, FeatureList, ModelFeature, FeaturePiece
 from .row_column_collection import RowColumnCollection
 from ..dimensions import E
 from ..geometry import Rc, Mm
 from ..selectors import Place
 
 
-class PartLayout(ABC):
+class FeatureLayout(ABC):
     """Base Layout class"""
 
     @abstractmethod
-    def layout_parts(self, parts: PartList, plate_planes: PlatePlanes) -> list[PlatePlanes]:
+    def layout_features(
+        self, features: FeatureList, plate_planes: PlatePlanes
+    ) -> list[PlatePlanes]:
         """
         Layout the 'parts' on the passed in 'plate' returning
         a list of sub plates for each passed in part.
@@ -30,20 +32,20 @@ class PartLayout(ABC):
 
     @staticmethod
     def render_pieces(
-        parts: PartList, plate_planes: PlatePlanes, layout: PartLayout
-    ) -> list[PartPiece]:
+        features: FeatureList, plate_planes: PlatePlanes, layout: FeatureLayout
+    ) -> list[FeaturePiece]:
         """
-        Render all `parts` using the given `plate` and `layout` algorithm.
+        Render all `features` using the given `plate` and `layout` algorithm.
         """
-        pieces: list[PartPiece] = []
-        sub_plates = layout.layout_parts(parts, plate_planes)
-        for part, _, _, index in RowColumnCollection(parts):
+        pieces: list[FeaturePiece] = []
+        sub_plates = layout.layout_features(features, plate_planes)
+        for part, _, _, index in RowColumnCollection(features):
             part_pieces = part.render(sub_plates[index])
             pieces.extend(part_pieces)
         return pieces
 
     @staticmethod
-    def assemble_pieces(to_part: Part, pieces: list[PartPiece]) -> Part:
+    def assemble_pieces(to_part: Part, pieces: list[FeaturePiece]) -> Part:
         """
         Add `pieces` with `to_part` to create the final result.
         """
@@ -58,7 +60,7 @@ class PartLayout(ABC):
 
 
 @dataclass(frozen=True)
-class RowLayout(PartLayout):
+class RowLayout(FeatureLayout):
     """
     Layout each row independently according to the part's desired size. If desired size
     does not fill the plate's width, then allocate space according to part's desires.
@@ -81,7 +83,7 @@ class RowLayout(PartLayout):
 
     def _layout_vert(
         self,
-        coll: RowColumnCollection[ModelPart],
+        coll: RowColumnCollection[ModelFeature],
         m: MeasuredRowsColumns,
         plate_planes: PlatePlanes,
     ) -> list[float]:
@@ -124,17 +126,19 @@ class RowLayout(PartLayout):
         return [expanded_height(i) for i in range(rc)]
 
     @override
-    def layout_parts(self, parts: PartList, plate_planes: PlatePlanes) -> list[PlatePlanes]:
-        coll = RowColumnCollection(parts)
+    def layout_features(
+        self, features: FeatureList, plate_planes: PlatePlanes
+    ) -> list[PlatePlanes]:
+        coll = RowColumnCollection(features)
         m = MeasuredRowsColumns.measure_parts(coll)
         s = self.spacing
 
-        def layout_one(row_parts: list[ModelPart]) -> list[Mm]:
+        def layout_one(row_features: list[ModelFeature]) -> list[Mm]:
             """Calculate the horizontal widths of cells of one row the left-to-right direction"""
             plate_width = plate_planes.bounds.size.x
-            cc = len(row_parts)
-            total_width = sum(p.desired_size().min_size.x for p in row_parts)
-            expand_count = sum(1 for p in row_parts if p.desired_size().more_x)
+            cc = len(row_features)
+            total_width = sum(p.desired_size().min_size.x for p in row_features)
+            expand_count = sum(1 for p in row_features if p.desired_size().more_x)
             excess = plate_width - total_width - s * (cc + 1)
             if excess < 0:
                 raise ValueError(f"Part width {total_width} is too large)")
@@ -144,14 +148,14 @@ class RowLayout(PartLayout):
 
             if expand_count == 0:
                 # distribute excess space evenly between all columns
-                return [p.desired_size().min_size.x + (excess / cc) for p in row_parts]
+                return [p.desired_size().min_size.x + (excess / cc) for p in row_features]
 
             # distribute excess space evenly between expanding columns
-            def expanded_width(p: ModelPart) -> Mm:
+            def expanded_width(p: ModelFeature) -> Mm:
                 ds = p.desired_size()
                 return ds.min_size.x + (excess / expand_count) if ds.more_x else ds.min_size.x
 
-            return [expanded_width(p) for p in row_parts]
+            return [expanded_width(p) for p in row_features]
 
         # Iterate over rows and columns to form sub_plates for each part.
         # Increment top and left with spacing to position each sub_plate correctly.
@@ -191,8 +195,10 @@ class GridLayout(RowLayout):
     """ Column widths """
 
     @override
-    def layout_parts(self, parts: PartList, plate_planes: PlatePlanes) -> list[PlatePlanes]:
-        coll = RowColumnCollection(parts)
+    def layout_features(
+        self, features: FeatureList, plate_planes: PlatePlanes
+    ) -> list[PlatePlanes]:
+        coll = RowColumnCollection(features)
         m = MeasuredRowsColumns.measure_parts(coll)
         s = self.spacing
 
@@ -267,7 +273,7 @@ class MeasuredRowsColumns:
     more_y: list[bool]
 
     @classmethod
-    def measure_parts(cls, parts: RowColumnCollection[ModelPart]) -> MeasuredRowsColumns:
+    def measure_parts(cls, parts: RowColumnCollection[ModelFeature]) -> MeasuredRowsColumns:
         min_x = [
             max(
                 part.desired_size().min_size.x if part is not None else 0

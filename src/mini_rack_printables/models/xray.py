@@ -4,7 +4,7 @@ from build123d import Color, Compound, Mode
 from build123d.topology.composite import Part
 from build123d.topology.three_d import Solid
 
-from ..parts.model_part import ModelPart, PlatePlanes
+from ..parts.model_feature import ModelFeature, PlatePlanes
 from .model import Model
 from ..geometry import Bx, Vec3
 
@@ -15,11 +15,11 @@ class XRayModel(Model):
     This model is useful for visualizing and debugging the structure of a ModelPart.
     """
 
-    part: ModelPart
+    part: ModelFeature
     size: Vec3
     only_adds: bool
 
-    def __init__(self, part: ModelPart, size: Vec3 | None = None, only_adds: bool = True):
+    def __init__(self, part: ModelFeature, size: Vec3 | None = None, only_adds: bool = True):
         self.part = part
         self.size = size if size is not None else Vec3(100, 100, 3.5)
         self.only_adds = only_adds

@@ -1,9 +1,9 @@
-from .model_part import ModelPart, PlatePlanes, PartPiece
+from .model_feature import ModelFeature, PlatePlanes, FeaturePiece
 from ..geometry import Vec2, Mm
 from typing import override
 
 
-class Spacer(ModelPart):
+class Spacer(ModelFeature):
     """A spacer that does nothing fill space to help with the layout of a plate."""
 
     width: Mm
@@ -18,9 +18,9 @@ class Spacer(ModelPart):
         self.more_y = more_y
 
     @override
-    def desired_size(self) -> ModelPart.DesiredSize:
-        return ModelPart.DesiredSize(Vec2(self.width, self.height), self.more_x, self.more_y)
+    def desired_size(self) -> ModelFeature.DesiredSize:
+        return ModelFeature.DesiredSize(Vec2(self.width, self.height), self.more_x, self.more_y)
 
     @override
-    def render(self, plate_planes: PlatePlanes) -> list[PartPiece]:
+    def render(self, plate_planes: PlatePlanes) -> list[FeaturePiece]:
         return []

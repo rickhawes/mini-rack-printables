@@ -20,8 +20,8 @@ from ..dimensions import RackDims, ShelfTabDims
 from ..holes import sketch_rack_holes
 from ..geometry import Rib, Bx, Vec3, Mm
 from .model import Model
-from ..parts.model_part import PlatePlanes, PartList
-from ..parts.layouts import PartLayout, RowLayout
+from ..parts.model_feature import PlatePlanes, FeatureList
+from ..parts.layouts import FeatureLayout, RowLayout
 
 
 @final
@@ -60,15 +60,15 @@ class FacePlate(Model):
     rack_units: float
     """Rack units of the plate"""
     style: Style
-    parts: PartList | None = None
-    layout: PartLayout = RowLayout()
+    features: FeatureList | None = None
+    layout: FeatureLayout = RowLayout()
 
     def __init__(
         self,
         rack_units: float,
         style: Style | None = None,
-        parts: PartList | None = None,
-        layout: PartLayout | None = None,
+        features: FeatureList | None = None,
+        layout: FeatureLayout | None = None,
     ) -> None:
         """
         Create a faceplate model
@@ -80,7 +80,7 @@ class FacePlate(Model):
         """
         self.rack_units = rack_units
         self.style = style if style is not None else FacePlate.Style()
-        self.parts = parts
+        self.features = features
         self.layout = layout if layout is not None else RowLayout()
 
     @override
@@ -129,11 +129,11 @@ class FacePlate(Model):
         # Add/subtract parts
         result = face_plate.part
         assert result is not None
-        if self.parts:
+        if self.features:
             part_planes = PlatePlanes(
                 Bx(size=part_area_size, shift=Vec3(0, 0, part_area_size.z / 2))
             )
-            pieces = PartLayout.render_pieces(self.parts, part_planes, self.layout)
-            result = PartLayout.assemble_pieces(result, pieces)
+            pieces = FeatureLayout.render_pieces(self.features, part_planes, self.layout)
+            result = FeatureLayout.assemble_pieces(result, pieces)
 
         return Compound(label="face_plate", children=[result])

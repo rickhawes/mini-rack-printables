@@ -1,13 +1,13 @@
 from typing import override
 
 from ..geometry import Rib, Vec2
-from .model_part import ModelPart, PartPiece, PlatePlanes
+from .model_feature import ModelFeature, FeaturePiece, PlatePlanes
 from ..elements_2d import Element2D
 from ..elements_3d import extrude_element, extrude_tube
 from build123d import Mode
 
 
-class Cutout(ModelPart):
+class Cutout(ModelFeature):
     """
     A cutout of a plate. It can also be outlined with a rib.
     """
@@ -25,22 +25,22 @@ class Cutout(ModelPart):
         self.rib = rib
 
     @override
-    def desired_size(self) -> ModelPart.DesiredSize:
+    def desired_size(self) -> ModelFeature.DesiredSize:
         rib = 2 * self.rib.width if self.rib else 0
         size = self.shape.size() + Vec2(rib, rib)
-        return ModelPart.DesiredSize(size, False)
+        return ModelFeature.DesiredSize(size, False)
 
     @override
-    def render(self, plate_planes: PlatePlanes) -> list[PartPiece]:
+    def render(self, plate_planes: PlatePlanes) -> list[FeaturePiece]:
         """Returns a list of PartOutput structures representing the cutout"""
         # the same rendering formula is used for all types of cutouts
         hole = plate_planes.bottom_plane * extrude_element(self.shape, plate_planes.depth)
-        result = [PartPiece(hole, Mode.SUBTRACT)]
+        result = [FeaturePiece(hole, Mode.SUBTRACT)]
 
         if self.rib:
             rib = plate_planes.top_plane * extrude_tube(
                 self.shape, self.rib.width, self.rib.depth
             )
-            result += [PartPiece(rib)]
+            result += [FeaturePiece(rib)]
 
         return result

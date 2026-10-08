@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from build123d import Part, Box, Pos, extrude, Mode, Sketch
 from typing import override
 
-from .model_part import ModelPart, PartPiece, PlatePlanes
+from .model_feature import ModelFeature, FeaturePiece, PlatePlanes
 from ..selectors import Side, select_locations
 from ..geometry import Rib, Vec3, Vec2, Mm
 from ..elements_2d import RectangleElement
@@ -11,7 +11,7 @@ from ..fills import HexHoles
 from ..elements_3d import extrude_element, extrude_sketch, sketch_ring, make_plate
 
 
-class WallHolder(ModelPart):
+class WallHolder(ModelFeature):
     """
     A device holder for a single device on a face plate.
     Devices are held by friction from side, top and bottom plates.
@@ -68,13 +68,13 @@ class WallHolder(ModelPart):
         )
 
     @override
-    def desired_size(self) -> ModelPart.DesiredSize:
+    def desired_size(self) -> ModelFeature.DesiredSize:
         wall = 2 * self.style.wall_thickness
         size = self.device_size.to_2d() + Vec2(wall, wall)
-        return ModelPart.DesiredSize(size)
+        return ModelFeature.DesiredSize(size)
 
     @override
-    def render(self, plate_planes: PlatePlanes) -> list[PartPiece]:
+    def render(self, plate_planes: PlatePlanes) -> list[FeaturePiece]:
         # geometry
         dx, dy, r = self.device_size.x, self.device_size.y, self.device_rounding
         holder_depth = (
@@ -144,8 +144,8 @@ class WallHolder(ModelPart):
 
         if self.style.has_cutout:
             return [
-                PartPiece(plate_planes.top_plane * holder),
-                PartPiece(plate_planes.bottom_plane * make_cutout(), Mode.SUBTRACT),
+                FeaturePiece(plate_planes.top_plane * holder),
+                FeaturePiece(plate_planes.bottom_plane * make_cutout(), Mode.SUBTRACT),
             ]
         else:
-            return [PartPiece(plate_planes.top_plane * holder)]
+            return [FeaturePiece(plate_planes.top_plane * holder)]

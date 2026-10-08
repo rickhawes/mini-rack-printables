@@ -15,12 +15,12 @@ from build123d import (
 from build123d.topology import Shape, Solid
 
 
-from .model_part import ModelPart, PartPiece, PlatePlanes
+from .model_feature import ModelFeature, FeaturePiece, PlatePlanes
 from ..dimensions import E
 from ..geometry import Vec3
 
 
-class ImportPart(ModelPart):
+class ImportFeature(ModelFeature):
     """
     Make a part from a BREP file or a STL file.
     BREP files are imported rapidly, while STL files are converted to a BREP model using the `Mesher` library which may take some time.
@@ -41,7 +41,7 @@ class ImportPart(ModelPart):
         path: Path | None = None,
         asset: str | None = None,
         cutout: bool = True,
-    ):
+    ) -> None:
         """
         Initialize the ImportPart with the given path or asset name and optional parameters.
 
@@ -103,21 +103,21 @@ class ImportPart(ModelPart):
         return Vec3(bbox.size.X, bbox.size.Y, bbox.size.Z)
 
     @override
-    def desired_size(self) -> ModelPart.DesiredSize:
-        return ModelPart.DesiredSize(self.size.to_2d(), False)
+    def desired_size(self) -> ModelFeature.DesiredSize:
+        return ModelFeature.DesiredSize(self.size.to_2d(), False)
 
     @override
-    def render(self, plate_planes: PlatePlanes) -> list[PartPiece]:
+    def render(self, plate_planes: PlatePlanes) -> list[FeaturePiece]:
         if self.cutout:
             # Cutout: Cutout the bottom plane and place the imported part in the cutout
             return [
-                PartPiece(
+                FeaturePiece(
                     part=plate_planes.bottom_plane
                     * Location((0, 0, plate_planes.depth / 2))
                     * Box(self.size.x - E, self.size.y - E, plate_planes.depth + E).solid(),
                     mode=Mode.SUBTRACT,
                 ),
-                PartPiece(
+                FeaturePiece(
                     part=plate_planes.bottom_plane
                     * Location((0, 0, self.size.z / 2))
                     * self.shape.solid(),
@@ -127,7 +127,7 @@ class ImportPart(ModelPart):
         else:
             # No cutout, render directly on the top plane
             return [
-                PartPiece(
+                FeaturePiece(
                     part=plate_planes.top_plane
                     * Location((0, 0, self.size.z / 2))
                     * self.shape.solid(),

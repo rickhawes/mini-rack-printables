@@ -9,7 +9,7 @@ from mini_rack_printables import Keystone, FacePlate
 
 # A basic horizontal layout for 3 keystones
 keystone_part = Keystone()
-plate = FacePlate(rack_units=1.0, parts=[keystone_part for _ in range(3)]).render()
+plate = FacePlate(rack_units=1.0, features=[keystone_part for _ in range(3)]).render()
 
 # Show the plate in the OCP viewer
 show(plate)

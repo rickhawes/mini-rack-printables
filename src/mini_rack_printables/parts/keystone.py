@@ -1,10 +1,10 @@
-from .import_part import ImportPart
+from .import_feature import ImportFeature
 
 
-class Keystone(ImportPart):
+class Keystone(ImportFeature):
     """
     A keystone cutout part.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(asset="keystone.brep", cutout=True)

@@ -1,12 +1,12 @@
 from .models.faceplate import FacePlate
 from .models.xray import XRayModel
 from .models.shelf import Shelf
-from .parts.model_part import ModelPart, PartPiece, PlatePlanes
-from .parts.layouts import PartLayout, GridLayout, RowLayout, MeasuredRowsColumns
+from .parts.model_feature import ModelFeature, FeaturePiece, PlatePlanes
+from .parts.layouts import FeatureLayout, GridLayout, RowLayout, MeasuredRowsColumns
 from .parts.row_column_collection import RowColumnCollection
 from .parts.cutout import Cutout
 from .parts.spacer import Spacer
-from .parts.import_part import ImportPart
+from .parts.import_feature import ImportFeature
 from .parts.keystone import Keystone
 from .parts.jetkvm import JetKVM
 from .parts.wall_holder import WallHolder
@@ -53,15 +53,15 @@ __all__ = [
     "Rc",
     "Bx",
     "Rib",
-    "ModelPart",
-    "PartPiece",
+    "ModelFeature",
+    "FeaturePiece",
     "PlatePlanes",
-    "PartLayout",
+    "FeatureLayout",
     "GridLayout",
     "RowLayout",
     "RowColumnCollection",
     "MeasuredRowsColumns",
-    "ImportPart",
+    "ImportFeature",
     "XRayModel",
     "Keystone",
     "JetKVM",

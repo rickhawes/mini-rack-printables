@@ -7,7 +7,7 @@ from mini_rack_printables import WallHolder, FacePlate, Vec3
 # This example demonstrates a face plate with a holder.
 #
 holder = WallHolder(device_size=Vec3(210.0, 33.1, 30), style=WallHolder.BACK_LIP)
-plate = FacePlate(rack_units=1.0, parts=[holder]).render()
+plate = FacePlate(rack_units=1.0, features=[holder]).render()
 
 # Show the plate in the OCP viewer
 show(plate)

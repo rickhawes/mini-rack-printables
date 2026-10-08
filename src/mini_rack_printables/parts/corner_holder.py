@@ -10,11 +10,11 @@ from build123d import Sketch, extrude
 from ..elements_2d import RectangleElement, Element2D
 from ..elements_3d import sketch_ring
 from ..corners import InsetCorners
-from .model_part import ModelPart, PartPiece, PlatePlanes
+from .model_feature import ModelFeature, FeaturePiece, PlatePlanes
 from ..geometry import Vec2, Mm
 
 
-class CornerHolder(ModelPart):
+class CornerHolder(ModelFeature):
     """
     A device holder for a single device on a shelf. Devices are held by friction from the corners. The corners
     are cut out of holder's shape.
@@ -62,12 +62,12 @@ class CornerHolder(ModelPart):
         )
 
     @override
-    def desired_size(self) -> ModelPart.DesiredSize:
+    def desired_size(self) -> ModelFeature.DesiredSize:
         size = self.shape.size() + Vec2(self.wall_thickness, self.wall_thickness) * 2
-        return ModelPart.DesiredSize(size, False)
+        return ModelFeature.DesiredSize(size, False)
 
     @override
-    def render(self, plate_planes: PlatePlanes) -> list[PartPiece]:
+    def render(self, plate_planes: PlatePlanes) -> list[FeaturePiece]:
         # dimensions
         w, d = self.wall_thickness, self.wall_depth
         cw = self.corner_width
@@ -76,4 +76,4 @@ class CornerHolder(ModelPart):
         # sketch the holder shape
         cross = RectangleElement(size.x + 2 * w, size.y + 2 * w, InsetCorners(cw + 2 * w))
         sk = Sketch(sketch_ring(self.shape, w) - cross.sketch())
-        return [PartPiece(plate_planes.top_plane * extrude(sk, d))]
+        return [FeaturePiece(plate_planes.top_plane * extrude(sk, d))]

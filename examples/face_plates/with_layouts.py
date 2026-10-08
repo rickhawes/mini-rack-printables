@@ -23,7 +23,9 @@ partRight = Cutout(SlotElement(10.0, 5.0), rib=FacePlate.STD_RIB)
 
 # A basic face plate with row layout
 plate = FacePlate(
-    rack_units=1.0, parts=[partLeft, partCenter, partRight], layout=RowLayout(align=Place.BOTTOM)
+    rack_units=1.0,
+    features=[partLeft, partCenter, partRight],
+    layout=RowLayout(align=Place.BOTTOM),
 ).render()
 
 # Show the plate in the OCP viewer
