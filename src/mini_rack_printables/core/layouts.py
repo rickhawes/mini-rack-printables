@@ -5,65 +5,46 @@ Place parts on a model's plate. Used by most models.
 """
 
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import override
 
-from build123d import BuildPart, Part, add
-
-from .model_feature import PlatePlanes, FeatureList, ModelFeature, FeaturePiece
+from .print_dims import E
+from .feature import Feature, FeatureList
+from .geometry import Dir2, Mm, Rc, Vec2
 from .row_column_collection import RowColumnCollection
-from .dimensions import E
-from .geometry import Rc, Mm
-from .selectors import Place
 
 
-class FeatureLayout(ABC):
-    """Base Layout class"""
+class Layout(ABC):
+    """Base layout classes"""
+
+    @dataclass(frozen=True)
+    class Section:
+        """The result of a layout for a single feature"""
+
+        bounds: Rc
+        """The bounds of the section. """
+        origin: Vec2
+        """The origin for rendering the feature"""
+        feature: Feature
 
     @abstractmethod
-    def layout_features(
-        self, features: FeatureList, plate_planes: PlatePlanes
-    ) -> list[PlatePlanes]:
+    def layout_features(self, features: FeatureList, area: Rc) -> list[Section]:
         """
-        Layout the 'parts' on the passed in 'plate' returning
-        a list of sub plates for each passed in part.
-        """
-        pass
+        Layout the 'features' on the passed in 'area' returning
+        a list of section for each passed in part.
 
-    @staticmethod
-    def render_pieces(
-        features: FeatureList, plate_planes: PlatePlanes, layout: FeatureLayout
-    ) -> list[FeaturePiece]:
+        Args:
+            features (Feature): The features to layout
+            area (Rc): The area to place the features on
         """
-        Render all `features` using the given `plate` and `layout` algorithm.
-        """
-        pieces: list[FeaturePiece] = []
-        sub_plates = layout.layout_features(features, plate_planes)
-        for part, _, _, index in RowColumnCollection(features):
-            part_pieces = part.render(sub_plates[index])
-            pieces.extend(part_pieces)
-        return pieces
-
-    @staticmethod
-    def assemble_pieces(to_part: Part, pieces: list[FeaturePiece]) -> Part:
-        """
-        Add `pieces` with `to_part` to create the final result.
-        """
-        with BuildPart() as result:
-            _ = add(to_part)
-            for piece in pieces:
-                _ = add(piece.part, mode=piece.mode)
-        if result.part is None:
-            raise ValueError("Part was not created")
-        # noinspection bad-return
-        return result.part
 
 
 @dataclass(frozen=True)
-class RowLayout(FeatureLayout):
+class RowLayout(Layout):
     """
-    Layout each row independently according to the part's desired size. If desired size
-    does not fill the plate's width, then allocate space according to part's desires.
+    Layout each row independently according to the feature's desired size. If desired size
+    does not fill the area's width, then allocate space according to each feature's desired size.
     """
 
     equal_heights: bool = False
@@ -72,7 +53,7 @@ class RowLayout(FeatureLayout):
     """ Row heights if not equal heights"""
     equal_widths: bool = False
     """ Equal widths """
-    align: Place = Place.CENTER
+    place: Dir2 = Dir2.CENTER
     """ Alignment of the within a cell"""
     spacing: Mm = 0
     """ Spacing between cells """
@@ -82,15 +63,12 @@ class RowLayout(FeatureLayout):
             raise ValueError("Cannot set both row_heights and equal_row_heights")
 
     def _layout_vert(
-        self,
-        coll: RowColumnCollection[ModelFeature],
-        m: MeasuredRowsColumns,
-        plate_planes: PlatePlanes,
-    ) -> list[float]:
+        self, coll: RowColumnCollection[Feature], m: MeasuredRowsColumns, area: Rc
+    ) -> list[Mm]:
         """Calculate the vertical heights of rows in the top-to-bottom direction"""
         s = self.spacing
         rc = coll.row_count
-        plate_height = plate_planes.bounds.size.y
+        plate_height = area.size.y
         # Calculate the excess space to distribute and how many rows can expand
         total_height = sum(m.min_y)
         expand_count = sum(1 for more in m.more_y if more)
@@ -100,7 +78,7 @@ class RowLayout(FeatureLayout):
                 f"Minimum total height {total_height} is larger than available plate height {plate_height}"
             )
 
-        if self.row_heights:
+        if self.row_heights is not None:
             # use caller-defined row heights
             if len(self.row_heights) != rc:
                 raise ValueError("row_heights must have the same length as the number of rows")
@@ -126,16 +104,14 @@ class RowLayout(FeatureLayout):
         return [expanded_height(i) for i in range(rc)]
 
     @override
-    def layout_features(
-        self, features: FeatureList, plate_planes: PlatePlanes
-    ) -> list[PlatePlanes]:
-        coll = RowColumnCollection(features)
+    def layout_features(self, features: FeatureList, area: Rc) -> list[Layout.Section]:
+        coll = RowColumnCollection[Feature](features)
         m = MeasuredRowsColumns.measure_parts(coll)
         s = self.spacing
 
-        def layout_one(row_features: list[ModelFeature]) -> list[Mm]:
+        def layout_one(row_features: Sequence[Feature]) -> list[Mm]:
             """Calculate the horizontal widths of cells of one row the left-to-right direction"""
-            plate_width = plate_planes.bounds.size.x
+            plate_width = area.size.x
             cc = len(row_features)
             total_width = sum(p.desired_size().min_size.x for p in row_features)
             expand_count = sum(1 for p in row_features if p.desired_size().more_x)
@@ -151,34 +127,32 @@ class RowLayout(FeatureLayout):
                 return [p.desired_size().min_size.x + (excess / cc) for p in row_features]
 
             # distribute excess space evenly between expanding columns
-            def expanded_width(p: ModelFeature) -> Mm:
+            def expanded_width(p: Feature) -> Mm:
                 ds = p.desired_size()
                 return ds.min_size.x + (excess / expand_count) if ds.more_x else ds.min_size.x
 
             return [expanded_width(p) for p in row_features]
 
-        # Iterate over rows and columns to form sub_plates for each part.
+        # Iterate over rows and columns to Rc for each part.
         # Increment top and left with spacing to position each sub_plate correctly.
-        result: list[PlatePlanes] = []
-        front = plate_planes.bounds.front
-        back = plate_planes.bounds.back
-        left = plate_planes.bounds.left + s
-        top = plate_planes.bounds.top - s
-        for row, row_height in zip(coll.rows, self._layout_vert(coll, m, plate_planes)):
+        result: list[Layout.Section] = []
+        left = area.left + s
+        top = area.top - s
+        for row, row_height in zip(coll.rows, self._layout_vert(coll, m, area)):
             bottom = top - row_height
             for col_idx, item_width in enumerate(layout_one(row)):
-                right = left + item_width
+                right: Mm = left + item_width
 
-                part = row[col_idx]
+                feature = row[col_idx]
                 bounds = Rc.from_edges(left, right, bottom, top)
-                bounds_bx = bounds.form_bx(front, back)
-                part_rc = Rc(part.desired_size().min_size, bounds.shift)
-                origin_offset = part_rc.bounds_shift(bounds, self.align)
-                result.append(PlatePlanes(bounds_bx, origin_offset))
+                min_size = Rc(feature.desired_size().min_size)
+                origin = bounds.place_center(min_size, self.place)
+                section = Layout.Section(bounds, origin, feature)
+                result.append(section)
 
                 left = right + s
             top = bottom - s
-            left = plate_planes.bounds.left + s
+            left = area.left + s
 
         return result
 
@@ -195,17 +169,15 @@ class GridLayout(RowLayout):
     """ Column widths """
 
     @override
-    def layout_features(
-        self, features: FeatureList, plate_planes: PlatePlanes
-    ) -> list[PlatePlanes]:
+    def layout_features(self, features: FeatureList, area: Rc) -> list[Layout.Section]:
         coll = RowColumnCollection(features)
         m = MeasuredRowsColumns.measure_parts(coll)
         s = self.spacing
 
-        def layout_horz() -> list[float]:
+        def layout_horz() -> list[Mm]:
             """Calculate the horizontal widths of cells of columns in the left-to-right direction"""
             cc = coll.col_count
-            plate_width: Mm = plate_planes.bounds.size.x
+            plate_width: Mm = area.size.x
 
             # Calculate the excess space to distribute and how many columns can expand
             total_width: Mm = sum(m.min_x)
@@ -214,7 +186,7 @@ class GridLayout(RowLayout):
             if excess < 0:
                 raise ValueError(f"Part total width {total_width} is larger than available space")
 
-            if self.col_widths:
+            if self.col_widths is not None:
                 # use caller-defined column widths, check the supplied widths
                 if len(self.col_widths) != cc:
                     raise ValueError("col_widths does not match number of columns")
@@ -237,29 +209,27 @@ class GridLayout(RowLayout):
 
             return [expanded_width(i) for i in range(cc)]
 
-        result: list[PlatePlanes] = []
-        front = plate_planes.bounds.front
-        back = plate_planes.bounds.back
-        left = plate_planes.bounds.left + s
-        top = plate_planes.bounds.top - s
-        vert_layout = self._layout_vert(coll, m, plate_planes)
+        result: list[Layout.Section] = []
+        left = area.left + s
+        top = area.top - s
+        vert_layout = self._layout_vert(coll, m, area)
         horz_layout = layout_horz()
         for row_idx, row_height in enumerate(vert_layout):
             bottom = top - row_height
             for col_idx, item_width in enumerate(horz_layout):
-                right = left + item_width
+                right: Mm = left + item_width
 
-                part = coll.get_item(row_idx, col_idx)
-                if part is not None:
+                feature = coll.get_item(row_idx, col_idx)
+                if feature is not None:
                     bounds = Rc.from_edges(left, right, bottom, top)
-                    bounds_bx = bounds.form_bx(front, back)
-                    part_rc = Rc(part.desired_size().min_size, bounds.shift)
-                    origin_offset = part_rc.bounds_shift(bounds, self.align)
-                    result.append(PlatePlanes(bounds_bx, origin_offset))
+                    min_size = Rc(feature.desired_size().min_size)
+                    origin = bounds.place_center(min_size, self.place)
+                    section = Layout.Section(bounds, origin, feature)
+                    result.append(section)
 
                 left = right + s
             top = bottom - s
-            left = plate_planes.bounds.left + s
+            left = area.left + s
         return result
 
 
@@ -267,13 +237,13 @@ class GridLayout(RowLayout):
 class MeasuredRowsColumns:
     """Holds the measured rows and columns of a layout collection"""
 
-    min_x: list[float]
+    min_x: list[Mm]
     more_x: list[bool]
-    min_y: list[float]
+    min_y: list[Mm]
     more_y: list[bool]
 
     @classmethod
-    def measure_parts(cls, parts: RowColumnCollection[ModelFeature]) -> MeasuredRowsColumns:
+    def measure_parts(cls, parts: RowColumnCollection[Feature]) -> MeasuredRowsColumns:
         min_x = [
             max(
                 part.desired_size().min_size.x if part is not None else 0

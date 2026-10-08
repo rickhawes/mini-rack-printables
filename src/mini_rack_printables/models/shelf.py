@@ -1,17 +1,17 @@
 from dataclasses import dataclass
-from build123d import Compound, Location, mirror, Plane, Part, Sketch, extrude
-from typing import override, final
+from typing import final, override
 
-from ..core.dimensions import ShelfTabDims, RackDims, rack_units_to_mm
-from ..core.geometry import Bx, Vec3, Mm
-from ..core.model_feature import FeatureList, PlatePlanes
-from ..core.layouts import FeatureLayout, GridLayout
-from ..core.selectors import Side, select_plane, Place, Ax
-from ..core.elements_2d import Element2D, RectangleElement, TrapezoidElement
-from ..core.elements_3d import extrude_element
+from build123d import Location, Part, Plane, Sketch, extrude, mirror
+
+from mini_rack_printables.models.rack_dims import RackDims, ShelfTabDims, rack_units_to_mm
+
+#from mini_rack_printables.models.holes import sketch_rack_holes
 from ..core.corners import SquareCorners
-from ..core.fills import HexHoles
-from ..core.holes import sketch_rack_holes
+from ..core.elements_2d import Element2D, RectangleElement, TrapezoidElement
+from ..core.feature import FeatureList
+from ..core.geometry import Ax3, Bx, Dir2, Mm, Vec3
+from ..core.hole_patterns import HexFill
+from ..core.layouts import GridLayout, Layout
 from ..core.model import Model
 
 
@@ -53,7 +53,7 @@ class Shelf(Model):
         rack_units: float = 1.0,
         style: Style = OPEN_FACE,
         shelf_features: FeatureList | None = None,
-        shelf_layout: FeatureLayout | None = None,
+        shelf_layout: Layout | None = None,
     ):
         """
         A rack shelf with either an open or closed face.
@@ -61,7 +61,7 @@ class Shelf(Model):
         Args:
             rack_units: The number of rack units the shelf spans.
             style: The style of the rack shelf.
-            shelf_parts: The part to render on the rack shelf.
+            shelf_features: The features to add to the rack shelf.
             shelf_layout: The layout of the rack shelf.
         """
         self.rack_units = rack_units
@@ -73,7 +73,7 @@ class Shelf(Model):
         )
 
     @override
-    def render(self) -> Compound:
+    def render(self, modeler: Modeler) -> None:
         # geometry
         base_size = Vec3(
             ShelfTabDims.MAX_DX_TABS,
@@ -95,7 +95,7 @@ class Shelf(Model):
             )
             inset = self.style.wall_inset
             wall_plane = (
-                select_plane(base_plate, Side.MIN_X)
+                select_plane(base_plate, Direction.MIN_X)
                 .moved(
                     Location(
                         (
@@ -118,12 +118,10 @@ class Shelf(Model):
             wall_holes = RectangleElement(
                 wall_size.x / 2,
                 wall_size.y,
-                fill=HexHoles(),
+                fill=HexFill(),
                 corners=SquareCorners(base_size.z),  # insets the fill area a bit
             )
-            wall_sketch = Element2D.combine(
-                [wall_base, wall_trans, wall_holes], Ax.X, Place.BOTTOM
-            )
+            wall_sketch = Element2D.combine([wall_base, wall_trans, wall_holes], Ax3.X, Dir2.BOTTOM)
             return wall_plane * extrude(wall_sketch, wall_size.z)
 
         # add face
@@ -133,7 +131,7 @@ class Shelf(Model):
                 rack_units_to_mm(self.rack_units),
                 self.style.face_thickness,
             )
-            face_plane = select_plane(base_plate, Side.MIN_Y).moved(
+            face_plane = select_plane(base_plate, Direction.MIN_Y).moved(
                 Location((0, (face_size.y - base_size.z) / 2, -face_size.z))
             )
             face_sketch = RectangleElement(
@@ -163,9 +161,7 @@ class Shelf(Model):
 
         shelf = make_shelf()
         if self.shelf_features:
-            shelf_plate = PlatePlanes(Bx(size=plate_size, shift=Vec3(0, 0, plate_size.z / 2)))
-            pieces = FeatureLayout.render_pieces(
-                self.shelf_features, shelf_plate, self.shelf_layout
-            )
-            shelf = FeatureLayout.assemble_pieces(shelf, pieces)
+            shelf_plate = Bx(size=plate_size, center=Vec3(0, 0, plate_size.z / 2))
+            pieces = Layout.render_pieces(self.shelf_features, shelf_plate, self.shelf_layout)
+            shelf = Layout.assemble_pieces(shelf, pieces)
         return shelf

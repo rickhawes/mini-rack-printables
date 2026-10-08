@@ -1,55 +1,53 @@
-"""
-Classes to generate a fill pattern of holes in a plate.
+"""Classes to generate a fill pattern of holes in a plate.
+
+See Also:
+    RectangleElement
 """
 
-from abc import ABC, abstractmethod
 import math
+from abc import ABC, abstractmethod
 from typing import override
+
 from build123d import (
-    Rectangle,
     Circle,
-    Sketch,
-    HexLocations,
-    RegularPolygon,
     GridLocations,
+    HexLocations,
+    Rectangle,
+    RegularPolygon,
+    Sketch,
 )
 from build123d.build_common import LocationList
-from .geometry import Mm
+
+from .geometry import Mm, Vec2
 
 
-class Fill(ABC):
-    """Some elements can support fill patterns"""
-
-    spacing: Mm
-    width: Mm
-
-    def __init__(self, spacing: Mm, width: Mm) -> None:
-        """Initialize with `spacing` between holes and `width` of the fill between holes."""
-        self.spacing = spacing
-        self.width = width
+class HolePattern(ABC):
+    """Some elements can support hole patterns"""
 
     @abstractmethod
-    def locations(self, dx: Mm, dy: Mm) -> LocationList:
+    def locations(self, size: Vec2, inset: Vec2) -> LocationList:
         """Return the locations of the holes for the given dimensions."""
-        pass
 
     @abstractmethod
     def sketch(self) -> Sketch:
         """Sketch a single hole."""
-        pass
 
 
-class HexHoles(Fill):
+class HexFill(HolePattern):
     """Hexagonal holes for filling a model's surface."""
 
+    spacing: Mm
+    width: Mm
+
     def __init__(self, spacing: Mm = 4.0, width: Mm = 1.0) -> None:
-        super().__init__(spacing, width)
+        self.spacing = spacing
+        self.width = width
 
     @override
-    def locations(self, dx: Mm, dy: Mm) -> LocationList:
+    def locations(self, size: Vec2, inset: Vec2) -> LocationList:
         cx, cy = (
-            math.floor(dx / (2 * self.spacing)),
-            math.floor((dy - self.spacing) / (2 * self.spacing)),
+            math.floor((size - 2*inset).x / (2 * self.spacing)),
+            math.floor(((size - 2*inset).y - self.spacing) / (2 * self.spacing)),
         )
         return HexLocations(self.spacing, cx, cy) if cx > 0 and cy > 0 else LocationList([])
 
@@ -58,17 +56,21 @@ class HexHoles(Fill):
         return RegularPolygon(self.width - self.spacing, 6)
 
 
-class CircleHoles(Fill):
+class CircleFill(HolePattern):
     """Circular holes for filling a model's surface."""
 
-    def __init__(self, spacing: Mm = 3.0, width: Mm = 1.5) -> None:
-        super().__init__(spacing, width)
+    spacing: Mm
+    width: Mm
+
+    def __init__(self, spacing: Mm = 4.0, width: Mm = 1.0) -> None:
+        self.spacing = spacing
+        self.width = width
 
     @override
-    def locations(self, dx: Mm, dy: Mm) -> LocationList:
+    def locations(self, size: Vec2, inset: Vec2) -> LocationList:
         cx, cy = (
-            math.floor(dx / (2 * self.spacing)),
-            math.floor((dy - self.spacing) / (2 * self.spacing)),
+            math.floor((size - 2*inset).x  / (2 * self.spacing)),
+            math.floor(((size - 2*inset).y - self.spacing) / (2 * self.spacing)),
         )
         return HexLocations(self.spacing, cx, cy) if cx > 0 and cy > 0 else LocationList([])
 
@@ -77,15 +79,19 @@ class CircleHoles(Fill):
         return Circle(self.spacing - self.width / 2)
 
 
-class SquareHoles(Fill):
+class SquareFill(HolePattern):
     """Square holes for filling a model's surface."""
 
+    spacing: Mm
+    width: Mm
+
     def __init__(self, spacing: Mm = 4.0, width: Mm = 1.0) -> None:
-        super().__init__(spacing, width)
+        self.spacing = spacing
+        self.width = width
 
     @override
-    def locations(self, dx: Mm, dy: Mm) -> LocationList:
-        cx, cy = math.floor(dx / self.spacing), math.floor(dy / self.spacing)
+    def locations(self,size: Vec2, inset: Vec2) -> LocationList:
+        cx, cy = math.floor((size - 2*inset).x / self.spacing), math.floor((size - 2*inset).y / self.spacing)
         return (
             GridLocations(self.spacing, self.spacing, cx, cy)
             if cx > 0 and cy > 0

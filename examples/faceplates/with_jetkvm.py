@@ -1,12 +1,12 @@
 import build123d as bd
 from ocp_vscode import show
 
-from mini_rack_printables import JetKVM, FacePlate
+from mini_rack_printables import Faceplate, JetKVM
 
 #
 # This example demonstrates a face plate with a Jet KVM cutout.
 #
-plate = FacePlate(rack_units=1.5, features=[JetKVM()]).render()
+plate = Faceplate(rack_units=1.5, features=[JetKVM()]).render()
 
 # Show the plate in the OCP viewer
 show(plate)

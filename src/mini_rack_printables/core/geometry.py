@@ -1,24 +1,690 @@
-"""
-Structures and functions for computing the geometry of rectangles and boxes.
+"""Classes to specify box and rectangle dimensions and positions.
+
+Contains 1D, 2D and 3D sections.
+
+See Also:
+    Placement - Enums to position and align boxes and rectangles
+    Element2D, Element3D - Main user of geometry
+
 """
 
 from dataclasses import dataclass
-from typing import Self, overload
-from build123d import Vector
+from enum import Enum, IntEnum, auto
+from typing import Self
 
-from .selectors import Place, Ax
+from build123d import Axis, Vector
 
+# ------------------------------------------------------------------------------
+# 1D Classes and Enums
+# ------------------------------------------------------------------------------
 
 type Mm = float | int
-"""
-A millimeter measurement value. Used for all length measurements in the library.
-"""
+"""A millimeter measurement value. Used for all length measurements in the library."""
+
+type Degree = float | int
+"""A angle in degree. Used for angle specifications."""
+
+
+class AxDir(IntEnum):
+    """A positive, neutral, or negative direction. Used for in forming 2d and 3d directions."""
+
+    PLUS = 1
+    MINUS = -1
+    CENTER = 0
+
+
+# ------------------------------------------------------------------------------
+# 2D Classes and Enums
+# ------------------------------------------------------------------------------
+
+
+class Ax2(Enum):
+    """The X or Y axis in 2d space."""
+
+    X = auto()
+    """ X axis """
+    Y = auto()
+    """ Y axis """
+
+    def to_other(self) -> Ax2:
+        """Convert to the other Ax2 axis."""
+        return Ax2.X if self == Ax2.Y else Ax2.Y
+
+
+class Dir2(Enum):
+    """
+    A direction in 2d space.
+
+    A Dir2 is not a vector, but used to specify the sections, edges, and corners of a rectangle.
+    For a square centered at 0, 0, the x, y values of the enum will specify a corner, side or center sections.
+
+    See Also:
+        AxDir2 -- Subset directions of Dir2
+        Rc.place() -- Use of a Dir2 to place a rectangle
+    """
+
+    x: AxDir
+    y: AxDir
+
+    # Main enumeration in X, Y ascending order
+    CORNER_LF_BT = (-1, -1)
+    Y_MINUS = (0, -1)
+    CORNER_RT_BT = (1, -1)
+    X_MINUS = (-1, 0)
+    CENTER = (0, 0)
+    X_PLUS = (1, 0)
+    CORNER_LF_TP = (-1, 1)
+    Y_PLUS = (0, 1)
+    CORNER_RT_TP = (1, 1)
+
+    # Alias names for sides
+    SIDE_BOTTOM = Y_MINUS
+    SIDE_LEFT = X_MINUS
+    SIDE_RIGHT = X_PLUS
+    SIDE_TOP = Y_PLUS
+
+    def __init__(self, x: AxDir, y: AxDir) -> None:
+        """Specify a direction in 2d space.
+
+        Args:
+            x (AxDir): X axis direction
+            y (AxDir): Y axis direction
+        """
+        self.x = x
+        self.y = y
+
+    @staticmethod
+    def corners() -> frozenset[Dir2]:
+        """A set of Dir2's which correspond to the corners of a rectangle."""
+        return frozenset(
+            {Dir2.CORNER_LF_BT, Dir2.CORNER_LF_TP, Dir2.CORNER_RT_BT, Dir2.CORNER_RT_TP}
+        )
+
+    @staticmethod
+    def sides() -> frozenset[Dir2]:
+        """A set of Dir2's which correspond to the sides of a rectangle."""
+        return frozenset({Dir2.SIDE_BOTTOM, Dir2.SIDE_LEFT, Dir2.SIDE_RIGHT, Dir2.SIDE_TOP})
+
+    @property
+    def is_corner(self) -> bool:
+        """Does the direction represent a corner?"""
+        return self in Dir2.corners()
+
+    @property
+    def is_side(self) -> bool:
+        """Does the direction represent a side?"""
+        return self in Dir2.sides()
+
+    @property
+    def is_center(self) -> bool:
+        """Does the direction represent a center?"""
+        return self == Dir2.CENTER
+
+    def __neg__(self) -> Dir2:
+        """Opposite direction"""
+        return Dir2(-self.x, -self.y)
+
+    def to_opposite(self) -> Dir2:
+        """Opposite direction"""
+        return -self
+
+    def to_ax_dir2(self) -> AxDir2 | None:
+        """Covert to an AxDir2, if possible. None otherwise."""
+        return AxDir2(self.x, self.y) if self.is_side else None
+
+
+class AxDir2(Enum):
+    """The set of directions which are axis aligned.
+
+    See Also:
+        Dir2 - A fuller set of directions.
+    """
+
+    x: AxDir
+    y: AxDir
+
+    # Axis aligned directions
+    X_MINUS = (-1, 0)
+    X_PLUS = (1, 0)
+    Y_MINUS = (0, -1)
+    Y_PLUS = (0, 1)
+
+    # Colloquial Aliases
+    LEFT = X_MINUS
+    RIGHT = X_PLUS
+    BOTTOM = Y_MINUS
+    TOP = Y_PLUS
+
+    def __init__(self, x: AxDir, y: AxDir) -> None:
+        if x == AxDir.CENTER and y == AxDir.CENTER or x != AxDir.CENTER and y != AxDir.CENTER:
+            raise ValueError("x == CENTER and y == CENTER must be exclusive")
+        self.x = x
+        self.y = y
+
+    @property
+    def is_x(self) -> bool:
+        """True iff the AxDir is in the x direction."""
+        return self.x != AxDir.CENTER
+
+    @property
+    def is_y(self) -> bool:
+        """True iff the AxDir is in the y direction."""
+        return self.y != AxDir.CENTER
+
+    def __neg__(self) -> AxDir2:
+        return AxDir2(-self.x, -self.y)
+
+    def to_opposite(self) -> AxDir2:
+        """The opposite direction along the same axis direction."""
+        return -self
+
+    def to_ax2(self) -> Ax2:
+        """Covert to an Ax2."""
+        return Ax2.X if self.is_x else Ax2.Y
+
+    def to_other_ax2(self) -> Ax2:
+        """Covert to the other axis. For an x-axis, an Ax.Y will be returned."""
+        return Ax2.Y if self.is_x else Ax2.X
+
+    def to_dir2(self) -> Dir2:
+        """Covert to a Dir2."""
+        return Dir2(self.x, self.y)
+
+
+@dataclass(frozen=True)
+class Vec2:
+    """
+    A vector in 2d space. Maybe a position or a size.
+
+    +, -, *, /, operators are provided to perform mathematical operations on Vec2
+
+    Example:
+        v = Vec2(1, 2) + Vec2(3, 4)
+        print(v)
+        # Vec2(x=4, y=6)
+        print(2*v)
+        # Vec2(x=8, y=12)
+    """
+
+    x: Mm
+    """x value"""
+    y: Mm
+    """y value"""
+
+    def __add__(self, other: Self) -> Self:
+        return self.__class__(self.x + other.x, self.y + other.y)
+
+    def __sub__(self, other: Self) -> Self:
+        return self.__class__(self.x - other.x, self.y - other.y)
+
+    def __mul__(self, other: Mm) -> Self:
+        return self.__class__(self.x * other, self.y * other)
+
+    def __rmul__(self, other: Mm) -> Self:
+        return self.__class__(self.x * other, self.y * other)
+
+    def __truediv__(self, other: Mm) -> Self:
+        return self.__class__(self.x / other, self.y / other)
+
+    def __neg__(self) -> Self:
+        return self.__class__(-self.x, -self.y)
+
+    def to_3d(self, z: Mm = 0) -> Vec3:
+        return Vec3(self.x, self.y, z)
+
+    def to_vector(self) -> Vector:
+        return Vector(self.x, self.y)
+
+    def to_tuple(self) -> tuple[Mm, Mm]:
+        return self.x, self.y
+
+
+@dataclass(frozen=True, init=False)
+class Rc:
+    """
+    Class representing an X-Y axis aligned rectangle in 2d-space.
+    """
+
+    # pyrefly: ignore[uninitialized-instance-variable]
+    size: Vec2
+    """Size of the rectangle"""
+    center: Vec2 = Vec2(0, 0)
+    """The center of the rectangle"""
+
+    def __init__(self, *args: Mm | Vec2) -> None:
+        match len(args):
+            case 1 if isinstance(args[0], Vec2):
+                object.__setattr__(self, "size", args[0])
+            case 2 if isinstance(args[0], Vec2):
+                object.__setattr__(self, "size", args[0])
+                object.__setattr__(self, "center", args[1])
+            case 2 if isinstance(args[0], int | float) and isinstance(args[1], int | float):
+                object.__setattr__(self, "size", Vec2(args[0], args[1]))
+            case 4 if (
+                isinstance(args[0], int | float)
+                and isinstance(args[1], int | float)
+                and isinstance(args[2], int | float)
+                and isinstance(args[3], int | float)
+            ):
+                object.__setattr__(self, "size", Vec2(args[0], args[1]))
+                object.__setattr__(self, "center", Vec2(args[2], args[3]))
+            case _:
+                raise ValueError("Improper arguments, must be 2 or 4 Mm or 1 or 2 Vec2")
+        if self.size.x < 0 or self.size.y < 0:
+            raise ValueError("Rc cannot have a negative size")
+
+    @classmethod
+    def from_values(cls, dx: Mm, dy: Mm, x: Mm = 0, y: Mm = 0) -> Self:
+        return cls(Vec2(dx, dy), Vec2(x, y))
+
+    @classmethod
+    def from_edges(
+        cls, left: Mm, right: Mm, bottom: Mm, top: Mm, allow_inversion: bool = False
+    ) -> Self:
+        if allow_inversion and left > right:
+            right, left = left, right
+        if allow_inversion and bottom > top:
+            top, bottom = bottom, top
+        size = Vec2(right - left, top - bottom)
+        center = Vec2((right + left) / 2, (top + bottom) / 2)
+        return cls(size, center)
+
+    @classmethod
+    def from_corners(cls, c1: Vec2, c2: Vec2) -> Self:
+        dx, dy = abs(c1.x - c2.x), abs(c1.y - c2.y)
+        return cls(Vec2(dx, dy), Vec2(dx / 2, dy))
+
+    @classmethod
+    def union(cls, *rcs: Rc) -> Self:
+        return cls.from_edges(
+            right=max([r.right for r in rcs]),
+            left=min([r.left for r in rcs]),
+            top=max([r.top for r in rcs]),
+            bottom=min([r.bottom for r in rcs]),
+        )
+
+    @property
+    def min(self) -> Vec2:
+        return self.center - (self.size / 2)
+
+    @property
+    def max(self) -> Vec2:
+        return self.center + (self.size / 2)
+
+    @property
+    def top(self) -> Mm:
+        return self.max.y
+
+    @property
+    def bottom(self) -> Mm:
+        return self.min.y
+
+    @property
+    def left(self) -> Mm:
+        return self.min.x
+
+    @property
+    def right(self) -> Mm:
+        return self.max.x
+
+    def is_within(self, outside: Rc) -> bool:
+        return (
+            self.min.x >= outside.min.x
+            and self.min.y >= outside.min.y
+            and self.max.x <= outside.max.x
+            and self.max.y <= outside.max.y
+        )
+
+    def move_to(self, new_center: Vec2) -> Self:
+        return self.__class__(self.size, new_center)
+
+    def move(self, shift: Vec2) -> Self:
+        return self.move_to(self.center + shift)
+
+    def dir_position(self, place: Dir2) -> Vec2:
+        """
+        Returns the position (x,y) of the 'dir' on the rectangle. 'dir' can specify a corner, a side,
+        or the center of the rectangle.
+        """
+        return Vec2(self.size.x * place.x, self.size.y * place.y) / 2 + self.center
+
+    def place_center(self, other: Rc, place: Dir2) -> Vec2:
+        """
+        The center of a `other` Rc that aligns the `place` position of this Rc and the `other` Rc.
+        """
+        return self.dir_position(place) - other.dir_position(place)
+
+    def place(self, other: Rc, place: Dir2) -> Rc:
+        """
+        Return a new `other` Rc moved so that `anchor` of this Rc and the `other` are aligned.
+        """
+        return Rc(other.size, self.place_center(other, place))
+
+    def apply_padding(self, padding: Mm) -> Rc:
+        """
+        Apply padding to the Rc, expanding its size by `padding` amount but not shifting its center.
+        """
+        return Rc(self.size + Vec2(2 * padding, 2 * padding), self.center)
+
+    # def centered_bounding(self) -> Rc:
+    #     """
+    #     return a rectangle in opposite AxDir of the offset by the amount needed to center a rect.
+    #     """
+    #     mirror = Rc(self.size, Vec2(-self.center.x, -self.center.y))
+    #     return Rc.union(self, mirror)
+
+    def form_bx(self, front: Mm, back: Mm) -> Bx:
+        return Bx(
+            Vec3(self.size.x, self.size.y, back - front),
+            Vec3(self.center.x, self.center.y, (back + front) / 2),
+        )
+
+    @staticmethod
+    def arrange(axis: Ax2, align: AxDir, *items: Rc) -> list[Rc]:
+        """
+        Arrange a collection of Rcs along an axis and alignment.
+
+        Args:
+            axis: (AxDir2) - the direction to layout
+            align: (AxDir) - the alignment direction
+            *items (Rc): The Rc list to arrange.
+
+        Returns:
+            list[Rc]: The arranged Rcs.
+        """
+
+        if len(items) == 0:
+            return []
+        output: list[Rc] = []
+        if axis == Ax2.X:
+            bounds = Rc(
+                Vec2(sum(item.size.x for item in items), max(item.size.y for item in items))
+            )
+            edge = bounds.left
+            for item in items:
+                item_bounds = Rc.from_edges(edge, edge + item.size.x, bounds.bottom, bounds.top)
+                arranged_item = item_bounds.place(other=item, place=Dir2(AxDir.CENTER, align))
+                output.append(arranged_item)
+                edge = item_bounds.right
+            return output
+        elif axis == Ax2.Y:
+            bounds = Rc(
+                Vec2(max(item.size.x for item in items), sum(item.size.y for item in items))
+            )
+            edge = bounds.bottom
+            for item in items:
+                item_bounds = Rc.from_edges(bounds.left, bounds.right, edge, edge + item.size.y)
+                arranged_item = item_bounds.place(other=item, place=Dir2(align, AxDir.CENTER))
+                output.append(arranged_item)
+                edge = item_bounds.top
+            return output
+        else:
+            raise NotImplementedError()
+
+
+# ------------------------------------------------------------------------------
+# 3D Classes and Enums
+# ------------------------------------------------------------------------------
+
+
+class Ax3(Enum):
+    """Axis X, Y or Z"""
+
+    X = auto()
+    """ X axis """
+    Y = auto()
+    """ Y axis """
+    Z = auto()
+    """ Z axis """
+
+    def to_positive(self) -> AxDir3:
+        match self:
+            case Ax3.X: return AxDir3.X_PLUS
+            case Ax3.Y: return AxDir3.Y_PLUS
+            case Ax3.Z: return AxDir3.Z_PLUS
+
+    def to_axis(self) -> Axis:
+        """ To a build123d axis """
+        match self:
+            case Ax3.X: return Axis.X
+            case Ax3.Y: return Axis.Y
+            case Ax3.Z: return Axis.Z
+
+
+class Dir3(Enum):
+    """
+    A direction in 3d space.
+
+    A Dir3 is not a vector, but used to specify the sections, edges, and corners of a cube.
+    For a 2x2x2 cube centered at 0, 0, the x, y, z values of the enum will specify the corner edge or a center sections.
+
+    See Also:
+        AxDir3 - Subset directions of Dir3
+        Rc.place() - Use of a Dir3 to place a rectangle
+    """
+
+    x: AxDir
+    y: AxDir
+    z: AxDir
+
+    # Main enumeration in Z, Y, X ascending order (TP/BT,
+    CORNER_LF_FT_BT = (-1, -1, -1)
+    EDGE_FT_BT = (0, -1, -1)
+    CORNER_RT_FT_BT = (1, -1, -1)
+
+    EDGE_LF_BT = (-1, 0, -1)
+    Z_MINUS = (0, 0, -1)
+    EDGE_RT_BT = (1, 0, -1)
+
+    CORNER_LF_BK_BT = (-1, 1, -1)
+    EDGE_BK_BT = (0, 1, -1)
+    CORNER_RT_BK_BT = (1, 1, -1)
+
+    EDGE_LF_FT = (-1, -1, 0)
+    Y_MINUS = (0, -1, 0)
+    EDGE_RT_FT = (1, -1, 0)
+
+    X_MINUS = (-1, 0, 0)
+    CENTER = (0, 0, 0)
+    X_PLUS = (1, 0, 0)
+
+    EDGE_LF_BK = (-1, 1, 0)
+    Y_PLUS = (0, 1, 0)
+    EDGE_RT_BK = (1, 1, 0)
+
+    CORNER_LF_FT_TP = (-1, -1, 1)
+    EDGE_FT_TP = (0, -1, 1)
+    CORNER_RT_FT_TP = (1, -1, 1)
+
+    EDGE_LF_TP = (-1, 0, 1)
+    Z_PLUS = (0, 0, 1)
+    EDGE_RT_TP = (1, 0, 1)
+
+    CORNER_LF_BK_TP = (-1, 1, 1)
+    EDGE_BK_TP = (0, 1, 1)
+    CORNER_RT_BK_TP = (1, 1, 1)
+
+    # Alias names for side
+    SIDE_LEFT = X_MINUS
+    SIDE_RIGHT = X_PLUS
+    SIDE_FRONT = Y_MINUS
+    SIDE_BACK = Y_PLUS
+    SIDE_BOTTOM = Z_MINUS
+    SIDE_TOP = Z_PLUS
+
+    def __init__(self, x: AxDir, y: AxDir, z: AxDir) -> None:
+        """Specify a dir in 2d space.
+
+        Args:
+            x (AxDir): X axis direction
+            y (AxDir): Y axis direction
+            z (AxDir): Z axis direction
+        """
+        self.x = x
+        self.y = y
+        self.z = z
+
+    @staticmethod
+    def corners() -> frozenset[Dir3]:
+        """A set of Dir3's which represent corners"""
+        return frozenset(
+            {
+                Dir3.CORNER_LF_BK_BT,
+                Dir3.CORNER_LF_BK_TP,
+                Dir3.CORNER_LF_FT_BT,
+                Dir3.CORNER_LF_FT_TP,
+                Dir3.CORNER_RT_BK_BT,
+                Dir3.CORNER_RT_BK_TP,
+                Dir3.CORNER_RT_FT_BT,
+                Dir3.CORNER_RT_FT_TP,
+            }
+        )
+
+    @staticmethod
+    def edges() -> frozenset[Dir3]:
+        """A set of Dir3's which represent edges"""
+        return frozenset(
+            {
+                Dir3.EDGE_BK_BT,
+                Dir3.EDGE_BK_TP,
+                Dir3.EDGE_FT_BT,
+                Dir3.EDGE_FT_TP,
+                Dir3.EDGE_LF_BK,
+                Dir3.EDGE_LF_BT,
+                Dir3.EDGE_LF_FT,
+                Dir3.EDGE_LF_TP,
+                Dir3.EDGE_RT_BK,
+                Dir3.EDGE_RT_BT,
+                Dir3.EDGE_RT_FT,
+                Dir3.EDGE_RT_TP,
+            }
+        )
+
+    @classmethod
+    def sides(cls) -> frozenset[Dir3]:
+        """A set of Dir3's which represent side directions"""
+        return frozenset(
+            {
+                Dir3.SIDE_RIGHT,
+                Dir3.SIDE_RIGHT,
+                Dir3.SIDE_FRONT,
+                Dir3.SIDE_BACK,
+                Dir3.SIDE_TOP,
+                Dir3.SIDE_BOTTOM,
+            }
+        )
+
+    @property
+    def is_corner(self) -> bool:
+        """Does the direction represent a corner?"""
+        return self in Dir3.corners()
+
+    @property
+    def is_edge(self) -> bool:
+        """Does the direction represent an edge?"""
+        return self in Dir3.edges()
+
+    @property
+    def is_side(self) -> bool:
+        """Does the direction represent a side?"""
+        return self in Dir3.sides()
+
+    @property
+    def is_center(self) -> bool:
+        """Does the direction represent a center?"""
+        return self == Dir3.CENTER
+
+    def __neg__(self) -> Dir3:
+        """Negative direction"""
+        return Dir3(-self.x, -self.y, -self.z)
+
+    def to_opposite(self) -> Dir3:
+        """Opposite direction"""
+        return -self
+
+    def to_ax_dir3(self) -> AxDir3 | None:
+        """Covert to an AxDir3, if possible. None otherwise."""
+        return AxDir3(self.x, self.y, self.z) if self.is_side else None
+
+
+class AxDir3(Enum):
+    """Enum for the 6 axis aligned AxDirs from the 0,0,0 origin.
+
+    Useful to specify the AxDir of a stack, or the side of the box, or the z-dir of a `Plane`
+    The default X-Y Plane has a z-axis AxDir of AxDir.PLUS_Z.
+    """
+
+    X_MINUS = (-1, 0, 0)
+    X_PLUS = (1, 0, 0)
+    Y_MINUS = (0, -1, 0)
+    Y_PLUS = (0, 1, 0)
+    Z_MINUS = (0, 0, -1)
+    Z_PLUS = (0, 0, 1)
+
+    # Colloquial names for AxDir
+    LEFT = X_MINUS
+    RIGHT = X_PLUS
+    FRONT = Y_MINUS
+    BACK = Y_PLUS
+    BOTTOM = Z_MINUS
+    TOP = Z_PLUS
+
+    def __init__(self, x: AxDir, y: AxDir, z: AxDir) -> None:
+        if (
+            x == AxDir.CENTER
+            and y == AxDir.CENTER
+            and z == AxDir.CENTER
+            or x != AxDir.CENTER
+            and y != AxDir.CENTER
+            and z != AxDir.CENTER
+        ):
+            raise ValueError("x == CENTER and y == CENTER must be exclusive")
+        self.x = x
+        self.y = y
+        self.z = z
+
+    @property
+    def is_x(self) -> bool:
+        return self.x != AxDir.CENTER
+
+    @property
+    def is_y(self) -> bool:
+        return self.y != AxDir.CENTER
+
+    @property
+    def is_z(self) -> bool:
+        return self.z != AxDir.CENTER
+
+    def __neg__(self) -> AxDir3:
+        return AxDir3(-self.x, -self.y, -self.z)
+
+    def to_opposite(self) -> AxDir3:
+        return -self
+
+    def to_dir3(self) -> AxDir3:
+        return AxDir3(self.x, self.y, self.z)
+
+    def to_plane_z_dir(self) -> tuple[int, int, int]:
+        return self.x, self.y, self.z
+
+    def to_plane_x_dir(self) -> tuple[int, int, int]:
+        """Convert to the x_dir of the plane defined the side of a box"""
+        conv: dict[AxDir3, tuple[int, int, int]] = {
+            AxDir3.Z_PLUS: (1, 0, 0),
+            AxDir3.Z_MINUS: (-1, 0, 0),
+            AxDir3.X_PLUS: (0, 1, 0),
+            AxDir3.X_MINUS: (0, -1, 0),
+            AxDir3.Y_PLUS: (-1, 0, 0),
+            AxDir3.Y_MINUS: (1, 0, 0),
+        }
+        assert self in conv
+        return conv[self]
 
 
 @dataclass(frozen=True)
 class Vec3:
     """
-    3D-space vector
+    A vector for 3d positions and sizes
     """
 
     x: Mm
@@ -56,214 +722,97 @@ class Vec3:
         return self.x, self.y, self.z
 
 
-@dataclass(frozen=True)
-class Vec2:
-    """
-    2d space vector
-    """
-
-    x: Mm
-    """x value"""
-    y: Mm
-    """y value"""
-
-    def __add__(self, other: Self) -> Self:
-        return self.__class__(self.x + other.x, self.y + other.y)
-
-    def __sub__(self, other: Self) -> Self:
-        return self.__class__(self.x - other.x, self.y - other.y)
-
-    def __mul__(self, other: Mm) -> Self:
-        return self.__class__(self.x * other, self.y * other)
-
-    def __rmul__(self, other: Mm) -> Self:
-        return self.__class__(self.x * other, self.y * other)
-
-    def __truediv__(self, other: Mm) -> Self:
-        return self.__class__(self.x / other, self.y / other)
-
-    def __neg__(self) -> Self:
-        return self.__class__(-self.x, -self.y)
-
-    def to_3d(self, z: Mm = 0) -> Vec3:
-        return Vec3(self.x, self.y, z)
-
-    def to_vector(self) -> Vector:
-        return Vector(self.x, self.y)
-
-    def to_tuple(self) -> tuple[Mm, Mm]:
-        return self.x, self.y
-
-
 @dataclass(frozen=True, init=False)
 class Bx:
     """
-    Represents an axis aligned 3d box.
+    Represents an axis-aligned 3d box.
     """
 
+    # pyrefly: ignore[uninitialized-instance-variable]
     size: Vec3
     """Size of the box"""
-    shift: Vec3
+    center: Vec3 = Vec3(0, 0, 0)
     """Center of the box"""
 
-    @overload
-    def __init__(self, other: Bx) -> None: ...
-    @overload
-    def __init__(self, size: Vec3) -> None: ...
-    @overload
-    def __init__(self, size: Vec3, shift: Vec3) -> None: ...
-    @overload
-    def __init__(self, dx: Mm, dy: Mm, dz: Mm) -> None: ...
-    @overload
-    def __init__(
-        self,
-        dx: Mm,
-        dy: Mm,
-        dz: Mm,
-        x: Mm,
-        y: Mm,
-        z: Mm,
-    ) -> None: ...
+    def __init__(self, *args: Mm | Vec3) -> None:
+        match len(args):
+            case 1 if isinstance(args[0], Vec3):
+                object.__setattr__(self, "size", args[0])
+            case 2 if isinstance(args[0], Vec3):
+                object.__setattr__(self, "size", args[0])
+                object.__setattr__(self, "center", args[1])
+            case 3 if (
+                isinstance(args[0], int | float)
+                and isinstance(args[1], int | float)
+                and isinstance(args[2], int | float)
+            ):
+                object.__setattr__(self, "size", Vec3(args[0], args[1], args[2]))
+            case 6 if (
+                isinstance(args[0], int | float)
+                and isinstance(args[1], int | float)
+                and isinstance(args[2], int | float)
+                and isinstance(args[3], int | float)
+                and isinstance(args[4], int | float)
+                and isinstance(args[5], int | float)
+            ):
+                object.__setattr__(self, "size", Vec3(args[0], args[1], args[2]))
+                object.__setattr__(self, "center", Vec3(args[3], args[4], args[5]))
+            case _:
+                raise ValueError("Improper arguments, must be 3 or 6 Mm or 1 or 2 Vec3")
+        if self.size.x < 0 or self.size.y < 0:
+            raise ValueError("Bx cannot have a negative size")
 
-    def __init__(self, *args, **kwargs) -> None:
-        """
-        Args:
-            other: Another Bx
-            size: The size of the box.
-            shift: The shift of the box. Default (0,0,0)
-            dx: The x dimension of the box.
-            dy: The y dimension of the box.
-            dz: The z dimension of the box.
-            x: The x shift of the box. Default 0.
-            y: The y shift of the box. Default 0.
-            z: The z shift of the box. Default 0.
-        """
+    @classmethod
+    def from_values(cls, dx: Mm, dy: Mm, dz: Mm, x: Mm, y: Mm, z: Mm) -> Self:
+        return cls(Vec3(dx, dy, dz), Vec3(x, y, z))
 
-        def set(size: Vec3, shift: Vec3) -> None:
-            if size.x < 0 or size.y < 0 or size.z < 0:
-                raise ValueError("Size must be positive")
-            object.__setattr__(self, "size", size)
-            object.__setattr__(self, "shift", shift)
-
-        # Size and shift
-        if "size" in kwargs:
-            size = kwargs["size"]  # pyright: ignore[reportUnknownVariableType]
-            shift = kwargs.get("shift", Vec3(0, 0, 0))  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
-            if not isinstance(size, Vec3) or not isinstance(shift, Vec3):
-                raise TypeError("size and shift must be a Vec3")
-            set(size, shift)
-            return
-
-        # Size from dx/dy/dz and shift from x/y/z
-        if "dx" in kwargs and "dy" in kwargs and "dz" in kwargs:
-
-            def get_value(name: str, default: Mm | None = None) -> Mm:
-                v = kwargs.get(name)  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
-                if v is None and default is None:
-                    raise ValueError(f"{name} must be supplied")
-                elif v is None and default is not None:
-                    v = default
-                if isinstance(v, (int, float)):
-                    return v
-                else:
-                    raise TypeError(f"{name} must be supplied")
-
-            dx, dy, dz = get_value("dx"), get_value("dy"), get_value("dz")
-            x, y, z = get_value("x", 0), get_value("y", 0), get_value("z", 0)
-            set(Vec3(dx, dy, dz), Vec3(x, y, z))
-            return
-
-        # Other
-        if "other" in kwargs:
-            other = kwargs["other"]  # pyright: ignore[reportUnknownVariableType]
-            if not isinstance(other, Bx):
-                raise TypeError("other must be a Bx")
-            set(other.size, other.shift)
-            return
-
-        if len(args) == 1 and isinstance(args[0], Bx):  # pyright: ignore[reportUnknownArgumentType]
-            other = args[0]
-            set(other.size, other.shift)
-            return
-
-        if len(args) == 1 and isinstance(args[0], Vec3):  # pyright: ignore[reportUnknownArgumentType]
-            size = args[0]
-            set(size, Vec3(0, 0, 0))
-            return
-
-        if len(args) == 2 and isinstance(args[0], Vec3) and isinstance(args[1], Vec3):  # pyright: ignore[reportUnknownArgumentType]
-            size = args[0]
-            shift = args[1]
-            set(size, shift)
-            return
-
-        if (
-            len(args) == 3  # pyright: ignore[reportUnknownArgumentType]
-            and isinstance(args[0], (int, float))
-            and isinstance(args[1], (int, float))
-            and isinstance(args[2], (int, float))
-        ):
-            size = Vec3(args[0], args[1], args[2])
-            set(size, Vec3(0, 0, 0))
-            return
-
-        if (
-            len(args) == 6  # pyright: ignore[reportUnknownArgumentType]
-            and isinstance(args[0], (int, float))
-            and isinstance(args[1], (int, float))
-            and isinstance(args[2], (int, float))
-            and isinstance(args[3], (int, float))
-            and isinstance(args[4], (int, float))
-            and isinstance(args[5], (int, float))
-        ):
-            size = Vec3(args[0], args[1], args[2])
-            shift = Vec3(args[3], args[4], args[5])
-            set(size, shift)
-            return
-
-        raise ValueError(f"Missing parameters {[*args], [*kwargs]}")
+    @classmethod
+    def from_corners(cls, c1: Vec3, c2: Vec3) -> Self:
+        dx, dy, dz = abs(c1.x - c2.x), abs(c1.y - c2.y), abs(c1.z - c2.z)
+        return cls(Vec3(dx, dy, dz), Vec3(dx / 2, dy / 2, dz / 2))
 
     @classmethod
     def from_edges(
         cls,
-        left: float,
-        right: float,
-        bottom: float,
-        top: float,
-        front: float = 0,
-        back: float = 0,
+        left: Mm,
+        right: Mm,
+        front: Mm,
+        back: Mm,
+        bottom: Mm = 0,
+        top: Mm = 0,
+        allow_inversion: bool = False,
     ) -> Self:
+        """Specify the boxes size and position from edge values instead of size and center values."""
+        if allow_inversion and left > right:
+            left, right = right, left
+        if allow_inversion and bottom > top:
+            bottom, top = top, bottom
+        if allow_inversion and front > back:
+            front, back = back, front
         return cls(
-            size=Vec3(right - left, top - bottom, back - front),
-            shift=Vec3((right + left) / 2, (top + bottom) / 2, (back + front) / 2),
+            Vec3(right - left, back - front, top - bottom),
+            Vec3((right + left) / 2, (back + front) / 2, (top + bottom) / 2),
         )
 
     @classmethod
     def union(cls, r1: Bx, r2: Bx) -> Self:
+        """Form the box that bound two boxes."""
         return cls.from_edges(
             right=max(r1.right, r2.right),
             left=min(r1.left, r2.left),
-            top=max(r1.top, r2.top),
-            bottom=min(r1.bottom, r2.bottom),
             front=min(r1.front, r2.front),
             back=max(r1.back, r2.back),
+            top=max(r1.top, r2.top),
+            bottom=min(r1.bottom, r2.bottom),
         )
 
     @property
     def min(self) -> Vec3:
-        return self.shift - (self.size / 2)
+        return self.center - (self.size / 2)
 
     @property
     def max(self) -> Vec3:
-        return self.shift + (self.size / 2)
-
-    @property
-    def top(self) -> Mm:
-        return self.max.y
-
-    @property
-    def bottom(self) -> Mm:
-        return self.min.y
+        return self.center + (self.size / 2)
 
     @property
     def left(self) -> Mm:
@@ -275,292 +824,74 @@ class Bx:
 
     @property
     def front(self) -> Mm:
-        return self.min.z
-
-    @property
-    def back(self) -> Mm:
-        return self.max.z
-
-    def shifted(self, shift: Vec3) -> Self:
-        return self.__class__(size=self.size, shift=shift)
-
-    def shifted_by(self, shift: Vec3) -> Self:
-        return self.shifted(self.shift + shift)
-
-
-@dataclass(frozen=True, init=False)
-class Rc:
-    """
-    Class representing a XY axis aligned rectangle in 2d-space.
-    """
-
-    size: Vec2
-    """Size of the rectangle"""
-    shift: Vec2
-    """The center of the rectangle"""
-
-    @overload
-    def __init__(self, other: Rc) -> None: ...
-    @overload
-    def __init__(self, size: Vec2, shift: Vec2) -> None: ...
-    @overload
-    def __init__(self, size: Vec2) -> None: ...
-    @overload
-    def __init__(self, dx: Mm, dy: Mm, x: Mm, y: Mm) -> None: ...
-    @overload
-    def __init__(self, dx: Mm, dy: Mm) -> None: ...
-
-    def __init__(self, *args, **kwargs) -> None:
-        """
-        Args:
-            other: Another Rc
-            size: The size of the box.
-            shift: The shift of the box. Default (0,0)
-            dx: The x dimension of the box.
-            dy: The y dimension of the box.
-            x: The x shift of the box. Default 0.
-            y: The y shift of the box. Default 0.
-        """
-
-        def set(size: Vec2, shift: Vec2) -> None:
-            if size.x < 0 or size.y < 0:
-                raise ValueError("Size must be positive")
-            object.__setattr__(self, "size", size)
-            object.__setattr__(self, "shift", shift)
-
-        # Size and shift
-        if "size" in kwargs:
-            size = kwargs["size"]  # pyright: ignore[reportUnknownVariableType]
-            shift = kwargs.get("shift", Vec2(0, 0))  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
-            if not isinstance(size, Vec2) or not isinstance(shift, Vec2):
-                raise TypeError("size and shift must be a Vec3")
-            set(size, shift)
-            return
-        # Size from dx, dy and shift from x, y
-        if "dx" in kwargs and "dy" in kwargs:
-
-            def get_value(name: str, default: Mm | None = None) -> float:
-                v = kwargs.get(name)  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
-                if v is None and default is None:
-                    raise ValueError(f"{name} must be supplied")
-                elif v is None and default is not None:
-                    v = default
-                elif not isinstance(v, (int, float)):
-                    raise TypeError(f"{name} must be a float")
-                return v
-
-            dx, dy = get_value("dx"), get_value("dy")
-            x, y = get_value("x", 0), get_value("y", 0)
-            set(Vec2(dx, dy), Vec2(x, y))
-            return
-
-        # Other
-        if "other" in kwargs:
-            other = kwargs["other"]  # pyright: ignore[reportUnknownVariableType]
-            if not isinstance(other, Rc):
-                raise TypeError("other must be a Rc")
-            set(other.size, other.shift)
-            return
-
-        if len(args) == 1 and isinstance(args[0], Rc):  # pyright: ignore[reportUnknownArgumentType]
-            other = args[0]
-            set(other.size, other.shift)
-            return
-
-        if len(args) == 1 and isinstance(args[0], Vec2):  # pyright: ignore[reportUnknownArgumentType]
-            size = args[0]
-            set(size, Vec2(0, 0))
-            return
-
-        if len(args) == 2 and isinstance(args[0], Vec2) and isinstance(args[1], Vec2):  # pyright: ignore[reportUnknownArgumentType]
-            size = args[0]
-            shift = args[1]
-            set(size, shift)
-            return
-
-        if (
-            len(args) == 2  # pyright: ignore[reportUnknownArgumentType]
-            and isinstance(args[0], (int, float))
-            and isinstance(args[1], (int, float))
-        ):
-            size = Vec2(args[0], args[1])
-            set(size, Vec2(0, 0))
-            return
-
-        if (
-            len(args) == 4  # pyright: ignore[reportUnknownArgumentType]
-            and isinstance(args[0], (int, float))
-            and isinstance(args[1], (int, float))
-            and isinstance(args[2], (int, float))
-            and isinstance(args[3], (int, float))
-        ):
-            size = Vec2(args[0], args[1])
-            shift = Vec2(args[2], args[3])
-            set(size, shift)
-            return
-
-        raise ValueError(f"Missing parameters {[*args], [*kwargs]}")
-
-    @classmethod
-    def from_edges(cls, left: Mm, right: Mm, bottom: Mm, top: Mm) -> Self:
-        return cls(
-            size=Vec2(right - left, top - bottom),
-            shift=Vec2((right + left) / 2, (top + bottom) / 2),
-        )
-
-    @classmethod
-    def union(cls, r1: Rc, r2: Rc) -> Self:
-        return cls.from_edges(
-            right=max(r1.right, r2.right),
-            left=min(r1.left, r2.left),
-            top=max(r1.top, r2.top),
-            bottom=min(r1.bottom, r2.bottom),
-        )
-
-    @property
-    def min(self) -> Vec2:
-        return self.shift - (self.size / 2)
-
-    @property
-    def max(self) -> Vec2:
-        return self.shift + (self.size / 2)
-
-    @property
-    def top(self) -> Mm:
-        return self.max.y
-
-    @property
-    def bottom(self) -> Mm:
         return self.min.y
 
     @property
-    def left(self) -> Mm:
-        return self.min.x
+    def back(self) -> Mm:
+        return self.max.y
 
     @property
-    def right(self) -> Mm:
-        return self.max.x
+    def top(self) -> Mm:
+        return self.max.z
 
-    def shifted(self, shift: Vec2) -> Self:
-        return self.__class__(size=self.size, shift=shift)
+    @property
+    def bottom(self) -> Mm:
+        return self.min.z
 
-    def shifted_by(self, shift: Vec2) -> Self:
-        return self.shifted(self.shift + shift)
+    def move_to(self, new_center: Vec3) -> Self:
+        """Return a new box of the same size with specified center."""
+        return self.__class__(self.size, new_center)
 
-    def anchor_shifted(self, anchor: Place) -> Rc:
-        """
-        Return a new Rc with the same size but
-        shifted so that the anchor's position is at the rectangle's center
-        """
-        return Rc(size=self.size, shift=self.anchor_position(anchor))
+    def move(self, shift: Vec3) -> Self:
+        """Return a new box with the same size offset by the `shift` amount."""
+        return self.move_to(self.center + shift)
 
-    def anchor_position(self, anchor: Place) -> Vec2:
-        """
-        Returns the position (an x, y vector) of the 'anchor' on the rectangle.
-        """
-        place_x, place_y = anchor.as_units()
-        return Vec2(
-            (self.size.x / 2) * place_x + self.shift.x,
-            (self.size.y / 2) * place_y + self.shift.y,
-        )
+    # Information about a side of a box
 
-    def bounds_shifted(self, bounds: Rc, anchor: Place) -> Rc:
-        """
-        Return a new Rc with the same size but shifted so that `align` is at the origin.
-        """
-        return Rc(size=self.size, shift=self.bounds_shift(bounds, anchor))
+    def side_center(self, side: AxDir3) -> Vec3:
+        """Return the center of the specified `side`"""
+        lf, rt = self.left, self.right
+        fr, bk = self.front, self.back
+        bt, tp = self.bottom, self.top
 
-    def bounds_shift(self, bounds: Rc, anchor: Place) -> Vec2:
-        """
-        The amount of shift to apply to this Rc to place it within the `bounds` according to
-        the `place`. Useful in layout calculations.
-        """
-        return bounds.anchor_position(anchor) - self.anchor_position(anchor)
+        match side:
+            case AxDir3.LEFT:
+                rt = lf
+            case AxDir3.RIGHT:
+                lf = rt
+            case AxDir3.BACK:
+                fr = bk
+            case AxDir3.FRONT:
+                bk = fr
+            case AxDir3.TOP:
+                bt = tp
+            case AxDir3.BOTTOM:
+                tp = bt
 
-    def apply_padding(self, padding: Mm) -> Rc:
-        """
-        Apply padding to the Rc, expanding its size by `padding` amount but not shifting its center.
-        """
-        return Rc(size=self.size + Vec2(2 * padding, 2 * padding), shift=self.shift)
+        side_bx = Bx.from_edges(left=lf, right=rt, front=fr, back=bk, bottom=bt, top=tp)
+        return side_bx.center
 
-    def split(self, amount: Mm, along: Ax = Ax.X) -> list[Rc]:
-        if along == Ax.X:
-            mid = self.left + amount if amount > 0 else self.right + amount
-            return [
-                Rc.from_edges(self.left, mid, self.bottom, self.top),
-                Rc.from_edges(mid, self.right, self.bottom, self.top),
-            ]
-        else:
-            mid = self.bottom + amount if amount > 0 else self.top + amount
-            return [
-                Rc.from_edges(self.left, self.right, self.bottom, mid),
-                Rc.from_edges(self.left, self.right, mid, self.top),
-            ]
+    def side_size(self, side: AxDir3) -> Vec2:
+        """Return the size of the specified `side`."""
+        dx, dy, dz = self.size.x, self.size.y, self.size.z
+        match side:
+            case AxDir3.X_MINUS | AxDir3.X_PLUS:
+                return Vec2(dy, dz)
+            case AxDir3.Y_MINUS | AxDir3.Y_PLUS:
+                return Vec2(dx, dz)
+            case AxDir3.Z_MINUS | AxDir3.Z_PLUS:
+                return Vec2(dx, dy)
+            case _:
+                assert False, "Incomplete match statement"
 
-    def centered_bounding(self) -> Rc:
-        """
-        return a rectangle in opposite direction of the offset by the amount needed to center a rect.
-        """
-        mirror = Rc(self.size, Vec2(-self.shift.x, -self.shift.y))
-        return Rc.union(self, mirror)
-
-    def form_bx(self, front: Mm, back: Mm) -> Bx:
-        return Bx(
-            size=Vec3(self.size.x, self.size.y, back - front),
-            shift=Vec3(self.shift.x, self.shift.y, (back + front) / 2),
-        )
-
-    @staticmethod
-    def arrange(
-        axis: Ax,
-        align: Place,
-        *items: Rc,
-    ) -> list[Rc]:
-        """
-        Arrange a collection of Rcs along an axis, aligning the collection according to the given alignment.
-
-        Args:
-            axis (Ax): The axis to arrange along.
-            align (Place): The edge to align to
-            *items (Rc): The Rc list to arrange.
-
-        Returns:
-            list[Rc]: The arranged Rcs.
-        """
-        output: list[Rc] = []
-        if len(items) == 0:
-            return []
-        if axis == Ax.X:
-            if align not in (Place.CENTER, Place.BOTTOM, Place.TOP):
-                raise ValueError(f"Invalid align for axis X: {align}")
-            bounds = Rc(sum(item.size.x for item in items), max(item.size.y for item in items))
-            edge = bounds.left
-            for item in items:
-                item_bounds = Rc.from_edges(edge, edge + item.size.x, bounds.bottom, bounds.top)
-                arranged_item = item.bounds_shifted(item_bounds, align)
-                output.append(arranged_item)
-                edge = item_bounds.right
-            return output
-        elif axis == Ax.Y:
-            if align not in (Place.CENTER, Place.LEFT, Place.RIGHT):
-                raise ValueError(f"Invalid place for axis Y: {align}")
-            bounds = Rc(max(item.size.x for item in items), sum(item.size.y for item in items))
-            edge = bounds.bottom
-            for item in items:
-                item_bounds = Rc.from_edges(bounds.left, bounds.right, edge, edge + item.size.y)
-                arranged_item = item.bounds_shifted(item_bounds, align)
-                output.append(arranged_item)
-                edge = item_bounds.top
-            return output
-        else:
-            raise ValueError(f"Invalid value for axis: {axis}")
-
-
-@dataclass(frozen=True)
-class Rib:
-    """
-    Represents a rib (width x depth) on a part or shape
-    """
-
-    width: Mm
-    depth: Mm
+    def side_depth(self, side: AxDir3) -> Mm:
+        """Return the depth of the specified `side`."""
+        match side:
+            case AxDir3.X_MINUS | AxDir3.X_PLUS:
+                return self.size.x
+            case AxDir3.Y_MINUS | AxDir3.Y_PLUS:
+                return self.size.y
+            case AxDir3.Z_MINUS | AxDir3.Z_PLUS:
+                return self.size.z
+            case _:
+                assert False, "Incomplete match statement"

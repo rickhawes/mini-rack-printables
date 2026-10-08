@@ -1,5 +1,6 @@
 from ocp_vscode import show
-from mini_rack_printables import XRayModel, JetKVM
+
+from mini_rack_printables import JetKVM, XRayModel
 
 #
 # This example demonstrates a Jet KVM cutout.

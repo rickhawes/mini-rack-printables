@@ -1,17 +1,18 @@
 from dataclasses import dataclass
-from build123d import Part, Box, Pos, extrude, Mode, Sketch
 from typing import override
 
-from ..core.model_feature import ModelFeature, FeaturePiece, PlatePlanes
-from ..core.selectors import Side, select_locations
-from ..core.geometry import Rib, Vec3, Vec2, Mm
-from ..core.elements_2d import RectangleElement
+from build123d import Box, Part, Pos, Sketch, extrude
+
 from ..core.corners import InsetCorners
-from ..core.fills import HexHoles
-from ..core.elements_3d import extrude_element, extrude_sketch, sketch_ring, make_plate
+from ..core.elements_2d import RectangleElement
+from ..core.elements_3d import extrude_sketch, make_plate, sketch_ring
+from ..core.feature import Feature, Rib
+from ..core.geometry import Mm, Vec2, Vec3
+from ..core.hole_patterns import HexFill
+from ..core.piece import Piece
 
 
-class WallHolder(ModelFeature):
+class WallHolder(Feature):
     """
     A device holder for a single device on a face plate.
     Devices are held by friction from side, top and bottom plates.
@@ -50,7 +51,7 @@ class WallHolder(ModelFeature):
         device_size: Vec3 | None = None,
         device_rounding: Mm = 1.0,
         style: Style = BACK_LIP,
-    ):
+    ) -> None:
         """
         Initialize a holder with the given style, device size, and optional label, align, shift, and padding.
 
@@ -68,13 +69,13 @@ class WallHolder(ModelFeature):
         )
 
     @override
-    def desired_size(self) -> ModelFeature.DesiredSize:
+    def desired_size(self) -> Feature.DesiredSize:
         wall = 2 * self.style.wall_thickness
         size = self.device_size.to_2d() + Vec2(wall, wall)
-        return ModelFeature.DesiredSize(size)
+        return Feature.DesiredSize(size)
 
     @override
-    def render(self, plate_planes: PlatePlanes) -> list[FeaturePiece]:
+    def render(self, plate_size: Vec3) -> list[Piece]:
         # geometry
         dx, dy, r = self.device_size.x, self.device_size.y, self.device_rounding
         holder_depth = (
@@ -100,12 +101,12 @@ class WallHolder(ModelFeature):
             """
             Make the walls of the holder as 4 plates with room for the corners.
             """
-            top = make_plate(Vec3(holder_depth, dx - 2 * dc, w), HexHoles())
-            side = make_plate(Vec3(holder_depth, dy - 2 * dc, w), HexHoles())
+            top = make_plate(Vec3(holder_depth, dx - 2 * dc, w), HexFill())
+            side = make_plate(Vec3(holder_depth, dy - 2 * dc, w), HexFill())
             # place around a box the size of the device
             device_box = Pos(0, 0, holder_depth / 2) * Box(dx, dy, holder_depth)
-            side_locs = select_locations(device_box, [Side.RIGHT, Side.LEFT])
-            top_locs = select_locations(device_box, [Side.TOP, Side.BOTTOM])
+            side_locs = select_locations(device_box, [Direction.RIGHT, Direction.LEFT])
+            top_locs = select_locations(device_box, [Direction.TOP, Direction.BOTTOM])
             return Part(
                 top_locs[0] * top + side_locs[0] * side + top_locs[1] * top + side_locs[1] * side
             )
@@ -144,8 +145,8 @@ class WallHolder(ModelFeature):
 
         if self.style.has_cutout:
             return [
-                FeaturePiece(plate_planes.top_plane * holder),
-                FeaturePiece(plate_planes.bottom_plane * make_cutout(), Mode.SUBTRACT),
+                Piece(holder),
+                Piece(make_cutout(), cut=True),
             ]
         else:
-            return [FeaturePiece(plate_planes.top_plane * holder)]
+            return [Piece(holder)]

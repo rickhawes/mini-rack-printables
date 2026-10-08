@@ -1,6 +1,6 @@
 version: '3'
 # 
-# Taskfile for the mini-rack-printables project
+# Task file for the mini-rack-printables project
 # 
 # Install task: https://taskfile.dev/#/installation
 # brew install go-task  
@@ -38,9 +38,8 @@ tasks:
     desc: "Check linting and formatting with ruff"
     deps: [init]
     cmds:
-      - uv run ruff check .
+      - uv run pyrefly check .
       - uv run ruff format --check .
-      - uv run basedpyright src/mini_rack_printables
 
   format:
     desc: "Fix linting issues and auto-format code with ruff"
@@ -53,9 +52,9 @@ tasks:
     deps: [init]
     if: '! lsof -Pi :3939 -sTCP:LISTEN -t >/dev/null;' # check if port is not in use
     cmds:
-      - python -m ocp_vscode &
+      - python -m ocp_viewer &
       - sleep 5
-      - open http://localhost:3939
+      - open -a "OCP Viewer"
 
   run:
     desc: "Run example program"

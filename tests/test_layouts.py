@@ -1,18 +1,21 @@
-from mini_rack_printables import (
-    RowColumnCollection,
-    MeasuredRowsColumns,
-    ModelFeature,
-    Spacer,
-    RowLayout,
-    GridLayout,
-    PlatePlanes,
-    Bx,
-    Place,
-    Vec3,
-)
-from build123d import Rectangle, Sketch, Circle, Location
+from collections.abc import Sequence
+
 import pytest
-from .conftest import Logger
+from build123d import Circle, Location, Rectangle, Sketch
+
+from mini_rack_printables import (
+    Dir2,
+    Feature,
+    GridLayout,
+    Layout,
+    MeasuredRowsColumns,
+    ModelLogger,
+    Rc,
+    RowColumnCollection,
+    RowLayout,
+    Spacer,
+    Vec2,
+)
 
 ALIGN_CELL = "Align cell tests"
 SINGLE_ROW = "single row tests"
@@ -20,28 +23,28 @@ ROW_LAYOUT = "row layout tests"
 GRID_LAYOUT = "grid layout tests"
 
 
-def test_measured_rows_columns():
+def test_measured_rows_columns() -> None:
     p1 = Spacer(10, 5)
     p2 = Spacer(20, 15)
     p3 = Spacer(30, 25)
     e4 = Spacer(10, 5, more_x=True)
     e5 = Spacer(10, 5, more_y=True)
 
-    coll = RowColumnCollection[ModelFeature]([[p1, p2, p3], [p1, p2, p3], [p1, p2, p3]])
-    m1 = MeasuredRowsColumns.measure_parts(coll)
+    coll1 = RowColumnCollection[Feature]([[p1, p2, p3], [p1, p2, p3], [p1, p2, p3]])
+    m1 = MeasuredRowsColumns.measure_parts(coll1)
     assert m1.min_x == [10, 20, 30]
     assert m1.min_y == [25, 25, 25]
     assert m1.more_x == [False, False, False]
     assert m1.more_y == [False, False, False]
 
-    coll2 = RowColumnCollection[ModelFeature]([[e4, p2, p3], [p1, p2, p3], [p1, p2, p3]])
+    coll2 = RowColumnCollection[Feature]([[e4, p2, p3], [p1, p2, p3], [p1, p2, p3]])
     m2 = MeasuredRowsColumns.measure_parts(coll2)
     assert m2.min_x == [10, 20, 30]
     assert m2.min_y == [25, 25, 25]
     assert m2.more_x == [True, False, False]
     assert m2.more_y == [False, False, False]
 
-    coll3 = RowColumnCollection[ModelFeature]([[p1, p2, p3], [p2, p2, p3], [e5, p2, p3]])
+    coll3 = RowColumnCollection[Feature]([[p1, p2, p3], [p2, p2, p3], [e5, p2, p3]])
     m3 = MeasuredRowsColumns.measure_parts(coll3)
     assert m3.min_x == [20, 20, 30]
     assert m3.min_y == [25, 25, 25]
@@ -49,16 +52,19 @@ def test_measured_rows_columns():
     assert m3.more_y == [False, False, True]
 
 
-def sketch_sub_plates(sub_plates: list[PlatePlanes]) -> Sketch:
-    sk = Sketch()
-    for p in sub_plates:
-        b = p.bounds
-        sk += p.bottom_plane * Location(b.shift.to_vector()) * Rectangle(b.size.x, b.size.y)
-        sk -= p.bottom_plane * Circle(0.2)
-    return Sketch(sk)
+def sketch_sections(sections: Sequence[Layout.Section]) -> Sketch:
+    return Sketch(
+        [
+            (
+                Location(s.bounds.center.to_vector()) * Rectangle(s.bounds.size.x, s.bounds.size.y)
+                - Location(s.origin.to_vector()) * Circle(0.2)
+            )
+            for s in sections
+        ]
+    )
 
 
-def test_row_heights_values():
+def test_row_heights_values() -> None:
     p1 = Spacer(10, 10)
     p2 = Spacer(15, 15)
     p3 = Spacer(20, 20)
@@ -70,175 +76,180 @@ def test_row_heights_values():
     # Specified row count is less than the number of rows
     with pytest.raises(ValueError):
         l1 = RowLayout(row_heights=[10], spacing=2)
-        _ = l1.layout_features([[p1], [p2, p3]], PlatePlanes(Bx(60, 20, 0)))
+        _ = l1.layout_features([[p1], [p2, p3]], Rc(60, 20))
 
     # Specified heights is more than plate size
     with pytest.raises(ValueError):
         l2 = RowLayout(row_heights=[10, 40], spacing=2)
-        _ = l2.layout_features([[p1], [p2, p3]], PlatePlanes(Bx(60, 20, 0)))
+        _ = l2.layout_features([[p1], [p2, p3]], Rc(60, 20))
 
     # specified height should be right
     l3 = RowLayout(row_heights=[10, 40], spacing=2)
-    _ = l3.layout_features([[p1], [p2, p3]], PlatePlanes(Bx(60, 56, 0)))
+    _ = l3.layout_features([[p1], [p2, p3]], Rc(60, 56))
 
 
-def test_too_large_widths():
+def test_too_large_widths() -> None:
     with pytest.raises(ValueError):
         p1 = Spacer(10, 10)
         p2 = Spacer(15, 15)
         p3 = Spacer(20, 20)
 
         layout = RowLayout(equal_widths=True, spacing=2)
-        plate = PlatePlanes(Bx(30, 30, 0))  # too small of a plate for theses parts
-        _ = layout.layout_features([p1, p2, p3], plate)
+        _ = layout.layout_features([[p1, p2, p3]], Rc(30, 30))
 
 
-def test_too_large_height():
+def test_too_large_height() -> None:
     with pytest.raises(ValueError):
         p1 = Spacer(10, 10)
         p2 = Spacer(15, 15)
         p3 = Spacer(20, 20)
 
         layout = RowLayout(equal_widths=True, spacing=2)
-        plate = PlatePlanes(Bx(60, 20, 0))  # too small of a plate for theses parts
-        _ = layout.layout_features([p1, p2, p3], plate)
+        plate = Rc(60, 20)  # too small of a plate for the parts
+        _ = layout.layout_features([[p1, p2, p3]], plate)
 
 
-def test_sub_plate_planes():
+def test_equal_widths() -> None:
     p1 = Spacer(10, 10)
     p2 = Spacer(15, 15)
     p3 = Spacer(20, 20)
 
     layout = RowLayout(equal_widths=True, spacing=0)
-    plate = PlatePlanes(Bx(60, 60, 6, 0, 0, 3))
-    sub_plates = layout.layout_features([p1, p2, p3], plate)
-    assert len(sub_plates) == 3
-    assert sub_plates[0].bounds.size == Vec3(20, 60, 6)
-    assert sub_plates[1].bounds.size == Vec3(20, 60, 6)
-    assert sub_plates[2].bounds.size == Vec3(20, 60, 6)
-    assert sub_plates[1].bottom_plane.origin == Vec3(0, 0, 0).to_vector()
-    assert sub_plates[1].top_plane.origin == Vec3(0, 0, 6).to_vector()
+    plate = Rc(60, 60)
+    sections = layout.layout_features([[p1, p2, p3]], plate)
+    assert len(sections) == 3
+    assert sections[0].bounds == Rc(20, 60, -20, 0)
+    assert sections[1].bounds == Rc(20, 60, 0, 0)
+    assert sections[2].bounds == Rc(20, 60, 20, 0)
 
 
-def test_align_cell(viewer_logger: Logger):
+def test_align_cell(viewer_logger: ModelLogger) -> None:
     p1 = Spacer(5, 5)
     p2 = Spacer(15, 15)
-    plate = PlatePlanes(Bx(40, 40, 0))
+    plate = Rc(40, 40)
 
-    l1 = RowLayout(align=Place.CENTER, spacing=2)
-    sub_plates = l1.layout_features([p1, p2], plate)
-    viewer_logger.log(sketch_sub_plates(sub_plates), ALIGN_CELL)
+    l1: RowLayout = RowLayout(place=Dir2.CENTER, spacing=2)
+    sections = l1.layout_features([[p1, p2]], plate)
+    assert sections[0].bounds == Rc(12, 36, -12, 0)
+    assert sections[1].bounds == Rc(22, 36, 7, 0)
+    assert sections[0].origin == Vec2(-12, 0)
+    assert sections[1].origin == Vec2(7, 0)
+    viewer_logger.log(sketch_sections(sections), ALIGN_CELL)
 
-    l2 = RowLayout(align=Place.LEFT, spacing=2)
-    sub_plates = l2.layout_features([p1, p2], plate)
-    viewer_logger.log(sketch_sub_plates(sub_plates), ALIGN_CELL)
+    l2 = RowLayout(place=Dir2.SIDE_TOP, spacing=2)
+    sections = l2.layout_features([[p1, p2]], plate)
+    assert sections[0].bounds == Rc(12, 36, -12, 0)
+    assert sections[1].bounds == Rc(22, 36, 7, 0)
+    assert sections[0].origin == Vec2(-12, 15.5)
+    assert sections[1].origin == Vec2(7, 10.5)
+    viewer_logger.log(sketch_sections(sections), ALIGN_CELL)
 
-    l3 = RowLayout(align=Place.TOP, spacing=2)
-    sub_plates = l3.layout_features([p1, p2], plate)
-    viewer_logger.log(sketch_sub_plates(sub_plates), ALIGN_CELL)
+    l3 = RowLayout(place=Dir2.SIDE_LEFT, spacing=2)
+    sections = l3.layout_features([[p1, p2]], plate)
+    viewer_logger.log(sketch_sections(sections), ALIGN_CELL)
 
-    l4 = RowLayout(align=Place.BOTTOM_RIGHT, spacing=2)
-    sub_plates = l4.layout_features([p1, p2], plate)
-    viewer_logger.log(sketch_sub_plates(sub_plates), ALIGN_CELL)
+    l4 = RowLayout(place=Dir2.CORNER_RT_BT, spacing=2)
+    sections = l4.layout_features([[p1, p2]], plate)
+    viewer_logger.log(sketch_sections(sections), ALIGN_CELL)
 
 
-def test_even_col_layout(viewer_logger: Logger):
+def test_even_col_layout(viewer_logger: ModelLogger) -> None:
     p1 = Spacer(10, 10)
     p2 = Spacer(15, 15)
     p3 = Spacer(20, 20)
 
     layout = RowLayout(equal_widths=True, spacing=2)
-    plate = PlatePlanes(Bx(60, 30, 0))
-    sub_plates = layout.layout_features([p1, p2, p3], plate)
+    plate = Rc(60, 30)
+    sections = layout.layout_features([[p1, p2, p3]], plate)
 
-    viewer_logger.log(sketch_sub_plates(sub_plates), SINGLE_ROW)
+    viewer_logger.log(sketch_sections(sections), SINGLE_ROW)
 
 
-def test_proportional_col_layout(viewer_logger: Logger):
+def test_proportional_col_layout(viewer_logger: ModelLogger) -> None:
     p1 = Spacer(10, 10)
     p2 = Spacer(15, 15)
     p3 = Spacer(20, 20)
 
     layout = RowLayout(spacing=2)
-    plate = PlatePlanes(Bx(60, 30, 0))
-    sub_plates = layout.layout_features([p1, p2, p3], plate)
+    plate = Rc(60, 30)
+    sections = layout.layout_features([[p1, p2, p3]], plate)
 
-    viewer_logger.log(sketch_sub_plates(sub_plates), SINGLE_ROW)
+    viewer_logger.log(sketch_sections(sections), SINGLE_ROW)
 
 
-def test_expand_col_layout(viewer_logger: Logger):
+def test_expand_col_layout(viewer_logger: ModelLogger) -> None:
     p1 = Spacer(5, 5)
     p2 = Spacer(10, 10)
     p3 = Spacer(15, 15, more_x=True)
 
     layout = RowLayout(spacing=2)
-    plate = PlatePlanes(Bx(60, 30, 0))
-    sub_plates = layout.layout_features([p1, p2, p3], plate)
+    plate = Rc(60, 30)
+    sections = layout.layout_features([[p1, p2, p3]], plate)
 
-    viewer_logger.log(sketch_sub_plates(sub_plates), SINGLE_ROW)
+    viewer_logger.log(sketch_sections(sections), SINGLE_ROW)
 
 
-def test_expand_two_col_layout(viewer_logger: Logger):
+def test_expand_two_col_layout(viewer_logger: ModelLogger) -> None:
     p1 = Spacer(5, 5, more_x=True)
     p2 = Spacer(10, 10)
     p3 = Spacer(15, 15, more_x=True)
 
     layout = RowLayout(spacing=2)
-    plate = PlatePlanes(Bx(60, 30, 0))
-    sub_plates = layout.layout_features([p1, p2, p3], plate)
+    plate = Rc(60, 30)
+    sections = layout.layout_features([[p1, p2, p3]], plate)
 
-    viewer_logger.log(sketch_sub_plates(sub_plates), SINGLE_ROW)
+    viewer_logger.log(sketch_sections(sections), SINGLE_ROW)
 
 
-def test_proportional_layout(viewer_logger: Logger):
+def test_proportional_layout(viewer_logger: ModelLogger) -> None:
     p1 = Spacer(5, 5)
     p2 = Spacer(10, 10)
     p3 = Spacer(15, 15)
 
     layout = RowLayout(spacing=2)
-    plate = PlatePlanes(Bx(60, 60, 0))
-    sub_plates = layout.layout_features([[p1, p2, p3], [p1, p2, p3]], plate)
+    plate = Rc(60, 60)
+    sections = layout.layout_features([[p1, p2, p3], [p1, p2, p3]], plate)
 
-    viewer_logger.log(sketch_sub_plates(sub_plates), ROW_LAYOUT)
+    viewer_logger.log(sketch_sections(sections), ROW_LAYOUT)
 
 
-def test_equal_cols_layout(viewer_logger: Logger):
+def test_equal_cols_layout(viewer_logger: ModelLogger) -> None:
     p1 = Spacer(5, 5)
     p2 = Spacer(10, 10)
     p3 = Spacer(15, 15)
 
     layout = RowLayout(equal_widths=True, spacing=2)
-    plate = PlatePlanes(Bx(60, 60, 0))
-    sub_plates = layout.layout_features([[p1, p2, p3], [p1, p2, p3]], plate)
+    plate = Rc(60, 60)
+    sections = layout.layout_features([[p1, p2, p3], [p1, p2, p3]], plate)
 
-    viewer_logger.log(sketch_sub_plates(sub_plates), ROW_LAYOUT)
+    viewer_logger.log(sketch_sections(sections), ROW_LAYOUT)
 
 
-def test_equal_rows_layout(viewer_logger: Logger):
+def test_equal_rows_layout(viewer_logger: ModelLogger) -> None:
     p1 = Spacer(5, 5)
     p2 = Spacer(10, 10)
     p3 = Spacer(15, 15)
 
     layout = RowLayout(equal_heights=True, spacing=2)
-    plate = PlatePlanes(Bx(60, 60, 0))
-    sub_plates = layout.layout_features([[p1, p2, p3], [p1, p2, p3]], plate)
+    plate = Rc(60, 60)
+    sections = layout.layout_features([[p1, p2, p3], [p1, p2, p3]], plate)
 
-    viewer_logger.log(sketch_sub_plates(sub_plates), ROW_LAYOUT)
+    viewer_logger.log(sketch_sections(sections), ROW_LAYOUT)
 
 
-def test_equal_rows_cols_layout(viewer_logger: Logger):
+def test_equal_rows_cols_layout(viewer_logger: ModelLogger) -> None:
     p1 = Spacer(5, 5)
     p2 = Spacer(10, 10)
     p3 = Spacer(15, 15)
 
     layout = RowLayout(equal_heights=True, equal_widths=True, spacing=2)
-    plate = PlatePlanes(Bx(60, 60, 0))
-    sub_plates = layout.layout_features([[p1, p2, p3], [p1, p2, p3]], plate)
+    plate = Rc(60, 60)
+    sections = layout.layout_features([[p1, p2, p3], [p1, p2, p3]], plate)
 
-    viewer_logger.log(sketch_sub_plates(sub_plates), ROW_LAYOUT)
+    viewer_logger.log(sketch_sections(sections), ROW_LAYOUT)
 
 
-def test_expanding_cols_layout(viewer_logger: Logger):
+def test_expanding_cols_layout(viewer_logger: ModelLogger) -> None:
     p1 = Spacer(5, 5)
     e1 = Spacer(5, 5, more_x=True)
     p2 = Spacer(10, 10)
@@ -246,110 +257,110 @@ def test_expanding_cols_layout(viewer_logger: Logger):
     e3 = Spacer(15, 15, more_x=True)
 
     layout = RowLayout(spacing=2)
-    plate = PlatePlanes(Bx(60, 60, 0))
-    sub_plates = layout.layout_features([[e1, p2, p3], [p1, p2, e3]], plate)
+    plate = Rc(60, 60)
+    sections = layout.layout_features([[e1, p2, p3], [p1, p2, e3]], plate)
 
-    viewer_logger.log(sketch_sub_plates(sub_plates), ROW_LAYOUT)
+    viewer_logger.log(sketch_sections(sections), ROW_LAYOUT)
 
 
-def test_expanding_row_layout(viewer_logger: Logger):
+def test_expanding_row_layout(viewer_logger: ModelLogger) -> None:
     p1 = Spacer(5, 5)
     e1 = Spacer(5, 5, more_y=True)
     p2 = Spacer(10, 10)
     p3 = Spacer(15, 15)
 
     layout = RowLayout(spacing=2)
-    plate = PlatePlanes(Bx(60, 60, 0))
-    sub_plates = layout.layout_features([[e1, p2, p3], [p1, p2, p3]], plate)
+    plate = Rc(60, 60)
+    sections = layout.layout_features([[e1, p2, p3], [p1, p2, p3]], plate)
 
-    viewer_logger.log(sketch_sub_plates(sub_plates), ROW_LAYOUT)
+    viewer_logger.log(sketch_sections(sections), ROW_LAYOUT)
 
 
-def test_explict_row_heights(viewer_logger: Logger):
+def test_explict_row_heights(viewer_logger: ModelLogger) -> None:
     p1 = Spacer(5, 5)
     p2 = Spacer(10, 10)
     p3 = Spacer(15, 15)
     e3 = Spacer(15, 15, more_x=True)
 
     layout = RowLayout(row_heights=[14, 44], spacing=(2 / 3))
-    plate = PlatePlanes(Bx(60, 60, 0))
-    sub_plates = layout.layout_features([[p1, p2, p3], [p1, p2, e3]], plate)
+    plate = Rc(60, 60)
+    sections = layout.layout_features([[p1, p2, p3], [p1, p2, e3]], plate)
 
-    viewer_logger.log(sketch_sub_plates(sub_plates), ROW_LAYOUT)
+    viewer_logger.log(sketch_sections(sections), ROW_LAYOUT)
 
 
-def test_one_row_grid(viewer_logger: Logger):
+def test_one_row_grid(viewer_logger: ModelLogger) -> None:
     p1 = Spacer(5, 5)
     p2 = Spacer(10, 10)
     p3 = Spacer(15, 15)
 
     layout = GridLayout(spacing=2)
-    plate = PlatePlanes(Bx(60, 60, 0))
-    sub_plates = layout.layout_features([[p1, p2, p3]], plate)
-    viewer_logger.log(sketch_sub_plates(sub_plates), GRID_LAYOUT)
+    plate = Rc(60, 60)
+    sections = layout.layout_features([[p1, p2, p3]], plate)
+    viewer_logger.log(sketch_sections(sections), GRID_LAYOUT)
 
 
-def test_one_equal_row_grid(viewer_logger: Logger):
+def test_one_equal_row_grid(viewer_logger: ModelLogger) -> None:
     p1 = Spacer(5, 5)
     p2 = Spacer(10, 10)
     p3 = Spacer(15, 15)
 
     layout = GridLayout(spacing=2, equal_widths=True)
-    plate = PlatePlanes(Bx(60, 60, 0))
-    sub_plates = layout.layout_features([[p1, p2, p3]], plate)
-    viewer_logger.log(sketch_sub_plates(sub_plates), GRID_LAYOUT)
+    plate = Rc(60, 60)
+    sections = layout.layout_features([[p1, p2, p3]], plate)
+    viewer_logger.log(sketch_sections(sections), GRID_LAYOUT)
 
 
-def test_one_specified_row_grid(viewer_logger: Logger):
+def test_one_specified_row_grid(viewer_logger: ModelLogger) -> None:
     p1 = Spacer(5, 5)
     p2 = Spacer(10, 10)
     p3 = Spacer(15, 15)
 
     layout = GridLayout(spacing=2, col_widths=[5, 20, 15])
-    plate = PlatePlanes(Bx(48, 30, 0))
-    sub_plates = layout.layout_features([[p1, p2, p3]], plate)
-    viewer_logger.log(sketch_sub_plates(sub_plates), GRID_LAYOUT)
+    plate = Rc(48, 30)
+    sections = layout.layout_features([[p1, p2, p3]], plate)
+    viewer_logger.log(sketch_sections(sections), GRID_LAYOUT)
 
 
-def test_one_expanded_row_grid(viewer_logger: Logger):
+def test_one_expanded_row_grid(viewer_logger: ModelLogger) -> None:
     p1 = Spacer(5, 5)
     p2 = Spacer(10, 10, more_x=True)
     p3 = Spacer(15, 15)
 
     layout = GridLayout(spacing=2, col_widths=[5, 20, 15])
-    plate = PlatePlanes(Bx(48, 30, 0))
-    sub_plates = layout.layout_features([[p1, p2, p3]], plate)
-    viewer_logger.log(sketch_sub_plates(sub_plates), GRID_LAYOUT)
+    plate = Rc(48, 30)
+    sections = layout.layout_features([[p1, p2, p3]], plate)
+    viewer_logger.log(sketch_sections(sections), GRID_LAYOUT)
 
 
-def test_sparse_grid(viewer_logger: Logger):
+def test_sparse_grid(viewer_logger: ModelLogger) -> None:
     p1 = Spacer(5, 5)
     p2 = Spacer(10, 10)
     p3 = Spacer(15, 15)
 
     layout = GridLayout(spacing=2)
-    plate = PlatePlanes(Bx(60, 60, 0))
-    sub_plates = layout.layout_features([[p1, p2, p3], [p1, p2], [p1]], plate)
-    viewer_logger.log(sketch_sub_plates(sub_plates), GRID_LAYOUT)
+    plate = Rc(60, 60)
+    sections = layout.layout_features([[p1, p2, p3], [p1, p2], [p1]], plate)
+    viewer_logger.log(sketch_sections(sections), GRID_LAYOUT)
 
 
-def test_sparse_equal_row_grid(viewer_logger: Logger):
+def test_sparse_equal_row_grid(viewer_logger: ModelLogger) -> None:
     p1 = Spacer(5, 5)
     p2 = Spacer(10, 10)
     p3 = Spacer(15, 15)
 
     layout = GridLayout(spacing=2, equal_heights=True)
-    plate = PlatePlanes(Bx(60, 60, 0))
-    sub_plates = layout.layout_features([[p1, p2, p3], [p1, p2], [p1]], plate)
-    viewer_logger.log(sketch_sub_plates(sub_plates), GRID_LAYOUT)
+    plate = Rc(60, 60)
+    sections = layout.layout_features([[p1, p2, p3], [p1, p2], [p1]], plate)
+    viewer_logger.log(sketch_sections(sections), GRID_LAYOUT)
 
 
-def test_sparse_equal_grid(viewer_logger: Logger):
+def test_sparse_equal_grid(viewer_logger: ModelLogger) -> None:
     p1 = Spacer(5, 5)
     p2 = Spacer(10, 10)
     p3 = Spacer(15, 15)
 
     layout = GridLayout(spacing=2, equal_widths=True, equal_heights=True)
-    plate = PlatePlanes(Bx(60, 60, 0))
-    sub_plates = layout.layout_features([[p1, p2, p3], [p1, p2], [p1]], plate)
-    viewer_logger.log(sketch_sub_plates(sub_plates), GRID_LAYOUT)
+    plate = Rc(60, 60)
+    sections = layout.layout_features([[p1, p2, p3], [p1, p2], [p1]], plate)
+    viewer_logger.log(sketch_sections(sections), GRID_LAYOUT)

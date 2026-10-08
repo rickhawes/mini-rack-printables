@@ -1,13 +1,13 @@
 from typing import override
 
-from ..core.geometry import Rib, Vec2
-from ..core.model_feature import ModelFeature, FeaturePiece, PlatePlanes
 from ..core.elements_2d import Element2D
-from ..core.elements_3d import extrude_element, extrude_tube
-from build123d import Mode
+from ..core.elements_3d import PrismElement, extrude_tube
+from ..core.feature import Feature, Rib
+from ..core.geometry import Vec2, Bx
+from ..core.piece import Piece
 
 
-class Cutout(ModelFeature):
+class Cutout(Feature):
     """
     A cutout of a plate. It can also be outlined with a rib.
     """
@@ -25,22 +25,20 @@ class Cutout(ModelFeature):
         self.rib = rib
 
     @override
-    def desired_size(self) -> ModelFeature.DesiredSize:
-        rib = 2 * self.rib.width if self.rib else 0
-        size = self.shape.size() + Vec2(rib, rib)
-        return ModelFeature.DesiredSize(size, False)
+    def desired_size(self) -> Feature.DesiredSize:
+        rib = 2 * self.rib.width if self.rib is not None else 0
+        size = self.shape.size + Vec2(rib, rib)
+        return Feature.DesiredSize(size, False)
 
     @override
-    def render(self, plate_planes: PlatePlanes) -> list[FeaturePiece]:
+    def render(self, plate: Bx) -> list[Piece]:
         """Returns a list of PartOutput structures representing the cutout"""
         # the same rendering formula is used for all types of cutouts
-        hole = plate_planes.bottom_plane * extrude_element(self.shape, plate_planes.depth)
-        result = [FeaturePiece(hole, Mode.SUBTRACT)]
+        hole = PrismElement(self.shape, plate.size.z)
+        result = [Piece(hole.render(), cut=True)]
 
-        if self.rib:
-            rib = plate_planes.top_plane * extrude_tube(
-                self.shape, self.rib.width, self.rib.depth
-            )
-            result += [FeaturePiece(rib)]
+        if self.rib is not None:
+            rib = extrude_tube(self.shape, self.rib.width, self.rib.depth)
+            result += [Piece(rib)]
 
         return result

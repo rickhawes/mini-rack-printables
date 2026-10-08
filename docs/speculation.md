@@ -2,13 +2,12 @@ Top level code
 
 ```python
 # Create a model
-plate = FacePlate(rack_units=1.0)
+plate = FacePlate(rack_units=1.0, name="Blank")
 
 # Do the rendering stuff
-md = Modler(name="Blank")
-md.render(plate)
-md.show()
-md.export_step("outputs/blank_face_plate.step")
+rendering = plate.render()
+rendering.show()
+rendering.export_step("outputs/blank_face_plate.step")
 ```
 
 
@@ -16,16 +15,18 @@ Model render method for a FacePlate
 
 ```python
 class FacePlate(Model):
-    def render(self, md: Modler) -> None:
-        md.place_element(self._render_plate(md), next_plate=Side.TOP)
+    def render(self) -> Rendering:
+        md = Modeler()
+        md.place()
         if self.ribs:
             rib = _make_rib()
             md.place_element(rib, side_plane=Place.BOTTOM)
             md.mirror_last(Ax.Y)
         if self.features:
-            md.place_features(self.features, self.layout, size=Vec2())
+            md.assemble(self.features, self.layout, size=Vec2())
         
-                
+    def _make_plate(self):
+        
     def _make_rib() -> Element3D:
         trap = TrapazoidElement(...)
         return PrismElement(trap, amount)
@@ -41,16 +42,17 @@ Model rendering for a Shelf
 
 class RackShelf(Model):
     def render(self, md: Modler) -> None:
-        md.place_element(self._render_plate(md), next_plate=Side.TOP)
+        md.place_element(self._render_plate(md))
+        md.set_base()
         md.place_features(self.features)
         
         # front
-        md.save_plate()
-        md.place_element(_make_faceplate(), side_plane=Place.BOTTOM, next_plate=Side.TOP)
+        md.place_element(_make_faceplate(), side_plane=Place.BOTTOM)
+        saved_base = md.set_base()
         md.place_features(self.faceplate_features, self.faceplate_layout, size=Vec())
-        md.recall_plate()
     
         # walls
+        md.set_base(saved_base)
         md.place_element(_make_wall(), side_plane=Place.LEFT)
         md.mirror_last(Ax.X)
         

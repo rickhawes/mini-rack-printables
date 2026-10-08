@@ -1,6 +1,6 @@
 from ocp_vscode import show
-from mini_rack_printables import XRayModel, WallHolder, Vec3
 
+from mini_rack_printables import Vec3, WallHolder, XRayModel
 
 #
 # This example demonstrates a keystone cutout.

@@ -1,28 +1,20 @@
+from functools import cached_property
+from importlib.resources import as_file, files
 from pathlib import Path
 from typing import override
-from importlib.resources import as_file, files
-from functools import cached_property
-from build123d import (
-    Vector,
-    import_brep,
-    Box,
-    Mode,
-    Location,
-    Mesher,
-    CenterOf,
-    Unit,
-)
-from build123d.topology import Shape, Solid
+
+from build123d import CenterOf, Location, Mesher, TopoDS_Solid, Unit, Vector, import_brep
+from build123d.topology import Shape
+
+from ..core.elements_3d import BoxElement
+from ..core.feature import Feature
+from ..core.geometry import Bx, Vec3
+from ..core.piece import Piece
 
 
-from ..core.model_feature import ModelFeature, FeaturePiece, PlatePlanes
-from ..core.dimensions import E
-from ..core.geometry import Vec3
-
-
-class ImportFeature(ModelFeature):
+class ImportFeature(Feature):
     """
-    Make a part from a BREP file or a STL file.
+    Make a part from a BREP file or an STL file.
     BREP files are imported rapidly, while STL files are converted to a BREP model using the `Mesher` library which may take some time.
     STL files can be converted to a BREP model using the `import_stl.py` script.
     Imported shapes should have a rectangular outline, if `cutout` is True.
@@ -50,7 +42,7 @@ class ImportFeature(ModelFeature):
             asset (str): The name of the asset to import.
             cutout (bool, optional): Whether to cut out the part from the enclosing model or place on top of it. Defaults to True.
         """
-        if path:
+        if path is not None:
             if not path.exists():
                 raise ValueError(f"Path does not exist: {path}")
             if not (path.suffix == self.BREP_SUFFIX or path.suffix == self.STL_SUFFIX):
@@ -62,25 +54,25 @@ class ImportFeature(ModelFeature):
         self.cutout = cutout
 
     @cached_property
-    def shape(self) -> Shape[Solid]:
+    def shape(self) -> Shape[TopoDS_Solid]:
         """
         Returns the shape of the part. Cached to avoid recomputing.
         """
 
-        def convert_stl(path: Path) -> Shape[Solid]:
+        def convert_stl(path: Path) -> Shape[TopoDS_Solid]:
             # Import the STL file and center it around the bounding box
             importer = Mesher(unit=Unit.MM)
             full_mesh = importer.read(path)[0]
             center = Shape.combined_center([full_mesh], center_of=CenterOf.BOUNDING_BOX)
             centered_mesh = full_mesh.move(Location((-center.X, -center.Y, -center.Z)))
-            return centered_mesh  # pyright: ignore[reportUnknownVariableType]
+            return centered_mesh
 
-        def import_path(path: Path) -> Shape[Solid]:
+        def import_path(path: Path) -> Shape[TopoDS_Solid]:
             match path.suffix:
                 case self.STL_SUFFIX:
                     return convert_stl(path)
                 case self.BREP_SUFFIX:
-                    return import_brep(path)  # pyright: ignore[reportUnknownVariableType]
+                    return import_brep(path)
                 case _:
                     raise ValueError(f"Unexpected file suffix: {path.suffix}")
 
@@ -103,34 +95,20 @@ class ImportFeature(ModelFeature):
         return Vec3(bbox.size.X, bbox.size.Y, bbox.size.Z)
 
     @override
-    def desired_size(self) -> ModelFeature.DesiredSize:
-        return ModelFeature.DesiredSize(self.size.to_2d(), False)
+    def desired_size(self) -> Feature.DesiredSize:
+        return Feature.DesiredSize(self.size.to_2d(), False)
 
     @override
-    def render(self, plate_planes: PlatePlanes) -> list[FeaturePiece]:
+    def render(self, plate: Bx) -> list[Piece]:
         if self.cutout:
             # Cutout: Cutout the bottom plane and place the imported part in the cutout
             return [
-                FeaturePiece(
-                    part=plate_planes.bottom_plane
-                    * Location((0, 0, plate_planes.depth / 2))
-                    * Box(self.size.x - E, self.size.y - E, plate_planes.depth + E).solid(),
-                    mode=Mode.SUBTRACT,
+                Piece(
+                    part=BoxElement(dx=self.size.x, dy=self.size.y, dz=plate.size.z).render(),
+                    cut=True,
                 ),
-                FeaturePiece(
-                    part=plate_planes.bottom_plane
-                    * Location((0, 0, self.size.z / 2))
-                    * self.shape.solid(),
-                    mode=Mode.ADD,
-                ),
+                Piece(self.shape.solid()),
             ]
         else:
             # No cutout, render directly on the top plane
-            return [
-                FeaturePiece(
-                    part=plate_planes.top_plane
-                    * Location((0, 0, self.size.z / 2))
-                    * self.shape.solid(),
-                    mode=Mode.ADD,
-                ),
-            ]
+            return [Piece(self.shape.solid())]

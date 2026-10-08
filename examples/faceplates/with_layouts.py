@@ -2,12 +2,12 @@ import build123d as bd
 from ocp_vscode import show
 
 from mini_rack_printables import (
-    Cutout,
-    FacePlate,
-    RowLayout,
-    Place,
     CircleElement,
+    Cutout,
+    Dir2,
+    Faceplate,
     RectangleElement,
+    RowLayout,
     SlotElement,
 )
 
@@ -19,13 +19,13 @@ from mini_rack_printables import (
 # Cutout
 partLeft = Cutout(CircleElement(5.0))
 partCenter = Cutout(RectangleElement(10.0, 5.0))
-partRight = Cutout(SlotElement(10.0, 5.0), rib=FacePlate.STD_RIB)
+partRight = Cutout(SlotElement(10.0, 5.0), rib=Faceplate.STD_RIB)
 
 # A basic face plate with row layout
-plate = FacePlate(
+plate = Faceplate(
     rack_units=1.0,
     features=[partLeft, partCenter, partRight],
-    layout=RowLayout(align=Place.BOTTOM),
+    layout=RowLayout(place=Dir2.BOTTOM),
 ).render()
 
 # Show the plate in the OCP viewer

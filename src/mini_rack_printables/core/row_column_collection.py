@@ -3,8 +3,7 @@ A Collection of either list of items or a list of lists of items. In all cases, 
 be treated as a 2d row-column collection.
 """
 
-from typing import cast, Callable
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 
 
 class RowColumnCollection[T]:
@@ -25,7 +24,7 @@ class RowColumnCollection[T]:
     length: int
     """The total number of items in the collection."""
 
-    def __init__(self, items: list[T] | list[list[T]]) -> None:
+    def __init__(self, items: list[list[T]]) -> None:
         """
         Initialize a sparse or full 2D collection of items.
         """
@@ -35,15 +34,8 @@ class RowColumnCollection[T]:
             self.is_full = True
             self.length = 0
             self.rows = []
-        elif not isinstance(items[0], list):
-            self.row_count = 1
-            self.col_count = len(items)
-            self.is_full = True
-            self.length = len(items)
-            self.rows = [cast(list[T], items)]
         else:
-            assert isinstance(items[0], list)
-            self.rows = cast(list[list[T]], items)
+            self.rows = items
             self.row_count = len(items)
             self.col_count = max(len(row) for row in self.rows)
             self.is_full = all(len(row) == self.col_count for row in self.rows)
@@ -86,7 +78,7 @@ class RowColumnCollection[T]:
         return [row[col] if col < len(row) else None for row in self.rows]
 
     def apply[U](self, func: Callable[[T], U]) -> RowColumnCollection[U]:
-        """Apply the given function to each item in this collection, returning a new collection with the results, keeping the shape of the this collection."""
+        """Apply the given function to each item in this collection, returning a new collection with the results, keeping the shape of this collection."""
         new_rows: list[list[U]] = [[func(item) for item in row] for row in self.rows]
         return RowColumnCollection[U](new_rows)
 

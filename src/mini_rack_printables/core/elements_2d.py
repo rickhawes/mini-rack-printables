@@ -2,90 +2,46 @@
 2d Elements for models. Elements are the primitives that make up models and parts. They are built to be easily combined and rendered.
 """
 
-from abc import ABC, abstractmethod
 import math
+from abc import ABC, abstractmethod
 from typing import override
+
 from build123d import (
-    Rectangle,
-    Line,
+    BuildLine,
+    BuildSketch,
     Circle,
-    RectangleRounded,
-    SlotOverall,
-    Sketch,
     Face,
+    Line,
     Location,
     Polyline,
-    BuildLine,
-    make_face,
-    BuildSketch,
+    Rectangle,
+    RectangleRounded,
+    Sketch,
+    SlotOverall,
     Trapezoid,
+    make_face,
 )
-from .selectors import Place, Ax
-from .geometry import Rc, Vec2, Mm
-from .fills import Fill
+
 from .corners import Corners, RoundedCorners, SquareCorners
+from .geometry import Ax2, AxDir, Mm, Rc, Vec2
+from .hole_patterns import HolePattern
 
 
 class Element2D(ABC):
     """ABC for the 2d shapes that are used for parts."""
 
+    @property
     @abstractmethod
     def size(self) -> Vec2:
         """Returns the size of the shape in 2d."""
-        pass
 
     @abstractmethod
     def sketch(self) -> Sketch:
         """Draw the outline of the shape."""
-        pass
-
-    @staticmethod
-    def arrange(
-        elements: list[Element2D],
-        axis: Ax = Ax.X,
-        anchor: Place = Place.CENTER,
-    ) -> list[Location]:
-        """
-        Arranges a list of elements along an axis, returning their locations.
-
-        Args:
-            axis (Ax): The axis along which to arrange the elements.
-            anchor (Place | tuple[Align, Align]): The anchor point or alignment for the group of elements.
-            elements (list[Element2D]): The list of elements to arrange.
-
-        Returns:
-            LocationList: The locations of the arranged elements.
-        """
-        elem_rects = [Rc(size=element.size()) for element in elements]
-        arranged_rects = Rc.arrange(axis, anchor, *elem_rects)
-        return [Location(position=rect.shift.to_vector()) for rect in arranged_rects]
-
-    @staticmethod
-    def combine(
-        elements: list[Element2D],
-        axis: Ax = Ax.X,
-        anchor: Place = Place.CENTER,
-    ) -> Sketch:
-        """
-        Arranges a list of elements along an axis and returns a sketch of their outline.
-
-        Args:
-            axis (Axis): The axis along which to arrange the elements.
-            anchor (Place | tuple[Align, Align]): The anchor point or alignment for the group of elements.
-            elements (list[Element2D]): The list of elements to arrange.
-
-        Returns:
-            Sketch: The sketch of the arranged elements.
-        """
-        locations = Element2D.arrange(elements, axis, anchor)
-        sketch = Sketch()
-        for element, location in zip(elements, locations):  # TODO: try to replace with build
-            sketch += element.sketch().move(location)
-        return sketch
 
 
 class CircleElement(Element2D):
-    """A circle element."""
+    """A circle element"""
 
     radius: Mm
 
@@ -96,6 +52,7 @@ class CircleElement(Element2D):
         """
         self.radius = radius
 
+    @property
     @override
     def size(self) -> Vec2:
         return Vec2(2 * self.radius, 2 * self.radius)
@@ -111,22 +68,22 @@ class RectangleElement(Element2D):
     width: Mm
     height: Mm
     corners: Corners
-    fill: Fill | None
+    holes: HolePattern | None
 
     def __init__(
         self,
         width: Mm,
         height: Mm,
         corners: Mm | Corners | None = None,
-        fill: Fill | None = None,
-    ):
+        holes: HolePattern | None = None,
+    ) -> None:
         """
         Args:
             width (Mm): The width of the rectangle.
             height (Mm): The height of the rectangle.
             corners (Corners): The corner shape of the rectangle.
                 If a `Mm` > 0, then a Rounded Corner is used.
-            fill (Holes): The hole pattern for the inside of the rectangle after
+            holes (HolePattern): The hole pattern for the inside of the rectangle after
                 insetting the rectangle for the corner size. Defaults to Fill.SOLID.
         """
         self.width = width
@@ -137,8 +94,9 @@ class RectangleElement(Element2D):
             self.corners = SquareCorners(0)
         else:
             self.corners = corners
-        self.fill = fill
+        self.holes = holes
 
+    @property
     @override
     def size(self) -> Vec2:
         return Vec2(self.width, self.height)
@@ -170,29 +128,27 @@ class RectangleElement(Element2D):
                     l_bottom = Line((dx, -dy - ch), (-dx, -dy - ch))
                     l_left = Line((-dx - cw, -dy), (-dx - cw, dy))
                     # corners
-                    self.corners.draw(l_top @ 1, l_right @ 0, Place.TOP_RIGHT)
-                    self.corners.draw(l_right @ 1, l_bottom @ 0, Place.BOTTOM_RIGHT)
-                    self.corners.draw(l_bottom @ 1, l_left @ 0, Place.BOTTOM_LEFT)
-                    self.corners.draw(l_left @ 1, l_top @ 0, Place.TOP_LEFT)
+                    self.corners.draw(l_top @ 1, l_right @ 0, Corners.TOP_RIGHT)
+                    self.corners.draw(l_right @ 1, l_bottom @ 0, Corners.BOTTOM_RIGHT)
+                    self.corners.draw(l_bottom @ 1, l_left @ 0, Corners.BOTTOM_LEFT)
+                    self.corners.draw(l_left @ 1, l_top @ 0, Corners.TOP_LEFT)
                 _ = make_face()
-            return sk.sketch
+            return Sketch(sk.sketch)
 
         def hole_fill() -> Sketch:
-            assert self.fill, "fill must be provided"
+            assert self.holes is not None, "fill must be provided"
             # make a sketch of the holes
             #
-            cs = self.corners.size
-            inner_dx, inner_dy = self.width - 2 * cs.x, self.height - 2 * cs.y
             outline = solid_fill().wire()
-            holes = self.fill.locations(inner_dx, inner_dy) * self.fill.sketch().wire()
+            holes = self.holes.locations(self.size, self.corners.size) * self.holes.sketch().wire()
             sk = Sketch()
             sk += Face(outline, holes)
             return sk
 
-        if self.fill:
-            return hole_fill()
-        else:
+        if self.holes is None:
             return solid_fill()
+        else:
+            return hole_fill()
 
 
 class SlotElement(Element2D):
@@ -201,7 +157,7 @@ class SlotElement(Element2D):
     width: Mm
     height: Mm
 
-    def __init__(self, width: Mm, height: Mm):
+    def __init__(self, width: Mm, height: Mm) -> None:
         """
         Args:
             width (Mm): The width of the slot.
@@ -210,6 +166,7 @@ class SlotElement(Element2D):
         self.width = width
         self.height = height
 
+    @property
     @override
     def size(self) -> Vec2:
         return Vec2(self.width, self.height)
@@ -274,6 +231,7 @@ class TrapezoidElement(Element2D):
         self.angle2 = angle2
         self.rotate = rotate
 
+    @property
     @override
     def size(self) -> Vec2:
         dx = self.height * math.sin(math.radians(self.rotate)) + self.width * math.cos(
@@ -302,7 +260,7 @@ class RightTriangleElement(Element2D):
     height: Mm
     flip: bool
 
-    def __init__(self, width: Mm, height: Mm, flip: bool = False):
+    def __init__(self, width: Mm, height: Mm, flip: bool = False) -> None:
         """
         Args:
             width (Mm): The width of the triangle.
@@ -312,6 +270,7 @@ class RightTriangleElement(Element2D):
         self.height = height
         self.flip = flip
 
+    @property
     @override
     def size(self) -> Vec2:
         return Vec2(self.width, self.height)
@@ -319,7 +278,105 @@ class RightTriangleElement(Element2D):
     @override
     def sketch(self) -> Sketch:
         dx, dy = self.width / 2, self.height / 2
-        pts = (
-            [(-dx, -dy), (-dx, dy), (dx, -dy)] if self.flip else [(-dx, -dy), (dx, dy), (dx, -dy)]
-        )
+        pts = [(-dx, -dy), (-dx, dy), (dx, -dy)] if self.flip else [(-dx, -dy), (dx, dy), (dx, -dy)]
         return make_face(Polyline(pts, close=True))
+
+
+class AlignedElement(Element2D):
+    """A combined element shape"""
+
+    elements: list[Element2D]
+    axis: Ax2
+    align: AxDir
+
+    def __init__(
+        self, elements: list[Element2D], axis: Ax2 = Ax2.X, align: AxDir = AxDir.CENTER
+    ) -> None:
+        self.elements = elements
+        self.axis = axis
+        self.align = align
+
+    @property
+    @override
+    def size(self) -> Vec2:
+        if self.axis == Ax2.X:
+            return Vec2(sum(e.size.x for e in self.elements), max(e.size.y for e in self.elements))
+        else:
+            return Vec2(max(e.size.x for e in self.elements), sum(e.size.y for e in self.elements))
+
+    def arrange(self) -> list[Location]:
+        """
+        Arranges a list of elements along an axis, returning their locations.
+        """
+        elem_rects = [Rc(el.size) for el in self.elements]
+        arranged_rects = Rc.arrange(self.axis, self.align, *elem_rects)
+        return [Location(position=rect.center.to_vector()) for rect in arranged_rects]
+
+    @override
+    def sketch(self) -> Sketch:
+        locations = self.arrange()
+        moved_elements: list[Sketch] = [
+            locations[i] * self.elements[i].sketch() for i in range(len(locations))
+        ]
+        # do the fusing all at once
+        return Sketch(moved_elements)
+
+
+class LocatedElement(Element2D):
+    """An element formed by list of elements with independent locations.
+
+    Args:
+        elements (list[Element2D]): The list of elements or a single element that is repeated.
+        locations (list[Location]): The list of locations.
+    """
+
+    elements: list[Element2D]
+    locations: list[Vec2]
+    _union_rc: Rc
+
+    def __init__(self, elements: list[Element2D] | Element2D, locations: list[Vec2]) -> None:
+        if not isinstance(elements, list):
+            elements = [elements] * len(locations)
+        if len(elements) != len(locations):
+            raise ValueError("locations and elements must have the same length")
+        self.elements = elements
+        self.locations = locations
+        rcs = [Rc(e.size, l) for e, l in zip(self.elements, self.locations)]
+        self._union_rc = Rc.union(*rcs)
+
+    @property
+    def size(self) -> Vec2:
+        return self._union_rc.size
+
+    def sketch(self) -> Sketch:
+        moved_elements: list[Sketch] = [
+            Location((l - self._union_rc.center).to_vector()) * e.sketch()
+            for e, l in zip(self.elements, self.locations)
+        ]
+        return Sketch(moved_elements)
+
+
+class CutoutElement(Element2D):
+    """Create an element that combines multiple elements"""
+
+    base: Element2D
+    cutout: Element2D
+    cutout_offset: Vec2
+
+    def __init__(self, base: Element2D, cutout: Element2D, offset: Vec2 | None = None) -> None:
+        if offset is None:
+            offset = Vec2(0, 0)
+        if not Rc(cutout.size, offset).is_within(Rc(base.size)):
+            raise ValueError("cutout must be within base")
+        self.base = base
+        self.cutout = cutout
+        self.cutout_offset = offset
+
+    @property
+    def size(self) -> Vec2:
+        return self.base.size
+
+    def sketch(self) -> Sketch:
+        return Sketch(
+            self.base.sketch() - Location(self.cutout_offset.to_vector()) * self.cutout.sketch()
+        )

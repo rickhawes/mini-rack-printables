@@ -1,10 +1,11 @@
 from ocp_vscode import show
-from mini_rack_printables import XRayModel, CornerHolder, RectangleElement
+
+from mini_rack_printables import PuckHolder, Vec3, XRayModel
 
 #
 # This example demonstrates a corner holder part.
 #
-holder = CornerHolder(RectangleElement(100, 100, 5), corner_width=12, corner_height=12)
+holder = PuckHolder(device_size=Vec3(100, 40, 100), device_rounding=10)
 plate = XRayModel(holder, only_adds=False).render()
 
 # Show the plate in the OCP viewer

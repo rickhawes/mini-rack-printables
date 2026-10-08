@@ -3,7 +3,8 @@ Constants for the dimensions of the hardware including 10-inch racks and screws.
 """
 
 from enum import Enum
-from .geometry import Mm
+
+from mini_rack_printables.core.geometry import Mm
 
 # ------------------------------------------------
 # Rack Dimensions
@@ -83,17 +84,7 @@ class Screw1032Dims(float, Enum):
     """Head for a 10-32 screw"""
 
 
-def rack_units_to_mm(units: float | int) -> Mm:
+def rack_units_to_mm(units: float) -> Mm:
     """Converts rack units to millimeters"""
     return units * RackDims.HEIGHT_1U
 
-
-# ------------------------------------------------
-# Printing Constants
-# ------------------------------------------------
-
-E = 0.02
-"""Small tolerance to make the imported part join with its cutout"""
-
-MIN_SPAN_WIDTH = 2.0
-"""Minimum spacing between features (ie. holes and cutouts) when printing"""
