@@ -2,17 +2,16 @@ from dataclasses import dataclass
 from typing import override
 from build123d import Part, Box, Pos, extrude, Mode, Location, BuildSketch, add, BuildPart
 
-from ..core.model_feature import ModelFeature, FeaturePiece, PlatePlanes
-from ..core.selectors import Side, select_locations, select_location
+from ..core.feature import Feature, FeaturePiece
 from ..core.elements_2d import RectangleElement
 from ..core.corners import RoundedCorners
-from ..core.elements_3d import extrude_element, make_plate
+from ..core.elements_3d import make_plate
 from ..core.fills import HexHoles
 from ..core.corners import SelectedCorners, InsetCorners
 from ..core.geometry import Vec3, Vec2, Mm
 
 
-class PuckHolder(ModelFeature):
+class PuckHolder(Feature):
     """
     A device holder for a single device on a faceplate.
     Devices are held by friction from side, top and bottom plates.
@@ -69,10 +68,10 @@ class PuckHolder(ModelFeature):
         )
 
     @override
-    def desired_size(self) -> ModelFeature.DesiredSize:
+    def desired_size(self) -> Feature.DesiredSize:
         wall = 2 * self.style.wall_thickness
         size = self.device_size.to_2d() + Vec2(wall, wall)
-        return ModelFeature.DesiredSize(size)
+        return Feature.DesiredSize(size)
 
     @override
     def render(self, plate_planes: PlatePlanes) -> list[FeaturePiece]:
@@ -108,8 +107,8 @@ class PuckHolder(ModelFeature):
             side = make_plate(Vec3(walls_depth, dy - 2 * dc, w), HexHoles())
             # place around a box the size of the device
             device_box = Pos(0, 0, walls_depth / 2 + walls_z) * Box(dx, dy, walls_depth)
-            side_locs = select_locations(device_box, [Side.RIGHT, Side.LEFT])
-            top_locs = select_locations(device_box, [Side.TOP, Side.BOTTOM])
+            side_locs = select_locations(device_box, [Direction.RIGHT, Direction.LEFT])
+            top_locs = select_locations(device_box, [Direction.TOP, Direction.BOTTOM])
             with BuildPart() as pb:
                 _ = add(top_locs[0] * top)
                 _ = add(side_locs[0] * side)
@@ -121,7 +120,7 @@ class PuckHolder(ModelFeature):
         def make_puck_cutout() -> Part:
             device_dz = dz / 2 if self.style.has_cutout else dz / 2 + plate_planes.depth
             device_box = Pos(0, 0, device_dz) * Box(dx, dy, dz)
-            base_loc = select_location(device_box, Side.BOTTOM, flip=True)
+            base_loc = select_location(device_box, Direction.BOTTOM, flip=True)
             # puck shape by selectively using rounded corners
             corners = SelectedCorners(RoundedCorners(r), top_left=True, bottom_left=True)
             base_sketch = RectangleElement(dx, dz, corners).sketch()

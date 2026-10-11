@@ -8,8 +8,7 @@ See Also:
 from abc import ABC, abstractmethod
 from typing import override
 from build123d import Vector, Line, RadiusArc, Polyline
-from .selectors import Place, CornerPlace
-from .geometry import Vec2, Mm
+from .geometry import Vec2, Mm, Place, CornerPlace
 
 
 class Corners(ABC):

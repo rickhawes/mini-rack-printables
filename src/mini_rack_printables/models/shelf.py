@@ -2,16 +2,14 @@ from dataclasses import dataclass
 from build123d import Compound, Location, mirror, Plane, Part, Sketch, extrude
 from typing import override, final
 
-from ..core.dimensions import ShelfTabDims, RackDims, rack_units_to_mm
-from ..core.geometry import Bx, Vec3, Mm
-from ..core.model_feature import FeatureList, PlatePlanes
+from mini_rack_printables.models.dimensions import ShelfTabDims, RackDims, rack_units_to_mm
+from ..core.geometry import Bx, Vec3, Mm, Place, Ax
+from ..core.feature import FeatureList
 from ..core.layouts import FeatureLayout, GridLayout
-from ..core.selectors import Side, select_plane, Place, Ax
 from ..core.elements_2d import Element2D, RectangleElement, TrapezoidElement
-from ..core.elements_3d import extrude_element
 from ..core.corners import SquareCorners
 from ..core.fills import HexHoles
-from ..core.holes import sketch_rack_holes
+from mini_rack_printables.models.holes import sketch_rack_holes
 from ..core.model import Model
 
 
@@ -73,7 +71,7 @@ class Shelf(Model):
         )
 
     @override
-    def render(self) -> Compound:
+    def render(self, modeler: Modeler) -> None:
         # geometry
         base_size = Vec3(
             ShelfTabDims.MAX_DX_TABS,
@@ -95,7 +93,7 @@ class Shelf(Model):
             )
             inset = self.style.wall_inset
             wall_plane = (
-                select_plane(base_plate, Side.MIN_X)
+                select_plane(base_plate, Direction.MIN_X)
                 .moved(
                     Location(
                         (
@@ -133,7 +131,7 @@ class Shelf(Model):
                 rack_units_to_mm(self.rack_units),
                 self.style.face_thickness,
             )
-            face_plane = select_plane(base_plate, Side.MIN_Y).moved(
+            face_plane = select_plane(base_plate, Direction.MIN_Y).moved(
                 Location((0, (face_size.y - base_size.z) / 2, -face_size.z))
             )
             face_sketch = RectangleElement(
@@ -163,7 +161,7 @@ class Shelf(Model):
 
         shelf = make_shelf()
         if self.shelf_features:
-            shelf_plate = PlatePlanes(Bx(size=plate_size, shift=Vec3(0, 0, plate_size.z / 2)))
+            shelf_plate = Bx(size=plate_size, center=Vec3(0, 0, plate_size.z / 2))
             pieces = FeatureLayout.render_pieces(
                 self.shelf_features, shelf_plate, self.shelf_layout
             )

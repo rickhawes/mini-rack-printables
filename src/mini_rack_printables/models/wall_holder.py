@@ -2,16 +2,16 @@ from dataclasses import dataclass
 from build123d import Part, Box, Pos, extrude, Mode, Sketch
 from typing import override
 
-from ..core.model_feature import ModelFeature, FeaturePiece, PlatePlanes
-from ..core.selectors import Side, select_locations
-from ..core.geometry import Rib, Vec3, Vec2, Mm
+from ..core.feature import Feature, FeaturePiece
+from ..core.geometry import Vec3, Vec2, Mm
 from ..core.elements_2d import RectangleElement
 from ..core.corners import InsetCorners
 from ..core.fills import HexHoles
-from ..core.elements_3d import extrude_element, extrude_sketch, sketch_ring, make_plate
+from ..core.elements_3d import extrude_sketch, sketch_ring, make_plate
+from ..core.feature import Rib
 
 
-class WallHolder(ModelFeature):
+class WallHolder(Feature):
     """
     A device holder for a single device on a face plate.
     Devices are held by friction from side, top and bottom plates.
@@ -68,10 +68,10 @@ class WallHolder(ModelFeature):
         )
 
     @override
-    def desired_size(self) -> ModelFeature.DesiredSize:
+    def desired_size(self) -> Feature.DesiredSize:
         wall = 2 * self.style.wall_thickness
         size = self.device_size.to_2d() + Vec2(wall, wall)
-        return ModelFeature.DesiredSize(size)
+        return Feature.DesiredSize(size)
 
     @override
     def render(self, plate_planes: PlatePlanes) -> list[FeaturePiece]:
@@ -104,8 +104,8 @@ class WallHolder(ModelFeature):
             side = make_plate(Vec3(holder_depth, dy - 2 * dc, w), HexHoles())
             # place around a box the size of the device
             device_box = Pos(0, 0, holder_depth / 2) * Box(dx, dy, holder_depth)
-            side_locs = select_locations(device_box, [Side.RIGHT, Side.LEFT])
-            top_locs = select_locations(device_box, [Side.TOP, Side.BOTTOM])
+            side_locs = select_locations(device_box, [Direction.RIGHT, Direction.LEFT])
+            top_locs = select_locations(device_box, [Direction.TOP, Direction.BOTTOM])
             return Part(
                 top_locs[0] * top + side_locs[0] * side + top_locs[1] * top + side_locs[1] * side
             )

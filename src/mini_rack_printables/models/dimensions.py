@@ -3,7 +3,7 @@ Constants for the dimensions of the hardware including 10-inch racks and screws.
 """
 
 from enum import Enum
-from .geometry import Mm
+from mini_rack_printables.core.geometry import Mm
 
 # ------------------------------------------------
 # Rack Dimensions

@@ -1,5 +1,7 @@
-"""
-Classes to generate a fill pattern of holes in a plate.
+"""Classes to generate a fill pattern of holes in a plate.
+
+See Also:
+    RectangleElement
 """
 
 from abc import ABC, abstractmethod

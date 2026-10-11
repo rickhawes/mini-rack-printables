@@ -1,7 +1,7 @@
 from mini_rack_printables import (
     RowColumnCollection,
     MeasuredRowsColumns,
-    ModelFeature,
+    Feature,
     Spacer,
     RowLayout,
     GridLayout,
@@ -27,21 +27,21 @@ def test_measured_rows_columns():
     e4 = Spacer(10, 5, more_x=True)
     e5 = Spacer(10, 5, more_y=True)
 
-    coll = RowColumnCollection[ModelFeature]([[p1, p2, p3], [p1, p2, p3], [p1, p2, p3]])
+    coll = RowColumnCollection[Feature]([[p1, p2, p3], [p1, p2, p3], [p1, p2, p3]])
     m1 = MeasuredRowsColumns.measure_parts(coll)
     assert m1.min_x == [10, 20, 30]
     assert m1.min_y == [25, 25, 25]
     assert m1.more_x == [False, False, False]
     assert m1.more_y == [False, False, False]
 
-    coll2 = RowColumnCollection[ModelFeature]([[e4, p2, p3], [p1, p2, p3], [p1, p2, p3]])
+    coll2 = RowColumnCollection[Feature]([[e4, p2, p3], [p1, p2, p3], [p1, p2, p3]])
     m2 = MeasuredRowsColumns.measure_parts(coll2)
     assert m2.min_x == [10, 20, 30]
     assert m2.min_y == [25, 25, 25]
     assert m2.more_x == [True, False, False]
     assert m2.more_y == [False, False, False]
 
-    coll3 = RowColumnCollection[ModelFeature]([[p1, p2, p3], [p2, p2, p3], [e5, p2, p3]])
+    coll3 = RowColumnCollection[Feature]([[p1, p2, p3], [p2, p2, p3], [e5, p2, p3]])
     m3 = MeasuredRowsColumns.measure_parts(coll3)
     assert m3.min_x == [20, 20, 30]
     assert m3.min_y == [25, 25, 25]
@@ -53,7 +53,7 @@ def sketch_sub_plates(sub_plates: list[PlatePlanes]) -> Sketch:
     sk = Sketch()
     for p in sub_plates:
         b = p.bounds
-        sk += p.bottom_plane * Location(b.shift.to_vector()) * Rectangle(b.size.x, b.size.y)
+        sk += p.bottom_plane * Location(b.center.to_vector()) * Rectangle(b.size.x, b.size.y)
         sk -= p.bottom_plane * Circle(0.2)
     return Sketch(sk)
 

@@ -41,16 +41,17 @@ Model rendering for a Shelf
 
 class RackShelf(Model):
     def render(self, md: Modler) -> None:
-        md.place_element(self._render_plate(md), next_plate=Side.TOP)
+        md.place_element(self._render_plate(md))
+        md.set_base()
         md.place_features(self.features)
         
         # front
-        md.save_plate()
-        md.place_element(_make_faceplate(), side_plane=Place.BOTTOM, next_plate=Side.TOP)
+        md.place_element(_make_faceplate(), side_plane=Place.BOTTOM)
+        saved_base = md.set_base()
         md.place_features(self.faceplate_features, self.faceplate_layout, size=Vec())
-        md.recall_plate()
     
         # walls
+        md.set_base(saved_base)
         md.place_element(_make_wall(), side_plane=Place.LEFT)
         md.mirror_last(Ax.X)
         

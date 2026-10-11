@@ -5,7 +5,6 @@ from build123d import (
     BuildSketch,
     BuildPart,
     Plane,
-    Compound,
     RectangleRounded,
     Trapezoid,
     Location,
@@ -16,11 +15,11 @@ from build123d import (
     add,
 )
 
-from ..core.dimensions import RackDims, ShelfTabDims
-from ..core.holes import sketch_rack_holes
-from ..core.geometry import Rib, Bx, Vec3, Mm
-from ..core.model import Model
-from ..core.model_feature import PlatePlanes, FeatureList
+from mini_rack_printables.models.dimensions import RackDims, ShelfTabDims
+from mini_rack_printables.models.holes import sketch_rack_holes
+from ..core.geometry import Bx, Vec3, Mm
+from ..core.model import Model, Modeler
+from ..core.feature import FeatureList, Rib
 from ..core.layouts import FeatureLayout, RowLayout
 
 
@@ -84,7 +83,7 @@ class FacePlate(Model):
         self.layout = layout if layout is not None else RowLayout()
 
     @override
-    def render(self) -> Compound:
+    def render(self, modeler: Modeler) -> None:
         """
         Render the faceplate
 
@@ -129,11 +128,6 @@ class FacePlate(Model):
         # Add/subtract parts
         result = face_plate.part
         assert result is not None
-        if self.features:
-            part_planes = PlatePlanes(
-                Bx(size=part_area_size, shift=Vec3(0, 0, part_area_size.z / 2))
-            )
-            pieces = FeatureLayout.render_pieces(self.features, part_planes, self.layout)
-            result = FeatureLayout.assemble_pieces(result, pieces)
 
-        return Compound(label="face_plate", children=[result])
+
+

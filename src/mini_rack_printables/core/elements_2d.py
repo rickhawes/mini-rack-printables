@@ -20,8 +20,7 @@ from build123d import (
     BuildSketch,
     Trapezoid,
 )
-from .selectors import Place, Ax
-from .geometry import Rc, Vec2, Mm
+from .geometry import Rc, Vec2, Mm, Place, Ax
 from .fills import Fill
 from .corners import Corners, RoundedCorners, SquareCorners
 
@@ -58,7 +57,7 @@ class Element2D(ABC):
         """
         elem_rects = [Rc(size=element.size()) for element in elements]
         arranged_rects = Rc.arrange(axis, anchor, *elem_rects)
-        return [Location(position=rect.shift.to_vector()) for rect in arranged_rects]
+        return [Location(position=rect.center.to_vector()) for rect in arranged_rects]
 
     @staticmethod
     def combine(

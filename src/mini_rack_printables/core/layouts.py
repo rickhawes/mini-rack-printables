@@ -10,11 +10,10 @@ from typing import override
 
 from build123d import BuildPart, Part, add
 
-from .model_feature import PlatePlanes, FeatureList, ModelFeature, FeaturePiece
+from .feature import FeatureList, Feature, FeaturePiece
 from .row_column_collection import RowColumnCollection
-from .dimensions import E
-from .geometry import Rc, Mm
-from .selectors import Place
+from mini_rack_printables.models.dimensions import E
+from .geometry import Rc, Mm, Place
 
 
 class FeatureLayout(ABC):
@@ -83,7 +82,7 @@ class RowLayout(FeatureLayout):
 
     def _layout_vert(
         self,
-        coll: RowColumnCollection[ModelFeature],
+        coll: RowColumnCollection[Feature],
         m: MeasuredRowsColumns,
         plate_planes: PlatePlanes,
     ) -> list[float]:
@@ -133,7 +132,7 @@ class RowLayout(FeatureLayout):
         m = MeasuredRowsColumns.measure_parts(coll)
         s = self.spacing
 
-        def layout_one(row_features: list[ModelFeature]) -> list[Mm]:
+        def layout_one(row_features: list[Feature]) -> list[Mm]:
             """Calculate the horizontal widths of cells of one row the left-to-right direction"""
             plate_width = plate_planes.bounds.size.x
             cc = len(row_features)
@@ -151,7 +150,7 @@ class RowLayout(FeatureLayout):
                 return [p.desired_size().min_size.x + (excess / cc) for p in row_features]
 
             # distribute excess space evenly between expanding columns
-            def expanded_width(p: ModelFeature) -> Mm:
+            def expanded_width(p: Feature) -> Mm:
                 ds = p.desired_size()
                 return ds.min_size.x + (excess / expand_count) if ds.more_x else ds.min_size.x
 
@@ -172,7 +171,7 @@ class RowLayout(FeatureLayout):
                 part = row[col_idx]
                 bounds = Rc.from_edges(left, right, bottom, top)
                 bounds_bx = bounds.form_bx(front, back)
-                part_rc = Rc(part.desired_size().min_size, bounds.shift)
+                part_rc = Rc(part.desired_size().min_size, bounds.center)
                 origin_offset = part_rc.bounds_shift(bounds, self.align)
                 result.append(PlatePlanes(bounds_bx, origin_offset))
 
@@ -253,7 +252,7 @@ class GridLayout(RowLayout):
                 if part is not None:
                     bounds = Rc.from_edges(left, right, bottom, top)
                     bounds_bx = bounds.form_bx(front, back)
-                    part_rc = Rc(part.desired_size().min_size, bounds.shift)
+                    part_rc = Rc(part.desired_size().min_size, bounds.center)
                     origin_offset = part_rc.bounds_shift(bounds, self.align)
                     result.append(PlatePlanes(bounds_bx, origin_offset))
 
@@ -273,7 +272,7 @@ class MeasuredRowsColumns:
     more_y: list[bool]
 
     @classmethod
-    def measure_parts(cls, parts: RowColumnCollection[ModelFeature]) -> MeasuredRowsColumns:
+    def measure_parts(cls, parts: RowColumnCollection[Feature]) -> MeasuredRowsColumns:
         min_x = [
             max(
                 part.desired_size().min_size.x if part is not None else 0

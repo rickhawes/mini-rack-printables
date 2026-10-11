@@ -15,12 +15,12 @@ from build123d import (
 from build123d.topology import Shape, Solid
 
 
-from ..core.model_feature import ModelFeature, FeaturePiece, PlatePlanes
-from ..core.dimensions import E
+from ..core.feature import Feature, FeaturePiece
+from mini_rack_printables.models.dimensions import E
 from ..core.geometry import Vec3
 
 
-class ImportFeature(ModelFeature):
+class ImportFeature(Feature):
     """
     Make a part from a BREP file or a STL file.
     BREP files are imported rapidly, while STL files are converted to a BREP model using the `Mesher` library which may take some time.
@@ -103,8 +103,8 @@ class ImportFeature(ModelFeature):
         return Vec3(bbox.size.X, bbox.size.Y, bbox.size.Z)
 
     @override
-    def desired_size(self) -> ModelFeature.DesiredSize:
-        return ModelFeature.DesiredSize(self.size.to_2d(), False)
+    def desired_size(self) -> Feature.DesiredSize:
+        return Feature.DesiredSize(self.size.to_2d(), False)
 
     @override
     def render(self, plate_planes: PlatePlanes) -> list[FeaturePiece]:

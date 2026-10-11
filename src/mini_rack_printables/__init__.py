@@ -9,11 +9,10 @@ from .models.wall_holder import WallHolder
 from .models.corner_holder import CornerHolder
 from .models.puck_holder import PuckHolder
 from .models.spacer import Spacer
-from .core.model_feature import ModelFeature, FeaturePiece, PlatePlanes
+from .core.feature import Feature, FeaturePiece, Rib
 from .core.layouts import FeatureLayout, GridLayout, RowLayout, MeasuredRowsColumns
-from .core.dimensions import RackDims, RackScrewDims, Screw1032Dims
-from .core.geometry import Rc, Bx, Rib, Vec2, Vec3
-from .core.selectors import Place, Side, Ax
+from mini_rack_printables.models.dimensions import RackDims, RackScrewDims, Screw1032Dims
+from .core.geometry import Rc, Bx, Ax, AxDir, Place, Vec2, Vec3
 from .core.row_column_collection import RowColumnCollection
 from .core.elements_2d import (
     Element2D,
@@ -24,7 +23,7 @@ from .core.elements_2d import (
     TrapezoidElement,
 )
 from .core.elements_3d import Element3D
-from .core.holes import layout_rack_screw_holes, sketch_rack_holes
+from mini_rack_printables.models.holes import layout_rack_screw_holes, sketch_rack_holes
 from .core.corners import (
     Corners,
     RoundedCorners,
@@ -53,9 +52,8 @@ __all__ = [
     "Rc",
     "Bx",
     "Rib",
-    "ModelFeature",
+    "Feature",
     "FeaturePiece",
-    "PlatePlanes",
     "FeatureLayout",
     "GridLayout",
     "RowLayout",
@@ -67,7 +65,7 @@ __all__ = [
     "JetKVM",
     "WallHolder",
     "Place",
-    "Side",
+    "AxDir",
     "Ax",
     "Element2D",
     "Element3D",
