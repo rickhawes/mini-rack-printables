@@ -84,7 +84,7 @@ class Element2D(ABC):
 
 
 class CircleElement(Element2D):
-    """A circle element."""
+    """A circle element"""
 
     radius: Mm
 

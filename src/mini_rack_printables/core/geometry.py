@@ -10,11 +10,12 @@ See Also:
 
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Literal, Self, override, overload
+from typing import Literal, Self
 from build123d import Vector, Plane
 
 type Mm = float | int
 """A millimeter measurement value. Used for all length measurements in the library."""
+
 
 class Ax(Enum):
     """Axis placing or align objects.
@@ -30,12 +31,14 @@ class Ax(Enum):
     Z = auto()
     """ Z axis """
 
+
 class AxDir(Enum):
     """Enum for the 6 axis aligned AxDirs from the 0,0,0 origin.
 
     Useful to specify the AxDir of a stack, or the side of the box, or the z-dir of a `Plane`
     The default X-Y Plane has a z-axis AxDir of AxDir.PLUS_Z.
     """
+
     MINUS_X = auto()
     MINUS_Y = auto()
     MINUS_Z = auto()
@@ -44,12 +47,13 @@ class AxDir(Enum):
     PLUS_Z = auto()
 
     # Colloquial names for AxDir
-    RIGHT = MINUS_X
-    LEFT = PLUS_X
+    LEFT = MINUS_X
+    RIGHT = PLUS_X
     BOTTOM = MINUS_Y
     TOP = PLUS_Y
     FRONT = MINUS_Z
     BACK = PLUS_Z
+
 
 class Place(Enum):
     """Place on a rectangle, if the rectangle was divided into 9 regions.
@@ -113,7 +117,7 @@ class Place(Enum):
             Place.TOP_EDGE,
             Place.BOTTOM_EDGE,
         ]
-    
+
     def is_center(self) -> bool:
         """Returns True if the place is a center of a square."""
         return self == Place.CENTER
@@ -135,9 +139,7 @@ class Place(Enum):
         return conversion[self]
 
 
-CornerPlace = Literal[
-    Place.TOP_LEFT, Place.TOP_RIGHT, Place.BOTTOM_LEFT, Place.BOTTOM_RIGHT
-]
+CornerPlace = Literal[Place.TOP_LEFT, Place.TOP_RIGHT, Place.BOTTOM_LEFT, Place.BOTTOM_RIGHT]
 """The subset of Place that represent corners"""
 
 
@@ -232,17 +234,22 @@ class Rc:
     center: Vec2 = Vec2(0, 0)
     """The center of the rectangle"""
 
-    @override
     def __post_init__(self) -> None:
         if self.size.x < 0 or self.size.y < 0:
             raise ValueError("Rc cannot have a negative size")
 
     @classmethod
     def from_values(cls, dx: Mm, dy: Mm, x: Mm = 0, y: Mm = 0) -> Self:
-        return cls(size = Vec2(dx, dy), center = Vec2(x, y))
+        return cls(size=Vec2(dx, dy), center=Vec2(x, y))
 
     @classmethod
-    def from_edges(cls, left: Mm, right: Mm, bottom: Mm, top: Mm) -> Self:
+    def from_edges(
+        cls, left: Mm, right: Mm, bottom: Mm, top: Mm, allow_inversion: bool = False
+    ) -> Self:
+        if allow_inversion and left > right:
+            right, left = left, right
+        if allow_inversion and bottom > top:
+            top, bottom = bottom, top
         size = Vec2(right - left, top - bottom)
         center = Vec2((right + left) / 2, (top + bottom) / 2)
         return cls(size, center)
@@ -372,14 +379,12 @@ class Rc:
         if axis == Ax.X:
             if align not in (Place.CENTER, Place.BOTTOM_EDGE, Place.TOP_EDGE):
                 raise ValueError(f"Invalid align for axis X: {align}")
-            bounds = Rc(Vec2(
-                sum(item.size.x for item in items), max(item.size.y for item in items)
-            ))
+            bounds = Rc(
+                Vec2(sum(item.size.x for item in items), max(item.size.y for item in items))
+            )
             edge = bounds.left
             for item in items:
-                item_bounds = Rc.from_edges(
-                    edge, edge + item.size.x, bounds.bottom, bounds.top
-                )
+                item_bounds = Rc.from_edges(edge, edge + item.size.x, bounds.bottom, bounds.top)
                 arranged_item = item.bounds_shifted(item_bounds, align)
                 output.append(arranged_item)
                 edge = item_bounds.right
@@ -387,14 +392,12 @@ class Rc:
         elif axis == Ax.Y:
             if align not in (Place.CENTER, Place.LEFT_EDGE, Place.RIGHT_EDGE):
                 raise ValueError(f"Invalid place for axis Y: {align}")
-            bounds = Rc(Vec2(
-                max(item.size.x for item in items), sum(item.size.y for item in items)
-            ))
+            bounds = Rc(
+                Vec2(max(item.size.x for item in items), sum(item.size.y for item in items))
+            )
             edge = bounds.bottom
             for item in items:
-                item_bounds = Rc.from_edges(
-                    bounds.left, bounds.right, edge, edge + item.size.y
-                )
+                item_bounds = Rc.from_edges(bounds.left, bounds.right, edge, edge + item.size.y)
                 arranged_item = item.bounds_shifted(item_bounds, align)
                 output.append(arranged_item)
                 edge = item_bounds.top
@@ -403,135 +406,24 @@ class Rc:
             raise ValueError(f"Invalid value for axis: {axis}")
 
 
-@dataclass(frozen=True, init=False)
+@dataclass(frozen=True)
 class Bx:
     """
-    Represents an axis aligned 3d box.
+    Represents an axis-aligned 3d box.
     """
 
     size: Vec3
     """Size of the box"""
-    center: Vec3
+    center: Vec3 = Vec3(0, 0, 0)
     """Center of the box"""
 
-    @overload
-    def __init__(self, other: Bx) -> None: ...
-    @overload
-    def __init__(self, size: Vec3) -> None: ...
-    @overload
-    def __init__(self, size: Vec3, center: Vec3) -> None: ...
-    @overload
-    def __init__(self, dx: Mm, dy: Mm, dz: Mm) -> None: ...
-    @overload
-    def __init__(self, dx: Mm, dy: Mm, dz: Mm, x: Mm, y: Mm, z: Mm) -> None: ...
+    def __post_init__(self) -> None:
+        if self.size.x < 0 or self.size.y < 0 or self.size.z < 0:
+            raise ValueError("Bx cannot have a negative size")
 
-    def __init__(self, *args, **kwargs) -> None:
-        """
-        Specify the box size and position parameters in multiple ways.
-
-        Args:
-            other: Another Bx
-            size: The size of the box.
-            center: The center of the box. Default (0,0,0)
-            dx: The x dimension of the box.
-            dy: The y dimension of the box.
-            dz: The z dimension of the box.
-            x: The x center of the box. Default 0.
-            y: The y center of the box. Default 0.
-            z: The z center of the box. Default 0.
-        """
-
-        def set_values(new_size: Vec3, new_center: Vec3) -> None:
-            if new_size.x < 0 or new_size.y < 0 or new_size.z < 0:
-                raise ValueError("Size must be positive")
-            object.__setattr__(self, "size", new_size)
-            object.__setattr__(self, "center", new_center)
-
-        # Size and center
-        if "size" in kwargs:
-            size = kwargs["size"]  # pyright: ignore[reportUnknownVariableType]
-            center = kwargs.get("center", Vec3(0, 0, 0))  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
-            if not isinstance(size, Vec3) or not isinstance(center, Vec3):
-                raise TypeError("size and center must be a Vec3")
-            set_values(size, center)
-            return
-
-        # Size from dx/dy/dz and center from x/y/z
-        if "dx" in kwargs and "dy" in kwargs and "dz" in kwargs:
-
-            def get_value(name: str, default: Mm | None = None) -> Mm:
-                v = kwargs.get(
-                    name
-                )  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
-                if v is None and default is None:
-                    raise ValueError(f"{name} must be supplied")
-                elif v is None and default is not None:
-                    v = default
-                if isinstance(v, (int, float)):
-                    return v
-                else:
-                    raise TypeError(f"{name} must be supplied")
-
-            dx, dy, dz = get_value("dx"), get_value("dy"), get_value("dz")
-            x, y, z = get_value("x", 0), get_value("y", 0), get_value("z", 0)
-            set_values(Vec3(dx, dy, dz), Vec3(x, y, z))
-            return
-
-        # Other
-        if "other" in kwargs:
-            other = kwargs["other"]  # pyright: ignore[reportUnknownVariableType]
-            if not isinstance(other, Bx):
-                raise TypeError("other must be a Bx")
-            set_values(other.size, other.center)
-            return
-
-        if len(args) == 1 and isinstance(
-            args[0], Bx
-        ):  # pyright: ignore[reportUnknownArgumentType]
-            other = args[0]
-            set_values(other.size, other.center)
-            return
-
-        if len(args) == 1 and isinstance(
-            args[0], Vec3
-        ):  # pyright: ignore[reportUnknownArgumentType]
-            size = args[0]
-            set_values(size, Vec3(0, 0, 0))
-            return
-
-        if (
-            len(args) == 2 and isinstance(args[0], Vec3) and isinstance(args[1], Vec3)
-        ):  # pyright: ignore[reportUnknownArgumentType]
-            size = args[0]
-            center = args[1]
-            set_values(size, center)
-            return
-
-        if (
-            len(args) == 3  # pyright: ignore[reportUnknownArgumentType]
-            and isinstance(args[0], (int, float))
-            and isinstance(args[1], (int, float))
-            and isinstance(args[2], (int, float))
-        ):
-            size = Vec3(args[0], args[1], args[2])
-            set_values(size, Vec3(0, 0, 0))
-            return
-
-        if (
-            len(args) == 6  # pyright: ignore[reportUnknownArgumentType]
-            and isinstance(args[0], (int, float))
-            and isinstance(args[1], (int, float))
-            and isinstance(args[2], (int, float))
-            and isinstance(args[3], (int, float))
-            and isinstance(args[4], (int, float))
-            and isinstance(args[5], (int, float))
-        ):
-            size = Vec3(args[0], args[1], args[2])
-            center = Vec3(args[3], args[4], args[5])
-            set_values(size, center)
-            return
-
-        raise ValueError(f"Missing parameters {[*args], [*kwargs]}")
+    @classmethod
+    def from_values(cls, dx: Mm, dy: Mm, dz: Mm, x: Mm, y: Mm, z: Mm) -> Self:
+        return cls(Vec3(dx, dy, dz), Vec3(x, y, z))
 
     @classmethod
     def from_edges(
@@ -542,7 +434,7 @@ class Bx:
         top: Mm,
         front: Mm = 0,
         back: Mm = 0,
-        allow_inversion: bool = False
+        allow_inversion: bool = False,
     ) -> Self:
         """Specify the boxes size and position from edge values instead of size and center values."""
         if allow_inversion and left > right:
@@ -643,3 +535,5 @@ class Bx:
                 return Vec2(dz, dy)
             case AxDir.TOP | AxDir.BOTTOM:
                 return Vec2(dx, dz)
+            case _: 
+                assert False, "Incomplete match statement"

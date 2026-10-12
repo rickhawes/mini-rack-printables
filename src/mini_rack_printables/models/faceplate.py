@@ -128,6 +128,3 @@ class FacePlate(Model):
         # Add/subtract parts
         result = face_plate.part
         assert result is not None
-
-
-

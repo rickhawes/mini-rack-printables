@@ -9,9 +9,10 @@ from .models.wall_holder import WallHolder
 from .models.corner_holder import CornerHolder
 from .models.puck_holder import PuckHolder
 from .models.spacer import Spacer
+from .models.holes import layout_rack_screw_holes, sketch_rack_holes
+from .models.dimensions import RackDims, RackScrewDims, Screw1032Dims
 from .core.feature import Feature, FeaturePiece, Rib
 from .core.layouts import FeatureLayout, GridLayout, RowLayout, MeasuredRowsColumns
-from mini_rack_printables.models.dimensions import RackDims, RackScrewDims, Screw1032Dims
 from .core.geometry import Rc, Bx, Ax, AxDir, Place, Vec2, Vec3
 from .core.row_column_collection import RowColumnCollection
 from .core.elements_2d import (
@@ -22,8 +23,8 @@ from .core.elements_2d import (
     RightTriangleElement,
     TrapezoidElement,
 )
-from .core.elements_3d import Element3D
-from mini_rack_printables.models.holes import layout_rack_screw_holes, sketch_rack_holes
+from .core.elements_3d import Element3D, PrismElement, TubeElement, BoxElement
+from .core.model import Model, Modeler
 from .core.corners import (
     Corners,
     RoundedCorners,
@@ -67,6 +68,8 @@ __all__ = [
     "Place",
     "AxDir",
     "Ax",
+    "Model",
+    "Modeler",
     "Element2D",
     "Element3D",
     "CircleElement",
@@ -74,6 +77,9 @@ __all__ = [
     "SlotElement",
     "RightTriangleElement",
     "TrapezoidElement",
+    "PrismElement",
+    "TubeElement",
+    "BoxElement",
     "Fill",
     "SquareHoles",
     "HexHoles",

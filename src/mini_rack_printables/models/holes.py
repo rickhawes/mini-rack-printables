@@ -5,7 +5,13 @@ Functions to draw and layout shapes for the common holes and patterns.
 import math
 from build123d import Locations, SlotOverall, Sketch
 
-from mini_rack_printables.models.dimensions import RackDims, RackScrewDims, ShelfTabDims, Screw1032Dims, rack_units_to_mm
+from mini_rack_printables.models.dimensions import (
+    RackDims,
+    RackScrewDims,
+    ShelfTabDims,
+    Screw1032Dims,
+    rack_units_to_mm,
+)
 from mini_rack_printables.core.geometry import Mm
 
 

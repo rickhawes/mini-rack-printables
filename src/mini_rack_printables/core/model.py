@@ -1,16 +1,16 @@
-"""Classes to model a 3D printable
-"""
+"""Classes to model a 3D printable"""
 
 from abc import ABC, abstractmethod
 from enum import Enum, auto
 from dataclasses import dataclass
 
-from build123d import BuildPart, export_step
+from build123d import BuildPart, export_step, Plane, Part, add
 import ocp_vscode as viewer
 
 from .elements_3d import Element3D
 from .geometry import Bx, Place, AxDir
 from .feature import Feature
+
 
 class Model(ABC):
     """
@@ -26,6 +26,7 @@ class Model(ABC):
             modeler (Modeler): the modeler to place elements and shapes into
         """
         pass
+
 
 class Modeler:
     """The top-level model renderer and exporter
@@ -43,12 +44,13 @@ class Modeler:
 
     Attributes:
         state (State): the current state of the model (PRE_RENDER, RENDERING, POST_RENDER)
-        base (Bx): the base bounding box of the base plate of the model
+        base_element (Element3D): the element to assemble other elements on top of model
 
     """
-    
+
     class State(Enum):
         """State of the modeler. Each instance only be used rendered once"""
+
         PRE_RENDER = auto()
         """Initial state before rendering a model"""
         RENDERING = auto()
@@ -56,25 +58,27 @@ class Modeler:
         POST_RENDER = auto()
         """Rendering complete a model can be viewed and exported"""
 
-    state: State  = State.PRE_RENDER
+    state: State = State.PRE_RENDER
     """State for the """
-    builder: BuildPart | None = None
-    """Build123d context which accumulates the rendered parts of the model"""
     base_element: Element3D | None = None
     """The base bounding box on which other """
     last_element: Element3D | None = None
     """Last element placed"""
-
+    result: Part | None = None
+    """The result of rendering"""
+    builder: BuildPart | None = None
+    """Build123d context which accumulates the rendered parts of the model"""
 
     def render(self, model: Model) -> None:
         """Render the passed in model into the modeler for export"""
         assert self.state == Modeler.State.PRE_RENDER
-        
+
         with BuildPart() as bd:
             self.builder = bd
             self.state = Modeler.State.RENDERING
             model.render(self)
 
+        self.result = self.builder.part if self.builder is not None else None
         self.builder = None
         self.state = Modeler.State.POST_RENDER
 
@@ -89,16 +93,22 @@ class Modeler:
             place_on_side: The position to place the other box on the base side
             other_dir: The z-direction of the other box
         """
+
         side_on_base: AxDir = AxDir.PLUS_Z
         place_on_side: Place = Place.CENTER
-        other_dir : AxDir = AxDir.PLUS_Z
+        other_dir: AxDir = AxDir.PLUS_Z
 
-    def place(self, element: Element3D, placement: Placement) -> None:
-        """Place an element """
-        element.render()
+    def place(self,
+            element: Element3D,
+            placement: Placement = Placement()
+        ) -> None:
+        """Place an element"""
+        assert self.state == Modeler.State.RENDERING and self.builder is not None
+        plane = Plane.XY
+        add(plane * element.render())
         self.last_element = element
 
-    def stack(self, elements: list[Element3D], placement:Placement) -> None:
+    def stack(self, elements: list[Element3D], placement: Placement) -> None:
         pass
 
     def assemble(self, features: list[Feature]):
@@ -109,16 +119,14 @@ class Modeler:
         self.base_element = new_base if new_base is not None else self.last_element
         return old_base
 
-
     # Post Rendering Methods
 
     def show(self) -> None:
-        if self.state != Modeler.State.POST_RENDER or self.builder is None or self.builder.part is None:
+        if self.state != Modeler.State.POST_RENDER or self.result is None:
             raise ValueError("No rendering to show")
-        viewer.show(self.builder.part)
+        viewer.show(self.result)
 
     def export(self, filename: str) -> None:
-        if self.state != Modeler.State.POST_RENDER or self.builder is None or self.builder.part is None:
-            raise ValueError("No rendering to show")
-        assert self.builder.part is not None
-        export_step(self.builder.part, filename)
+        if self.state != Modeler.State.POST_RENDER or self.result is None:
+            raise ValueError("No rendering to export")
+        export_step(self.result, filename)

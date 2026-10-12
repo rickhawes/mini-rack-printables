@@ -51,6 +51,13 @@ class PrismElement(Element3D):
     def render(self) -> Part:
         return extrude(self.element.sketch())
 
+
+class BoxElement(PrismElement):
+    """A box element."""
+    def __init__(self, dx: Mm, dy: Mm, dz: Mm) -> None:
+        super().__init__(RectangleElement(dx, dy), dz)
+
+
 class TubeElement(Element3D):
     """A tube element."""
 
@@ -89,11 +96,7 @@ def sketch_ring(element: Element2D, wall_thickness: Mm) -> Sketch:
     return Sketch(outer - inner)
 
 
-def extrude_tube(
-    element: Element2D,
-    wall_thickness: Mm,
-    amount: Mm
-) -> Part:
+def extrude_tube(element: Element2D, wall_thickness: Mm, amount: Mm) -> Part:
     """
     Make a 3d tube from the element shape by outsetting the shape and extruding it along the Z axis.
 
@@ -110,10 +113,7 @@ def extrude_tube(
     return extrude(sketch, amount)
 
 
-def extrude_sketch(
-    sketch: Sketch,
-    amount: Mm
-) -> Part:
+def extrude_sketch(sketch: Sketch, amount: Mm) -> Part:
     """
     Extrude a sketch along the Z axis.
 

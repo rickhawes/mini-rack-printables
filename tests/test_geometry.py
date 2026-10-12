@@ -144,24 +144,18 @@ def test_arrange_vertical():
 
 def test_bx_init():
     with pytest.raises(ValueError):
-        _ = Bx(-1, -1, 1)
+        _ = Bx(Vec3(-1, -1, 1))
 
     bx1 = Bx(size=Vec3(1, 1, 1))
     assert bx1.size == Vec3(1, 1, 1)
     assert bx1.center == Vec3(0, 0, 0)
 
-    bx2 = Bx(Vec3(2, 2, 3))
-    assert bx2.size == Vec3(2, 2, 3)
-
-    bx3 = Bx(dx=3, dy=3, dz=1, x=-1, y=-1, z=-1)
+    bx3 = Bx.from_values(dx=3, dy=3, dz=1, x=-1, y=-1, z=-1)
     assert bx3.size == Vec3(3, 3, 1)
-
-    bx4 = Bx(bx3)
-    assert bx4.center == Vec3(-1, -1, -1)
 
 
 def test_bx_props():
-    bx = Bx(4, 6, 3, 1, 1, 1)
+    bx = Bx.from_values(4, 6, 3, 1, 1, 1)
     assert bx.size == Vec3(4, 6, 3)
     assert bx.center == Vec3(1, 1, 1)
     assert bx.top == 4
@@ -173,7 +167,7 @@ def test_bx_props():
 
 
 def test_bx_shift():
-    bx = Bx(4, 6, 3, 1, 1, 1)
+    bx = Bx.from_values(4, 6, 3, 1, 1, 1)
     assert bx.size == Vec3(4, 6, 3)
     assert bx.center == Vec3(1, 1, 1)
 
