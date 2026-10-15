@@ -119,9 +119,7 @@ class Shelf(Model):
                 fill=HexHoles(),
                 corners=SquareCorners(base_size.z),  # insets the fill area a bit
             )
-            wall_sketch = Element2D.combine(
-                [wall_base, wall_trans, wall_holes], Ax.X, Place.BOTTOM
-            )
+            wall_sketch = Element2D.combine([wall_base, wall_trans, wall_holes], Ax.X, Place.BOTTOM)
             return wall_plane * extrude(wall_sketch, wall_size.z)
 
         # add face

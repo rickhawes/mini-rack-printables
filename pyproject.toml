@@ -24,9 +24,12 @@ dev = [
 requires = ["uv_build>=0.11.28,<0.12.0"]
 build-backend = "uv_build"
 
+[tool.black]
+line-length = 100
+
 [tool.ruff]
 # Set the line length to match your Black configuration (usually 88)
-line-length = 98
+line-length = 100
 
 [tool.ruff.format]
 # Use double quotes for strings

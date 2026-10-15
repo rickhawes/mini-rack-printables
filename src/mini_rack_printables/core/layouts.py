@@ -172,7 +172,7 @@ class RowLayout(FeatureLayout):
                 bounds = Rc.from_edges(left, right, bottom, top)
                 bounds_bx = bounds.form_bx(front, back)
                 part_rc = Rc(part.desired_size().min_size, bounds.center)
-                origin_offset = part_rc.bounds_shift(bounds, self.align)
+                origin_offset = part_rc.place_center(bounds, self.align)
                 result.append(PlatePlanes(bounds_bx, origin_offset))
 
                 left = right + s
@@ -253,7 +253,7 @@ class GridLayout(RowLayout):
                     bounds = Rc.from_edges(left, right, bottom, top)
                     bounds_bx = bounds.form_bx(front, back)
                     part_rc = Rc(part.desired_size().min_size, bounds.center)
-                    origin_offset = part_rc.bounds_shift(bounds, self.align)
+                    origin_offset = part_rc.place_center(bounds, self.align)
                     result.append(PlatePlanes(bounds_bx, origin_offset))
 
                 left = right + s

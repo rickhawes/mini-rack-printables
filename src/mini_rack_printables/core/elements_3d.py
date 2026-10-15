@@ -7,20 +7,16 @@ See Also:
 
 from abc import ABC, abstractmethod
 from typing import override
-from build123d import (
-    Sketch,
-    extrude,
-    offset,
-    Part,
-)
+from build123d import Sketch, extrude, offset, Part, Cone, Location, Cylinder
 from .elements_2d import Element2D, RectangleElement
 from .fills import Fill
-from .geometry import Vec3, Mm
+from .geometry import Vec3, Mm, Degree
 
 
 class Element3D(ABC):
-    """Element for 3d shapes"""
+    """3d shapes that are composable by `Modeler`"""
 
+    @property
     @abstractmethod
     def size(self) -> Vec3:
         """Returns the size of the shape in 3d."""
@@ -28,56 +24,85 @@ class Element3D(ABC):
 
     @abstractmethod
     def render(self) -> Part:
-        """Extrudes the shape along the z-axis."""
+        """Extrudes the shape centered on the plane and the z-axis of the plane"""
         pass
 
 
 class PrismElement(Element3D):
-    """A prism element."""
+    """A prism element is just an extrusion of a 2d shape."""
 
     element: Element2D
     amount: Mm
+    taper: Degree
 
-    def __init__(self, element: Element2D, amount: Mm) -> None:
+    def __init__(self, element: Element2D, amount: Mm, taper: Degree = 0) -> None:
         self.element = element
         self.amount = amount
+        self.taper = taper
 
+    @property
     @override
     def size(self) -> Vec3:
-        size2d = self.element.size()
+        size2d = self.element.size
         return Vec3(size2d.x, size2d.y, self.amount)
 
     @override
     def render(self) -> Part:
-        return extrude(self.element.sketch())
+        return Location((0, 0, -self.amount / 2)) * extrude(
+            self.element.sketch(), amount=self.amount, taper=self.taper
+        )
 
 
 class BoxElement(PrismElement):
-    """A box element."""
+    """A box element is a 3d cuboid"""
+
     def __init__(self, dx: Mm, dy: Mm, dz: Mm) -> None:
         super().__init__(RectangleElement(dx, dy), dz)
 
 
-class TubeElement(Element3D):
-    """A tube element."""
+class CylinderElement(Element3D):
+    """A cylinder element."""
 
-    element: Element2D
-    amount: Mm
-    wall_thickness: Mm
+    radius: Mm
+    height: Mm
 
-    def __init__(self, element: Element2D, amount: Mm, wall_thickness: Mm) -> None:
-        self.element = element
-        self.amount = amount
-        self.wall_thickness = wall_thickness
+    def __init__(self, radius: Mm, height: Mm) -> None:
+        self.radius = radius
+        self.height = height
 
+    @property
     @override
     def size(self) -> Vec3:
-        size2d = self.element.size()
-        return Vec3(size2d.x, size2d.y, self.amount)
+        return Vec3(2 * self.radius, 2 * self.radius, self.height)
 
     @override
     def render(self) -> Part:
-        return extrude_tube(self.element, amount=self.amount, wall_thickness=self.wall_thickness)
+        return Cylinder(self.radius, self.height)
+
+
+class ConeElement(Element3D):
+    """A cone element."""
+
+    base_radius: Mm
+    top_radius: Mm
+    height: Mm
+
+    def __init__(self, base_radius: Mm, top_radius: Mm, height: Mm) -> None:
+        self.base_radius = base_radius
+        self.top_radius = top_radius
+        self.height = height
+
+    @property
+    @override
+    def size(self) -> Vec3:
+        max_radius = max(self.base_radius, self.top_radius)
+        return Vec3(2 * max_radius, 2 * max_radius, self.height)
+
+    @override
+    def render(self) -> Part:
+        return Location((0, 0, self.height / 2)) * Cone(
+            self.base_radius, self.top_radius, self.height
+        )
 
 
 def sketch_ring(element: Element2D, wall_thickness: Mm) -> Sketch:
@@ -110,7 +135,7 @@ def extrude_tube(element: Element2D, wall_thickness: Mm, amount: Mm) -> Part:
         Part: The extruded tube of the basic shape.
     """
     sketch = sketch_ring(element, wall_thickness)
-    return extrude(sketch, amount)
+    return Location((0, 0, -amount / 2)) * extrude(sketch, amount)
 
 
 def extrude_sketch(sketch: Sketch, amount: Mm) -> Part:
@@ -123,7 +148,7 @@ def extrude_sketch(sketch: Sketch, amount: Mm) -> Part:
     Returns:
         Part: The extruded sketch.
     """
-    return extrude(sketch, amount)
+    return Location((0, 0, -amount / 2)) * extrude(sketch, amount)
 
 
 def make_plate(size: Vec3, fill: Fill | None = None) -> Part:
@@ -138,4 +163,4 @@ def make_plate(size: Vec3, fill: Fill | None = None) -> Part:
         Part: The extruded plate.
     """
     sketch = RectangleElement(size.x, size.y, fill=fill).sketch()
-    return extrude(sketch, size.z)
+    return Location((0, 0, -size.z / 2)) * extrude(sketch, size.z)

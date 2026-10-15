@@ -19,7 +19,7 @@ def layout_rack_screw_holes(
     rack_units: float | int,
     middle_holes: bool = True,
     half_height_bottom: bool = False,
-) -> list[Mm]:
+) -> [Mm]:
     """
     Layout the screw holes for a faceplate on a rack according to the pattern established
     in the dimensions' module.

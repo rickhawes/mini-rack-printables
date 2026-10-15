@@ -13,7 +13,7 @@ from .models.holes import layout_rack_screw_holes, sketch_rack_holes
 from .models.dimensions import RackDims, RackScrewDims, Screw1032Dims
 from .core.feature import Feature, FeaturePiece, Rib
 from .core.layouts import FeatureLayout, GridLayout, RowLayout, MeasuredRowsColumns
-from .core.geometry import Rc, Bx, Ax, AxDir, Place, Vec2, Vec3
+from .core.geometry import Rc, Bx, Ax, AxAlign, AxDir, Place, Vec2, Vec3, Mm, Degree
 from .core.row_column_collection import RowColumnCollection
 from .core.elements_2d import (
     Element2D,
@@ -23,8 +23,14 @@ from .core.elements_2d import (
     RightTriangleElement,
     TrapezoidElement,
 )
-from .core.elements_3d import Element3D, PrismElement, TubeElement, BoxElement
-from .core.model import Model, Modeler
+from .core.elements_3d import (
+    Element3D,
+    PrismElement,
+    BoxElement,
+    ConeElement,
+)
+from .core.model import Model
+from .core.modeler import Modeler
 from .core.corners import (
     Corners,
     RoundedCorners,
@@ -65,9 +71,12 @@ __all__ = [
     "Keystone",
     "JetKVM",
     "WallHolder",
+    "Degree",
+    "Mm",
     "Place",
     "AxDir",
     "Ax",
+    "AxAlign",
     "Model",
     "Modeler",
     "Element2D",
@@ -78,8 +87,8 @@ __all__ = [
     "RightTriangleElement",
     "TrapezoidElement",
     "PrismElement",
-    "TubeElement",
     "BoxElement",
+    "ConeElement",
     "Fill",
     "SquareHoles",
     "HexHoles",

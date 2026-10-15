@@ -20,7 +20,7 @@ from build123d import (
     BuildSketch,
     Trapezoid,
 )
-from .geometry import Rc, Vec2, Mm, Place, Ax
+from .geometry import Rc, Vec2, Mm, Place, Ax, AxAlign
 from .fills import Fill
 from .corners import Corners, RoundedCorners, SquareCorners
 
@@ -28,6 +28,7 @@ from .corners import Corners, RoundedCorners, SquareCorners
 class Element2D(ABC):
     """ABC for the 2d shapes that are used for parts."""
 
+    @property
     @abstractmethod
     def size(self) -> Vec2:
         """Returns the size of the shape in 2d."""
@@ -37,50 +38,6 @@ class Element2D(ABC):
     def sketch(self) -> Sketch:
         """Draw the outline of the shape."""
         pass
-
-    @staticmethod
-    def arrange(
-        elements: list[Element2D],
-        axis: Ax = Ax.X,
-        anchor: Place = Place.CENTER,
-    ) -> list[Location]:
-        """
-        Arranges a list of elements along an axis, returning their locations.
-
-        Args:
-            axis (Ax): The axis along which to arrange the elements.
-            anchor (Place | tuple[Align, Align]): The anchor point or alignment for the group of elements.
-            elements (list[Element2D]): The list of elements to arrange.
-
-        Returns:
-            LocationList: The locations of the arranged elements.
-        """
-        elem_rects = [Rc(size=element.size()) for element in elements]
-        arranged_rects = Rc.arrange(axis, anchor, *elem_rects)
-        return [Location(position=rect.center.to_vector()) for rect in arranged_rects]
-
-    @staticmethod
-    def combine(
-        elements: list[Element2D],
-        axis: Ax = Ax.X,
-        anchor: Place = Place.CENTER,
-    ) -> Sketch:
-        """
-        Arranges a list of elements along an axis and returns a sketch of their outline.
-
-        Args:
-            axis (Axis): The axis along which to arrange the elements.
-            anchor (Place | tuple[Align, Align]): The anchor point or alignment for the group of elements.
-            elements (list[Element2D]): The list of elements to arrange.
-
-        Returns:
-            Sketch: The sketch of the arranged elements.
-        """
-        locations = Element2D.arrange(elements, axis, anchor)
-        sketch = Sketch()
-        for element, location in zip(elements, locations):  # TODO: try to replace with build
-            sketch += element.sketch().move(location)
-        return sketch
 
 
 class CircleElement(Element2D):
@@ -95,6 +52,7 @@ class CircleElement(Element2D):
         """
         self.radius = radius
 
+    @property
     @override
     def size(self) -> Vec2:
         return Vec2(2 * self.radius, 2 * self.radius)
@@ -138,6 +96,7 @@ class RectangleElement(Element2D):
             self.corners = corners
         self.fill = fill
 
+    @property
     @override
     def size(self) -> Vec2:
         return Vec2(self.width, self.height)
@@ -169,10 +128,10 @@ class RectangleElement(Element2D):
                     l_bottom = Line((dx, -dy - ch), (-dx, -dy - ch))
                     l_left = Line((-dx - cw, -dy), (-dx - cw, dy))
                     # corners
-                    self.corners.draw(l_top @ 1, l_right @ 0, Place.TOP_RIGHT)
-                    self.corners.draw(l_right @ 1, l_bottom @ 0, Place.BOTTOM_RIGHT)
-                    self.corners.draw(l_bottom @ 1, l_left @ 0, Place.BOTTOM_LEFT)
-                    self.corners.draw(l_left @ 1, l_top @ 0, Place.TOP_LEFT)
+                    self.corners.draw(l_top @ 1, l_right @ 0, Corners.TOP_RIGHT)
+                    self.corners.draw(l_right @ 1, l_bottom @ 0, Corners.BOTTOM_RIGHT)
+                    self.corners.draw(l_bottom @ 1, l_left @ 0, Corners.BOTTOM_LEFT)
+                    self.corners.draw(l_left @ 1, l_top @ 0, Corners.TOP_LEFT)
                 _ = make_face()
             return sk.sketch
 
@@ -209,6 +168,7 @@ class SlotElement(Element2D):
         self.width = width
         self.height = height
 
+    @property
     @override
     def size(self) -> Vec2:
         return Vec2(self.width, self.height)
@@ -273,6 +233,7 @@ class TrapezoidElement(Element2D):
         self.angle2 = angle2
         self.rotate = rotate
 
+    @property
     @override
     def size(self) -> Vec2:
         dx = self.height * math.sin(math.radians(self.rotate)) + self.width * math.cos(
@@ -311,6 +272,7 @@ class RightTriangleElement(Element2D):
         self.height = height
         self.flip = flip
 
+    @property
     @override
     def size(self) -> Vec2:
         return Vec2(self.width, self.height)
@@ -318,7 +280,41 @@ class RightTriangleElement(Element2D):
     @override
     def sketch(self) -> Sketch:
         dx, dy = self.width / 2, self.height / 2
-        pts = (
-            [(-dx, -dy), (-dx, dy), (dx, -dy)] if self.flip else [(-dx, -dy), (dx, dy), (dx, -dy)]
-        )
+        pts = [(-dx, -dy), (-dx, dy), (dx, -dy)] if self.flip else [(-dx, -dy), (dx, dy), (dx, -dy)]
         return make_face(Polyline(pts, close=True))
+
+
+class AlignedElements(Element2D):
+    """A combined element shape"""
+
+    elements: list[Element2D]
+    align: AxAlign = AxAlign.X
+
+    def __init__(self, elements: list[Element2D], align: AxAlign = AxAlign.X):
+        self.elements = elements
+        self.align = align
+
+    @property
+    @override
+    def size(self) -> Vec2:
+        if self.align.to_ax() == Ax.X:
+            return Vec2(sum(e.size.x for e in self.elements), max(e.size.y for e in self.elements))
+        else:
+            return Vec2(max(e.size.x for e in self.elements), sum(e.size.y for e in self.elements))
+
+    def arrange(self) -> list[Location]:
+        """
+        Arranges a list of elements along an axis, returning their locations.
+        """
+        elem_rects = [Rc(size=el.size) for el in self.elements]
+        arranged_rects = Rc.arrange(self.align, *elem_rects)
+        return [Location(position=rect.center.to_vector()) for rect in arranged_rects]
+
+    @override
+    def sketch(self) -> Sketch:
+        locations = self.arrange()
+        moved_elements: list[Sketch] = [
+            locations[i] * self.elements[i].sketch() for i in range(len(locations))
+        ]
+        # do the fusing all at once
+        return Sketch(moved_elements)

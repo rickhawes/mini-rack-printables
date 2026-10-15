@@ -18,7 +18,8 @@ from build123d import (
 from mini_rack_printables.models.dimensions import RackDims, ShelfTabDims
 from mini_rack_printables.models.holes import sketch_rack_holes
 from ..core.geometry import Bx, Vec3, Mm
-from ..core.model import Model, Modeler
+from ..core.model import Model
+from ..core.modeler import Modeler
 from ..core.feature import FeatureList, Rib
 from ..core.layouts import FeatureLayout, RowLayout
 

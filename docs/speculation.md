@@ -2,13 +2,12 @@ Top level code
 
 ```python
 # Create a model
-plate = FacePlate(rack_units=1.0)
+plate = FacePlate(rack_units=1.0, name="Blank")
 
 # Do the rendering stuff
-md = Modler(name="Blank")
-md.render(plate)
-md.show()
-md.export_step("outputs/blank_face_plate.step")
+rendering = plate.render()
+rendering.show()
+rendering.export_step("outputs/blank_face_plate.step")
 ```
 
 
@@ -16,16 +15,18 @@ Model render method for a FacePlate
 
 ```python
 class FacePlate(Model):
-    def render(self, md: Modler) -> None:
-        md.place_element(self._render_plate(md), next_plate=Side.TOP)
+    def render(self) -> Rendering:
+        md = Modeler()
+        md.place()
         if self.ribs:
             rib = _make_rib()
             md.place_element(rib, side_plane=Place.BOTTOM)
             md.mirror_last(Ax.Y)
         if self.features:
-            md.place_features(self.features, self.layout, size=Vec2())
+            md.assemble(self.features, self.layout, size=Vec2())
         
-                
+    def _make_plate(self):
+        
     def _make_rib() -> Element3D:
         trap = TrapazoidElement(...)
         return PrismElement(trap, amount)

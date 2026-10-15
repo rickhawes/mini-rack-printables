@@ -38,9 +38,7 @@ class Cutout(Feature):
         result = [FeaturePiece(hole, Mode.SUBTRACT)]
 
         if self.rib:
-            rib = plate_planes.top_plane * extrude_tube(
-                self.shape, self.rib.width, self.rib.depth
-            )
+            rib = plate_planes.top_plane * extrude_tube(self.shape, self.rib.width, self.rib.depth)
             result += [FeaturePiece(rib)]
 
         return result
