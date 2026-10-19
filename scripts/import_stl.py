@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-import build123d as bd
+import argparse
 from typing import cast
 
-import argparse
+import build123d as bd
 
 
 def convert_stl_to_brep(input_path: str, output_path: str):

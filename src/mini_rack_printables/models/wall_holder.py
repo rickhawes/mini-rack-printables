@@ -1,14 +1,14 @@
 from dataclasses import dataclass
-from build123d import Part, Box, Pos, extrude, Mode, Sketch
 from typing import override
 
-from ..core.feature import Feature, FeaturePiece
-from ..core.geometry import Vec3, Vec2, Mm
-from ..core.elements_2d import RectangleElement
+from build123d import Box, Mode, Part, Pos, Sketch, extrude
+
 from ..core.corners import InsetCorners
+from ..core.elements_2d import RectangleElement
+from ..core.elements_3d import extrude_sketch, make_plate, sketch_ring
+from ..core.feature import Feature, FeaturePiece, Rib
 from ..core.fills import HexHoles
-from ..core.elements_3d import extrude_sketch, sketch_ring, make_plate
-from ..core.feature import Rib
+from ..core.geometry import Mm, Vec2, Vec3
 
 
 class WallHolder(Feature):

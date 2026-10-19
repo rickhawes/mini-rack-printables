@@ -10,10 +10,11 @@ from typing import override
 
 from build123d import BuildPart, Part, add
 
-from .feature import FeatureList, Feature, FeaturePiece
-from .row_column_collection import RowColumnCollection
 from mini_rack_printables.models.dimensions import E
-from .geometry import Rc, Mm, Place
+
+from .feature import Feature, FeatureList, FeaturePiece
+from .geometry import Dir2, Mm, Rc
+from .row_column_collection import RowColumnCollection
 
 
 class FeatureLayout(ABC):
@@ -27,7 +28,6 @@ class FeatureLayout(ABC):
         Layout the 'parts' on the passed in 'plate' returning
         a list of sub plates for each passed in part.
         """
-        pass
 
     @staticmethod
     def render_pieces(
@@ -71,7 +71,7 @@ class RowLayout(FeatureLayout):
     """ Row heights if not equal heights"""
     equal_widths: bool = False
     """ Equal widths """
-    align: Place = Place.CENTER
+    place: Dir2 = Dir2.CENTER
     """ Alignment of the within a cell"""
     spacing: Mm = 0
     """ Spacing between cells """
@@ -172,7 +172,7 @@ class RowLayout(FeatureLayout):
                 bounds = Rc.from_edges(left, right, bottom, top)
                 bounds_bx = bounds.form_bx(front, back)
                 part_rc = Rc(part.desired_size().min_size, bounds.center)
-                origin_offset = part_rc.place_center(bounds, self.align)
+                origin_offset = part_rc.place_center(bounds, self.place)
                 result.append(PlatePlanes(bounds_bx, origin_offset))
 
                 left = right + s
@@ -253,7 +253,7 @@ class GridLayout(RowLayout):
                     bounds = Rc.from_edges(left, right, bottom, top)
                     bounds_bx = bounds.form_bx(front, back)
                     part_rc = Rc(part.desired_size().min_size, bounds.center)
-                    origin_offset = part_rc.place_center(bounds, self.align)
+                    origin_offset = part_rc.place_center(bounds, self.place)
                     result.append(PlatePlanes(bounds_bx, origin_offset))
 
                 left = right + s

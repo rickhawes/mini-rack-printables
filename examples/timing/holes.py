@@ -3,8 +3,8 @@ Compare the use of builder vs algebra mode for drawing 25x25 grid of holes in a 
 """
 
 import timeit
-from build123d import *
 
+from build123d import *
 
 major_r = 10
 

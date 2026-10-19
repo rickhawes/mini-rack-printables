@@ -1,10 +1,11 @@
 from typing import override
 
-from ..core.geometry import Vec2
-from ..core.feature import Feature, FeaturePiece, Rib
+from build123d import Mode
+
 from ..core.elements_2d import Element2D
 from ..core.elements_3d import extrude_tube
-from build123d import Mode
+from ..core.feature import Feature, FeaturePiece, Rib
+from ..core.geometry import Vec2
 
 
 class Cutout(Feature):

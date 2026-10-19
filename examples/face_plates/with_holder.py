@@ -1,7 +1,7 @@
 import build123d as bd
 from ocp_vscode import show
 
-from mini_rack_printables import WallHolder, FacePlate, Vec3
+from mini_rack_printables import FacePlate, Vec3, WallHolder
 
 #
 # This example demonstrates a face plate with a holder.

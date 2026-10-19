@@ -3,6 +3,7 @@ In algebra mode, compare use of fuse of single object versus a fuse of a list of
 """
 
 import timeit
+
 from build123d import *
 
 

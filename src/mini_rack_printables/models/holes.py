@@ -3,20 +3,21 @@ Functions to draw and layout shapes for the common holes and patterns.
 """
 
 import math
-from build123d import Locations, SlotOverall, Sketch
 
+from build123d import Locations, Sketch, SlotOverall
+
+from mini_rack_printables.core.geometry import Mm
 from mini_rack_printables.models.dimensions import (
     RackDims,
     RackScrewDims,
-    ShelfTabDims,
     Screw1032Dims,
+    ShelfTabDims,
     rack_units_to_mm,
 )
-from mini_rack_printables.core.geometry import Mm
 
 
 def layout_rack_screw_holes(
-    rack_units: float | int,
+    rack_units: float,
     middle_holes: bool = True,
     half_height_bottom: bool = False,
 ) -> [Mm]:
@@ -78,7 +79,7 @@ def layout_rack_screw_holes(
 
 
 def sketch_rack_holes(
-    rack_units: float | int,
+    rack_units: float,
     middle_holes: bool = True,
     half_height_bottom: bool = False,
 ) -> Sketch:

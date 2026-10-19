@@ -1,22 +1,23 @@
+from functools import cached_property
+from importlib.resources import as_file, files
 from pathlib import Path
 from typing import override
-from importlib.resources import as_file, files
-from functools import cached_property
+
 from build123d import (
-    Vector,
-    import_brep,
     Box,
-    Mode,
+    CenterOf,
     Location,
     Mesher,
-    CenterOf,
+    Mode,
     Unit,
+    Vector,
+    import_brep,
 )
 from build123d.topology import Shape, Solid
 
+from mini_rack_printables.models.dimensions import E
 
 from ..core.feature import Feature, FeaturePiece
-from mini_rack_printables.models.dimensions import E
 from ..core.geometry import Vec3
 
 

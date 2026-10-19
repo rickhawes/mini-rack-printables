@@ -1,14 +1,14 @@
 from dataclasses import dataclass
 from typing import override
-from build123d import Part, Box, Pos, extrude, Mode, Location, BuildSketch, add, BuildPart
 
-from ..core.feature import Feature, FeaturePiece
+from build123d import Box, BuildPart, BuildSketch, Location, Mode, Part, Pos, add, extrude
+
+from ..core.corners import InsetCorners, RoundedCorners, SelectedCorners
 from ..core.elements_2d import RectangleElement
-from ..core.corners import RoundedCorners
 from ..core.elements_3d import make_plate
+from ..core.feature import Feature, FeaturePiece
 from ..core.fills import HexHoles
-from ..core.corners import SelectedCorners, InsetCorners
-from ..core.geometry import Vec3, Vec2, Mm
+from ..core.geometry import Mm, Vec2, Vec3
 
 
 class PuckHolder(Feature):

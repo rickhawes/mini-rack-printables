@@ -2,11 +2,12 @@
 Classes for specifying features of a `Model`. Features may be related to specific devices or general concepts like cutouts.
 """
 
-from build123d import Solid, Part
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
-from .geometry import Bx, Vec2, Mm
+from build123d import Part, Solid
+
+from .geometry import Bx, Mm, Vec2
 
 
 class Feature(ABC):
@@ -37,7 +38,6 @@ class Feature(ABC):
         Returns:
             DesiredSize: The minimum size and the expand flag of the plate for rendering.
         """
-        pass
 
     @abstractmethod
     def render(self, base_plate: Bx) -> list[FeaturePiece]:
@@ -47,7 +47,6 @@ class Feature(ABC):
         Returns:
             A list of PartOutput objects representing the solids to be added to the plate.
         """
-        pass
 
 
 type FeatureList = list[Feature] | list[list[Feature]]

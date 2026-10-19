@@ -1,5 +1,6 @@
 from ocp_vscode import show
-from mini_rack_printables import XRayModel, Cutout, FacePlate, SlotElement
+
+from mini_rack_printables import Cutout, FacePlate, SlotElement, XRayModel
 
 #
 # This example demonstrates a corner holder part.

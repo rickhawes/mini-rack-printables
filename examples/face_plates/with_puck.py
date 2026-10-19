@@ -1,7 +1,7 @@
 import build123d as bd
 from ocp_vscode import show
 
-from mini_rack_printables import PuckHolder, FacePlate, Vec3
+from mini_rack_printables import FacePlate, PuckHolder, Vec3
 
 #
 # This example demonstrates a face plate with a puck holder.

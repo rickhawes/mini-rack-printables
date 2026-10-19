@@ -4,18 +4,20 @@ See Also:
     RectangleElement
 """
 
-from abc import ABC, abstractmethod
 import math
+from abc import ABC, abstractmethod
 from typing import override
+
 from build123d import (
-    Rectangle,
     Circle,
-    Sketch,
-    HexLocations,
-    RegularPolygon,
     GridLocations,
+    HexLocations,
+    Rectangle,
+    RegularPolygon,
+    Sketch,
 )
 from build123d.build_common import LocationList
+
 from .geometry import Mm
 
 
@@ -33,12 +35,10 @@ class Fill(ABC):
     @abstractmethod
     def locations(self, dx: Mm, dy: Mm) -> LocationList:
         """Return the locations of the holes for the given dimensions."""
-        pass
 
     @abstractmethod
     def sketch(self) -> Sketch:
         """Sketch a single hole."""
-        pass
 
 
 class HexHoles(Fill):

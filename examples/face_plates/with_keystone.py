@@ -1,7 +1,7 @@
 import build123d as bd
 from ocp_vscode import show
 
-from mini_rack_printables import Keystone, FacePlate
+from mini_rack_printables import FacePlate, Keystone
 
 #
 # This example demonstrates a face plate with a keystone cutout.

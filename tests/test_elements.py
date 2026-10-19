@@ -1,20 +1,21 @@
 from mini_rack_printables import (
-    Place,
-    Ax,
-    Element2D,
-    InsetCorners,
-    HexHoles,
-    SquareHoles,
-    CircleHoles,
-    RectangleElement,
-    CircleElement,
-    SlotElement,
+    Ax3,
     BeveledCorners,
-    SelectedCorners,
-    RoundedCorners,
+    CircleElement,
+    CircleHoles,
+    Dir2,
+    Element2D,
+    HexHoles,
+    InsetCorners,
+    RectangleElement,
     RightTriangleElement,
+    RoundedCorners,
+    SelectedCorners,
+    SlotElement,
+    SquareHoles,
     TrapezoidElement,
 )
+
 from .conftest import Logger
 
 # test by rendering a bunch of elements
@@ -105,5 +106,5 @@ def test_combine_elements(viewer_logger: Logger):
     e1 = RectangleElement(5, 2)
     e2 = TrapezoidElement(10, 15, minor_width=2, angle1=90, rotate=90)
     e3 = RectangleElement(20, 10)
-    sk = Element2D.combine([e1, e2, e3], axis=Ax.X, anchor=Place.BOTTOM)
+    sk = Element2D.combine([e1, e2, e3], axis=Ax3.X, anchor=Dir2.BOTTOM)
     viewer_logger.log(sk, SHAPE)

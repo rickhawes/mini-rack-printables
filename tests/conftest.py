@@ -2,13 +2,12 @@
 Fixture to display on OCP Viewer the output of each test
 """
 
+import sys
 from typing import final
 
 import pytest
-import sys
-from ocp_vscode import push_object, show_objects, reset_show, Camera
-from build123d import Compound, Part, Location, Text, Sketch, Rectangle, Align, Color
-
+from build123d import Align, Color, Compound, Location, Part, Rectangle, Sketch, Text
+from ocp_vscode import Camera, push_object, reset_show, show_objects
 
 STD_SPACING = 80
 MIN_SPACING = 10
@@ -80,4 +79,3 @@ def viewer_logger():
             row += 1
     _ = show_objects(reset_camera=Camera.TOP)  # pyright: ignore[reportUnknownVariableType]
 
-    #

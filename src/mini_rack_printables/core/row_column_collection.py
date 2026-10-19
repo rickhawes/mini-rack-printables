@@ -3,8 +3,8 @@ A Collection of either list of items or a list of lists of items. In all cases, 
 be treated as a 2d row-column collection.
 """
 
-from typing import cast, Callable
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
+from typing import cast
 
 
 class RowColumnCollection[T]:

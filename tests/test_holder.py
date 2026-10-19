@@ -1,11 +1,12 @@
 from mini_rack_printables import (
-    WallHolder,
-    XRayModel,
-    PuckHolder,
     CornerHolder,
+    PuckHolder,
     RectangleElement,
     Vec3,
+    WallHolder,
+    XRayModel,
 )
+
 from .conftest import Logger
 
 

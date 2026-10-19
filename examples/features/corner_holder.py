@@ -1,5 +1,6 @@
 from ocp_vscode import show
-from mini_rack_printables import XRayModel, CornerHolder, RectangleElement
+
+from mini_rack_printables import CornerHolder, RectangleElement, XRayModel
 
 #
 # This example demonstrates a corner holder part.

@@ -1,15 +1,17 @@
 from dataclasses import dataclass
-from build123d import Compound, Location, mirror, Plane, Part, Sketch, extrude
-from typing import override, final
+from typing import final, override
 
-from mini_rack_printables.models.dimensions import ShelfTabDims, RackDims, rack_units_to_mm
-from ..core.geometry import Bx, Vec3, Mm, Place, Ax
-from ..core.feature import FeatureList
-from ..core.layouts import FeatureLayout, GridLayout
-from ..core.elements_2d import Element2D, RectangleElement, TrapezoidElement
-from ..core.corners import SquareCorners
-from ..core.fills import HexHoles
+from build123d import Location, Part, Plane, Sketch, extrude, mirror
+
+from mini_rack_printables.models.dimensions import RackDims, ShelfTabDims, rack_units_to_mm
 from mini_rack_printables.models.holes import sketch_rack_holes
+
+from ..core.corners import SquareCorners
+from ..core.elements_2d import Element2D, RectangleElement, TrapezoidElement
+from ..core.feature import FeatureList
+from ..core.fills import HexHoles
+from ..core.geometry import Ax3, Bx, Dir2, Mm, Vec3
+from ..core.layouts import FeatureLayout, GridLayout
 from ..core.model import Model
 
 
@@ -119,7 +121,7 @@ class Shelf(Model):
                 fill=HexHoles(),
                 corners=SquareCorners(base_size.z),  # insets the fill area a bit
             )
-            wall_sketch = Element2D.combine([wall_base, wall_trans, wall_holes], Ax.X, Place.BOTTOM)
+            wall_sketch = Element2D.combine([wall_base, wall_trans, wall_holes], Ax3.X, Dir2.BOTTOM)
             return wall_plane * extrude(wall_sketch, wall_size.z)
 
         # add face

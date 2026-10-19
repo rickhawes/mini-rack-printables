@@ -1,17 +1,19 @@
+import pytest
+from build123d import Circle, Location, Rectangle, Sketch
+
 from mini_rack_printables import (
-    RowColumnCollection,
-    MeasuredRowsColumns,
-    Feature,
-    Spacer,
-    RowLayout,
-    GridLayout,
-    PlatePlanes,
     Bx,
-    Place,
+    Dir2,
+    Feature,
+    GridLayout,
+    MeasuredRowsColumns,
+    PlatePlanes,
+    RowColumnCollection,
+    RowLayout,
+    Spacer,
     Vec3,
 )
-from build123d import Rectangle, Sketch, Circle, Location
-import pytest
+
 from .conftest import Logger
 
 ALIGN_CELL = "Align cell tests"
@@ -125,19 +127,19 @@ def test_align_cell(viewer_logger: Logger):
     p2 = Spacer(15, 15)
     plate = PlatePlanes(Bx(40, 40, 0))
 
-    l1 = RowLayout(align=Place.CENTER, spacing=2)
+    l1 = RowLayout(place=Dir2.CENTER, spacing=2)
     sub_plates = l1.layout_features([p1, p2], plate)
     viewer_logger.log(sketch_sub_plates(sub_plates), ALIGN_CELL)
 
-    l2 = RowLayout(align=Place.LEFT, spacing=2)
+    l2 = RowLayout(place=Dir2.LEFT, spacing=2)
     sub_plates = l2.layout_features([p1, p2], plate)
     viewer_logger.log(sketch_sub_plates(sub_plates), ALIGN_CELL)
 
-    l3 = RowLayout(align=Place.TOP, spacing=2)
+    l3 = RowLayout(place=Dir2.TOP, spacing=2)
     sub_plates = l3.layout_features([p1, p2], plate)
     viewer_logger.log(sketch_sub_plates(sub_plates), ALIGN_CELL)
 
-    l4 = RowLayout(align=Place.BOTTOM_RIGHT, spacing=2)
+    l4 = RowLayout(place=Dir2.BOTTOM_RIGHT, spacing=2)
     sub_plates = l4.layout_features([p1, p2], plate)
     viewer_logger.log(sketch_sub_plates(sub_plates), ALIGN_CELL)
 

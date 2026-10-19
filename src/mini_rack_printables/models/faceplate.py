@@ -2,26 +2,27 @@ from dataclasses import dataclass
 from typing import final, override
 
 from build123d import (
-    BuildSketch,
+    Axis,
     BuildPart,
+    BuildSketch,
+    Location,
+    Mode,
     Plane,
     RectangleRounded,
     Trapezoid,
-    Location,
-    mirror,
-    extrude,
-    Mode,
-    Axis,
     add,
+    extrude,
+    mirror,
 )
 
 from mini_rack_printables.models.dimensions import RackDims, ShelfTabDims
 from mini_rack_printables.models.holes import sketch_rack_holes
-from ..core.geometry import Bx, Vec3, Mm
+
+from ..core.feature import FeatureList, Rib
+from ..core.geometry import Mm, Vec3
+from ..core.layouts import FeatureLayout, RowLayout
 from ..core.model import Model
 from ..core.modeler import Modeler
-from ..core.feature import FeatureList, Rib
-from ..core.layouts import FeatureLayout, RowLayout
 
 
 @final

@@ -2,27 +2,29 @@
 2d Elements for models. Elements are the primitives that make up models and parts. They are built to be easily combined and rendered.
 """
 
-from abc import ABC, abstractmethod
 import math
+from abc import ABC, abstractmethod
 from typing import override
+
 from build123d import (
-    Rectangle,
-    Line,
+    BuildLine,
+    BuildSketch,
     Circle,
-    RectangleRounded,
-    SlotOverall,
-    Sketch,
     Face,
+    Line,
     Location,
     Polyline,
-    BuildLine,
-    make_face,
-    BuildSketch,
+    Rectangle,
+    RectangleRounded,
+    Sketch,
+    SlotOverall,
     Trapezoid,
+    make_face,
 )
-from .geometry import Rc, Vec2, Mm, Place, Ax, AxAlign
-from .fills import Fill
+
 from .corners import Corners, RoundedCorners, SquareCorners
+from .fills import Fill
+from .geometry import Ax2, Ax3, AxDir, AxDir2, Mm, Rc, Vec2
 
 
 class Element2D(ABC):
@@ -32,12 +34,10 @@ class Element2D(ABC):
     @abstractmethod
     def size(self) -> Vec2:
         """Returns the size of the shape in 2d."""
-        pass
 
     @abstractmethod
     def sketch(self) -> Sketch:
         """Draw the outline of the shape."""
-        pass
 
 
 class CircleElement(Element2D):
@@ -288,16 +288,18 @@ class AlignedElements(Element2D):
     """A combined element shape"""
 
     elements: list[Element2D]
-    align: AxAlign = AxAlign.X
+    axis: Ax2
+    align: AxDir
 
-    def __init__(self, elements: list[Element2D], align: AxAlign = AxAlign.X):
+    def __init__(self, elements: list[Element2D], axis: Ax2 = Ax2.X, align: AxDir = AxDir.CENTER):
         self.elements = elements
+        self.axis = axis
         self.align = align
 
     @property
     @override
     def size(self) -> Vec2:
-        if self.align.to_ax() == Ax.X:
+        if self.axis == Ax2.X:
             return Vec2(sum(e.size.x for e in self.elements), max(e.size.y for e in self.elements))
         else:
             return Vec2(max(e.size.x for e in self.elements), sum(e.size.y for e in self.elements))
@@ -307,7 +309,7 @@ class AlignedElements(Element2D):
         Arranges a list of elements along an axis, returning their locations.
         """
         elem_rects = [Rc(size=el.size) for el in self.elements]
-        arranged_rects = Rc.arrange(self.align, *elem_rects)
+        arranged_rects = Rc.arrange(self.axis, self.align, *elem_rects)
         return [Location(position=rect.center.to_vector()) for rect in arranged_rects]
 
     @override

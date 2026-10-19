@@ -1,6 +1,6 @@
 # Layout tests
 #
-from mini_rack_printables import RackScrewDims, RackDims, layout_rack_screw_holes
+from mini_rack_printables import RackDims, RackScrewDims, layout_rack_screw_holes
 
 
 def test_layout_rack_screw_holes_1u():

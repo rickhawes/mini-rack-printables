@@ -1,4 +1,4 @@
-from mini_rack_printables import Model, Modeler, BoxElement, Vec3, Vec2, SlotElement, PrismElement
+from mini_rack_printables import BoxElement, Model, Modeler, PrismElement, SlotElement, Vec2, Vec3
 from mini_rack_printables.core.elements_3d import CylinderElement
 
 

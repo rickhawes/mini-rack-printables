@@ -1,7 +1,7 @@
 import build123d as bd
 from ocp_vscode import show
 
-from mini_rack_printables import FacePlate, Cutout, CircleElement
+from mini_rack_printables import CircleElement, Cutout, FacePlate
 
 #
 # Minimal example of a face plate with a part

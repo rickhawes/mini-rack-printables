@@ -3,8 +3,8 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
-from build123d import export_step, Part
 import ocp_vscode as viewer
+from build123d import Part, export_step
 
 
 class Model(ABC):
@@ -35,4 +35,3 @@ class Model(ABC):
         """
         Render the model in a Rendering class.
         """
-        pass

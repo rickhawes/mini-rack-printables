@@ -7,11 +7,11 @@ from typing import override
 
 from build123d import Sketch, extrude
 
-from ..core.elements_2d import RectangleElement, Element2D
-from ..core.elements_3d import sketch_ring
 from ..core.corners import InsetCorners
+from ..core.elements_2d import Element2D, RectangleElement
+from ..core.elements_3d import sketch_ring
 from ..core.feature import Feature, FeaturePiece
-from ..core.geometry import Vec2, Mm
+from ..core.geometry import Mm, Vec2
 
 
 class CornerHolder(Feature):

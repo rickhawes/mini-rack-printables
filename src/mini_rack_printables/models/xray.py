@@ -5,8 +5,8 @@ from build123d.topology.composite import Part
 from build123d.topology.three_d import Solid
 
 from ..core.feature import Feature
-from ..core.model import Model
 from ..core.geometry import Bx, Vec3
+from ..core.model import Model
 
 
 class XRayModel(Model):

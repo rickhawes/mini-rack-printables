@@ -7,10 +7,12 @@ See Also:
 
 from abc import ABC, abstractmethod
 from typing import override
-from build123d import Sketch, extrude, offset, Part, Cone, Location, Cylinder
+
+from build123d import Cone, Cylinder, Location, Part, Sketch, extrude, offset
+
 from .elements_2d import Element2D, RectangleElement
 from .fills import Fill
-from .geometry import Vec3, Mm, Degree
+from .geometry import Degree, Mm, Vec3
 
 
 class Element3D(ABC):
@@ -20,12 +22,10 @@ class Element3D(ABC):
     @abstractmethod
     def size(self) -> Vec3:
         """Returns the size of the shape in 3d."""
-        pass
 
     @abstractmethod
     def render(self) -> Part:
         """Extrudes the shape centered on the plane and the z-axis of the plane"""
-        pass
 
 
 class PrismElement(Element3D):

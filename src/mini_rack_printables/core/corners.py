@@ -7,8 +7,10 @@ See Also:
 
 from abc import ABC, abstractmethod
 from typing import override
-from build123d import Vector, Line, RadiusArc, Polyline
-from .geometry import Vec2, Mm
+
+from build123d import Line, Polyline, RadiusArc, Vector
+
+from .geometry import Mm, Vec2
 
 
 class Corners(ABC):
@@ -35,7 +37,6 @@ class Corners(ABC):
     @abstractmethod
     def draw(self, start: Vector, end: Vector, where: Corners.SelectedCorner) -> None:
         """draw the lines or arcs in the context of `BuildLine`"""
-        pass
 
 
 class RoundedCorners(Corners):

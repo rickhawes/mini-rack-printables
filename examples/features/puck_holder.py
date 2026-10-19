@@ -1,5 +1,6 @@
 from ocp_vscode import show
-from mini_rack_printables import XRayModel, PuckHolder, Vec3
+
+from mini_rack_printables import PuckHolder, Vec3, XRayModel
 
 #
 # This example demonstrates a corner holder part.

@@ -1,6 +1,7 @@
-from ..core.feature import Feature, FeaturePiece
-from ..core.geometry import Vec2, Mm
 from typing import override
+
+from ..core.feature import Feature, FeaturePiece
+from ..core.geometry import Mm, Vec2
 
 
 class Spacer(Feature):
