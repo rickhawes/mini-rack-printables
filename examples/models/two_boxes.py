@@ -8,10 +8,10 @@ class TwoElementModel(Model):
         node = BoxElement(2, 1.5, 1)
 
         # place the nodes on the base using a modeler
-        md = Modeler.make_with_element(base, side=AxDir3.Y_MINUS)
+        md = Modeler.make_with_element(base, side=AxDir3.Y_PLUS)
         for member in Dir2:
-            if member.value != Dir2.BOTTOM_LEFT.value:
-                md.place_element(node, Dir2(member.value))
+            cut = member.value == Dir2.CORNER_LF_BT.value
+            md.place_element(node, Dir2(member.value), cut)
 
         return md.render()
 

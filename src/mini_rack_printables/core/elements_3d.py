@@ -129,8 +129,6 @@ def extrude_tube(element: Element2D, wall_thickness: Mm, amount: Mm) -> Part:
         element (Element2D): The shape of the tube.
         wall_thickness (Mm): The thickness of the tube wall.
         amount (Mm): The amount to extrude the tube in the Z direction.
-        over (Part | Face | None, optional): The plane to place the tube over. Defaults to XY.
-        under (Part | Face | None, optional): The plane to place the tube under. Cannot be specified with `over`.
     Returns:
         Part: The extruded tube of the basic shape.
     """

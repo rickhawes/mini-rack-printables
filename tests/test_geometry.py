@@ -1,10 +1,33 @@
 import pytest
 
-from mini_rack_printables import Ax2, AxDir2, AxDir3, Bx, Dir2, Rc, Vec2, Vec3
-from mini_rack_printables.core.geometry import AxDir
+from mini_rack_printables import Ax2, AxDir, AxDir2, AxDir3, Bx, Dir2, Rc, Vec2, Vec3
 
 
-def test_init():
+def test_dir2():
+    d1 = Dir2.Y_MINUS
+    assert d1.value[0] == AxDir.CENTER
+    assert d1.x == AxDir.CENTER
+    assert d1.y == AxDir.MINUS
+    assert d1 == Dir2.SIDE_BOTTOM
+    d2 = AxDir2.BOTTOM.to_dir2()
+    assert d2 == d1
+    assert d2 == Dir2.SIDE_BOTTOM
+
+def test_ax_dir2():
+    a1 = AxDir2.Y_PLUS
+    assert a1.x == AxDir.CENTER and a1.y == AxDir.PLUS and a1.is_y
+    a2 = a1.to_opposite()
+    assert a2.x == AxDir.CENTER and a2.y == AxDir.MINUS and a2.is_y
+    assert a2.to_ax2() == Ax2.Y
+    assert a2.to_other_ax2() == Ax2.X
+
+    a3 = AxDir2(1, 0)
+    assert a3.x == AxDir.PLUS and a3.y == AxDir.CENTER
+    with pytest.raises(ValueError):
+        _ = AxDir2(1, 1)
+
+
+def test_rc_init():
     with pytest.raises(ValueError):
         _ = Rc.from_values(-1, -1)
 
@@ -18,18 +41,6 @@ def test_init():
     rc3 = Rc.from_values(dx=3, dy=3, x=-1, y=-1)
     assert rc3.size.x == 3
     assert rc3.size.y == 3
-
-
-def test_dir2_equality():
-    d1 = Dir2.Y_MINUS
-    assert d1.value[0] == AxDir.CENTER
-    assert d1.x == AxDir.CENTER
-    assert d1.y == AxDir.MINUS
-    assert d1 == Dir2.SIDE_BOTTOM
-    d2 = AxDir2.BOTTOM.to_dir2()
-    assert d2 == d1
-    assert d2 == Dir2.SIDE_BOTTOM
-
 
 def test_edge_functions():
     rc = Rc.from_values(4, 6, 1, 1)

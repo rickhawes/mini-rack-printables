@@ -21,9 +21,7 @@ class FeatureLayout(ABC):
     """Base Layout class"""
 
     @abstractmethod
-    def layout_features(
-        self, features: FeatureList, plate_planes: PlatePlanes
-    ) -> list[PlatePlanes]:
+    def layout_features(self, features: FeatureList, area: Rc) -> list[Rc]:
         """
         Layout the 'parts' on the passed in 'plate' returning
         a list of sub plates for each passed in part.
@@ -125,16 +123,14 @@ class RowLayout(FeatureLayout):
         return [expanded_height(i) for i in range(rc)]
 
     @override
-    def layout_features(
-        self, features: FeatureList, plate_planes: PlatePlanes
-    ) -> list[PlatePlanes]:
+    def layout_features(self, features: FeatureList, area: Rc) -> list[Rc]:
         coll = RowColumnCollection(features)
         m = MeasuredRowsColumns.measure_parts(coll)
         s = self.spacing
 
         def layout_one(row_features: list[Feature]) -> list[Mm]:
             """Calculate the horizontal widths of cells of one row the left-to-right direction"""
-            plate_width = plate_planes.bounds.size.x
+            plate_width = area.size.x
             cc = len(row_features)
             total_width = sum(p.desired_size().min_size.x for p in row_features)
             expand_count = sum(1 for p in row_features if p.desired_size().more_x)
@@ -158,8 +154,8 @@ class RowLayout(FeatureLayout):
 
         # Iterate over rows and columns to form sub_plates for each part.
         # Increment top and left with spacing to position each sub_plate correctly.
-        result: list[PlatePlanes] = []
-        front = plate_planes.bounds.front
+        result: list[Rc] = []
+        front = area.front
         back = plate_planes.bounds.back
         left = plate_planes.bounds.left + s
         top = plate_planes.bounds.top - s

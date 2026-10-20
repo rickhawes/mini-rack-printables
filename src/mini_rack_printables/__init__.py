@@ -22,7 +22,7 @@ from .core.elements_3d import (
 )
 from .core.feature import Feature, FeaturePiece, Rib
 from .core.fills import CircleHoles, Fill, HexHoles, SquareHoles
-from .core.geometry import Ax2, Ax3, AxDir2, AxDir3, Bx, Degree, Dir2, Mm, Rc, Vec2, Vec3
+from .core.geometry import Ax2, Ax3, AxDir, AxDir2, AxDir3, Bx, Degree, Dir2, Mm, Rc, Vec2, Vec3
 from .core.layouts import FeatureLayout, GridLayout, MeasuredRowsColumns, RowLayout
 from .core.model import Model
 from .core.modeler import Modeler
@@ -31,7 +31,6 @@ from .models.corner_holder import CornerHolder
 from .models.cutout import Cutout
 from .models.dimensions import RackDims, RackScrewDims, Screw1032Dims
 from .models.faceplate import FacePlate
-from .models.holes import layout_rack_screw_holes, sketch_rack_holes
 from .models.import_feature import ImportFeature
 from .models.jetkvm import JetKVM
 from .models.keystone import Keystone
@@ -42,10 +41,11 @@ from .models.wall_holder import WallHolder
 from .models.xray import XRayModel
 
 __all__ = [
-    "Ax3",
     "Ax2",
-    "AxDir3",
+    "Ax3",
+    "AxDir",
     "AxDir2",
+    "AxDir3",
     "BeveledCorners",
     "BoxElement",
     "Bx",
@@ -97,6 +97,4 @@ __all__ = [
     "Vec3",
     "WallHolder",
     "XRayModel",
-    "layout_rack_screw_holes",
-    "sketch_rack_holes",
 ]

@@ -19,10 +19,10 @@ class Corners(ABC):
     width: Mm
     height: Mm
 
-    TOP_LEFT = "top_left"
-    TOP_RIGHT = "top_right"
-    BOTTOM_LEFT = "bottom_left"
-    BOTTOM_RIGHT = "bottom_right"
+    TOP_LEFT: str = "top_left"
+    TOP_RIGHT: str = "top_right"
+    BOTTOM_LEFT: str = "bottom_left"
+    BOTTOM_RIGHT: str = "bottom_right"
 
     type SelectedCorner = str
 
@@ -67,7 +67,7 @@ class SquareCorners(Corners):
             case Corners.TOP_RIGHT | Corners.BOTTOM_LEFT:
                 _ = Polyline(start, (end.X, start.Y), end)
             case _:
-                ValueError(f"Corners.draw called with {where}")
+                raise ValueError(f"Corners.draw called with {where}")
 
 
 class InsetCorners(Corners):
@@ -81,7 +81,7 @@ class InsetCorners(Corners):
             case Corners.TOP_RIGHT | Corners.BOTTOM_LEFT:
                 _ = Polyline([start, (start.X, end.Y), end])
             case _:
-                ValueError(f"Corners.draw called with {where}")
+                raise ValueError(f"Corners.draw called with {where}")
 
 
 class BeveledCorners(Corners):

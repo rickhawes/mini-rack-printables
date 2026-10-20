@@ -26,8 +26,6 @@ class Modeler:
     """The base bounds of the model"""
     base_depth: Mm
     """The base depth of the model"""
-    subtract: bool
-    """Subtract additions from the base, otherwise add the base"""
 
     pieces: list[Piece]
     """The pieces placed on this model"""
@@ -37,11 +35,11 @@ class Modeler:
     def __init__(
         self,
         plane: Plane = Plane.XY,
-        base_bounds: Rc = Rc(Vec2(0, 0)),
+        base_bounds: Rc | None = None,
         base_depth: Mm = 0,
     ) -> None:
         self.plane = plane
-        self.base_bounds = base_bounds
+        self.base_bounds = base_bounds if base_bounds is not None else Rc(Vec2(0, 0))
         self.base_depth = base_depth
         self.pieces = []
         self.sub_modelers = []
@@ -52,7 +50,7 @@ class Modeler:
         side_center = bx.side_center(side)
         side_rc = Rc(bx.side_size(side))
         side_depth = bx.side_depth(side)
-        plane = Plane(origin=side_center.to_vector(), z_dir=z_dir.z_dir(), x_dir=z_dir.x_dir())
+        plane = Plane(origin=side_center.to_vector(), z_dir=z_dir.to_plane_z_dir(), x_dir=z_dir.to_plane_x_dir())
         return Modeler(plane, side_rc, side_depth)
 
     @classmethod
@@ -82,9 +80,11 @@ class Modeler:
         self.add_element(element, center, cut)
 
     def add_element(
-        self, element: Element3D, centers: Vec2 | list[Vec2] = Vec2(0, 0), cut: bool = False
+        self, element: Element3D, centers: Vec2 | list[Vec2] | None, cut: bool = False
     ) -> None:
-        if isinstance(centers, Vec2):
+        if centers is None:
+            centers = [Vec2(0, 0)]
+        elif isinstance(centers, Vec2):
             centers = [centers]
         assert isinstance(centers, list)
         rendered = element.render()
@@ -102,7 +102,7 @@ class Modeler:
     def mirror(self, axis: Ax3, times: int = 1) -> None:
         """Mirror the last piece"""
 
-    def assemble(self, features: list[Feature], layout: FeatureLayout) -> None:
+    def layout_features(self, features: list[Feature], layout: FeatureLayout) -> None:
         pass
 
     def add_modeler(self, child: Modeler) -> None:

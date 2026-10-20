@@ -59,7 +59,7 @@ class Dir2(Enum):
     For a square centered at 0, 0, the x, y values of the enum will specify a corner, side or center sections.
 
     See Also:
-        AxDir2, Corner2 -- Subset directions of Dir2
+        AxDir2 -- Subset directions of Dir2
         Rc.place() -- Use of a Dir2 to place a rectangle
     """
 
@@ -130,22 +130,6 @@ class Dir2(Enum):
         """Covert to an AxDir2, if possible. None otherwise."""
         return AxDir2(self.x, self.y) if self.is_side else None
 
-    def to_corners(self) -> list[Corner2]:
-        """List the Corner2's associated with this Dir2.
-
-        If this is a center direction, then an empty list is returned.
-        If this is a side direction, then two corners are returned.
-        """
-        if self.is_center:
-            return []
-        elif (ax := self.to_ax_dir2()) is not None:
-            if ax.is_x:
-                return [Corner2(self.x, AxDir.MINUS), Corner2(self.x, AxDir.PLUS)]
-            else:
-                return [Corner2(AxDir.MINUS, self.y), Corner2(AxDir.PLUS, self.y)]
-        else:
-            return [Corner2(self.x, self.y)]
-
 
 class AxDir2(Enum):
     """The set of directions which are axis aligned.
@@ -204,40 +188,6 @@ class AxDir2(Enum):
         """Covert to a Dir2."""
         return Dir2(self.x, self.y)
 
-
-class Corner2(Enum):
-    """Enum which corresponds with the four corners of a rectangle"""
-    x: AxDir
-    y: AxDir
-
-    LT_BT = (-1, -1)
-    RT_BT = (1, -1)
-    LT_TP = (-1, 1)
-    RT_TP = (1, 1)
-
-    def __init__(self, x: AxDir, y: AxDir) -> None:
-        """
-        A corner of a rectangle.
-
-        Args:
-            x (AxDir): X direction
-            y (AxDir): Y direction
-        """
-        if x == AxDir.CENTER or y == AxDir.CENTER:
-            raise ValueError("Only corners values are valid")
-        self.x = x
-        self.y = y
-
-    def __neg__(self) -> Corner2:
-        return Corner2(-self.x, -self.y)
-
-    def opposite(self) -> Corner2:
-        """Return the opposite corner of the corner."""
-        return -self
-
-    def to_dir2(self) -> Dir2:
-        """Covert to a Dir2 direction."""
-        return Dir2(self.x, self.y)
 
 
 @dataclass(frozen=True)
@@ -469,8 +419,8 @@ class Dir3(Enum):
     For a 2x2x2 cube centered at 0, 0, the x, y, z values of the enum will specify the corner edge or an center sections.
 
     See Also:
-        AxDir3, Corner2 -- Subset directions of Dir3
-        Rc.place() -- Use of a Dir3 to place a rectangle
+        AxDir3 - Subset directions of Dir3
+        Rc.place() - Use of a Dir3 to place a rectangle
     """
 
     x: AxDir
@@ -674,17 +624,18 @@ class AxDir3(Enum):
     def to_dir3(self) -> AxDir3:
         return AxDir3(self.x, self.y, self.z)
 
-    def to_z_dir(self) -> tuple[int, int, int]:
+    def to_plane_z_dir(self) -> tuple[int, int, int]:
         return self.x, self.y, self.z
 
-    def to_x_dir(self) -> tuple[int, int, int]:
+    def to_plane_x_dir(self) -> tuple[int, int, int]:
+        """Convert to the x_dir of the plane defined the side of a box"""
         conv: dict[AxDir3, tuple[int, int, int]] = {
-            AxDir3.Z_PLUS: (-1, 0, 0),
-            AxDir3.Z_MINUS: (1, 0, 0),
-            AxDir3.X_PLUS: (1, 0, 0),
-            AxDir3.X_MINUS: (-1, 0, 0),
-            AxDir3.Y_PLUS: (1, 0, 0),
-            AxDir3.Y_MINUS: (-1, 0, 0),
+            AxDir3.Z_PLUS: (1, 0, 0),
+            AxDir3.Z_MINUS: (-1, 0, 0),
+            AxDir3.X_PLUS: (0, 1, 0),
+            AxDir3.X_MINUS: (0, -1, 0),
+            AxDir3.Y_PLUS: (-1, 0, 0),
+            AxDir3.Y_MINUS: (1, 0, 0),
         }
         assert self in conv
         return conv[self]

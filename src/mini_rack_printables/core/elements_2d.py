@@ -24,7 +24,7 @@ from build123d import (
 
 from .corners import Corners, RoundedCorners, SquareCorners
 from .fills import Fill
-from .geometry import Ax2, Ax3, AxDir, AxDir2, Mm, Rc, Vec2
+from .geometry import Ax2, AxDir, Mm, Rc, Vec2
 
 
 class Element2D(ABC):
