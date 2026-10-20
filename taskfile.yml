@@ -1,6 +1,6 @@
 version: '3'
 # 
-# Taskfile for the mini-rack-printables project
+# Task file for the mini-rack-printables project
 # 
 # Install task: https://taskfile.dev/#/installation
 # brew install go-task  
@@ -38,9 +38,8 @@ tasks:
     desc: "Check linting and formatting with ruff"
     deps: [init]
     cmds:
-      - uv run ruff check .
+      - uv run pyrefly check .
       - uv run ruff format --check .
-      - uv run basedpyright src/mini_rack_printables
 
   format:
     desc: "Fix linting issues and auto-format code with ruff"

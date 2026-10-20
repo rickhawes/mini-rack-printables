@@ -15,7 +15,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "basedpyright>=1.40.2",
+    "pyrefly>=1.4.0",
     "pytest>=9.1.1",
     "ruff",
 ]
@@ -58,4 +58,9 @@ filterwarnings = [
 
 [tool.basedpyright]
 allowedUntypedLibraries =["build123d", "ocp_vscode"]
+
+[tool.pyrefly]
+python-platform = "all"
+preset = "all"
+infer-with-first-use = false
 
