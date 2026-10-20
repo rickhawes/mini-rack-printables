@@ -46,7 +46,7 @@ class Ax2(Enum):
     Y = auto()
     """ Y axis """
 
-    def to_other(self):
+    def to_other(self) -> Ax2:
         """Convert to the other Ax2 axis."""
         return Ax2.X if self == Ax2.Y else Ax2.Y
 
@@ -93,15 +93,17 @@ class Dir2(Enum):
         self.x = x
         self.y = y
 
-    @classmethod
-    def corners(cls):
+    @staticmethod
+    def corners() -> frozenset[Dir2]:
         """A set of Dir2's which correspond to the corners of a rectangle."""
-        return frozenset({cls.CORNER_LF_BT, cls.CORNER_LF_TP, cls.CORNER_RT_BT, cls.CORNER_RT_TP})
+        return frozenset(
+            {Dir2.CORNER_LF_BT, Dir2.CORNER_LF_TP, Dir2.CORNER_RT_BT, Dir2.CORNER_RT_TP}
+        )
 
-    @classmethod
-    def sides(cls):
+    @staticmethod
+    def sides() -> frozenset[Dir2]:
         """A set of Dir2's which correspond to the sides of a rectangle."""
-        return frozenset({cls.SIDE_BOTTOM, cls.SIDE_LEFT, cls.SIDE_RIGHT, cls.SIDE_TOP})
+        return frozenset({Dir2.SIDE_BOTTOM, Dir2.SIDE_LEFT, Dir2.SIDE_RIGHT, Dir2.SIDE_TOP})
 
     @property
     def is_corner(self) -> bool:
@@ -160,12 +162,12 @@ class AxDir2(Enum):
         self.y = y
 
     @property
-    def is_x(self):
+    def is_x(self) -> bool:
         """True iff the AxDir is in the x direction."""
         return self.x != AxDir.CENTER
 
     @property
-    def is_y(self):
+    def is_y(self) -> bool:
         """True iff the AxDir is in the y direction."""
         return self.y != AxDir.CENTER
 
@@ -181,13 +183,12 @@ class AxDir2(Enum):
         return Ax2.X if self.is_x else Ax2.Y
 
     def to_other_ax2(self) -> Ax2:
-        """Covert to the other axis. For a x-axis."""
+        """Covert to the other axis. For an x-axis, an Ax.Y will be returned."""
         return Ax2.Y if self.is_x else Ax2.X
 
     def to_dir2(self) -> Dir2:
         """Covert to a Dir2."""
         return Dir2(self.x, self.y)
-
 
 
 @dataclass(frozen=True)
@@ -238,24 +239,43 @@ class Vec2:
         return self.x, self.y
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, init=False)
 class Rc:
     """
     Class representing an X-Y axis aligned rectangle in 2d-space.
     """
 
+    # pyrefly: ignore[uninitialized-instance-variable]
     size: Vec2
     """Size of the rectangle"""
     center: Vec2 = Vec2(0, 0)
     """The center of the rectangle"""
 
-    def __post_init__(self) -> None:
+    def __init__(self, *args: Mm | Vec2) -> None:
+        match len(args):
+            case 1 if isinstance(args[0], Vec2):
+                object.__setattr__(self, "size", args[0])
+            case 2 if isinstance(args[0], Vec2):
+                object.__setattr__(self, "size", args[0])
+                object.__setattr__(self, "center", args[1])
+            case 2 if isinstance(args[0], int | float) and isinstance(args[1], int | float):
+                object.__setattr__(self, "size", Vec2(args[0], args[1]))
+            case 4 if (
+                isinstance(args[0], int | float)
+                and isinstance(args[1], int | float)
+                and isinstance(args[2], int | float)
+                and isinstance(args[3], int | float)
+            ):
+                object.__setattr__(self, "size", Vec2(args[0], args[1]))
+                object.__setattr__(self, "center", Vec2(args[2], args[3]))
+            case _:
+                raise ValueError("Improper arguments, must be 2 or 4 Mm or 1 or 2 Vec2")
         if self.size.x < 0 or self.size.y < 0:
             raise ValueError("Rc cannot have a negative size")
 
     @classmethod
     def from_values(cls, dx: Mm, dy: Mm, x: Mm = 0, y: Mm = 0) -> Self:
-        return cls(size=Vec2(dx, dy), center=Vec2(x, y))
+        return cls(Vec2(dx, dy), Vec2(x, y))
 
     @classmethod
     def from_edges(
@@ -272,7 +292,7 @@ class Rc:
     @classmethod
     def from_corners(cls, c1: Vec2, c2: Vec2) -> Self:
         dx, dy = abs(c1.x - c2.x), abs(c1.y - c2.y)
-        return cls(size=Vec2(dx, dy), center=Vec2(dx / 2, dy))
+        return cls(Vec2(dx, dy), Vec2(dx / 2, dy))
 
     @classmethod
     def union(cls, r1: Rc, r2: Rc) -> Self:
@@ -308,7 +328,7 @@ class Rc:
         return self.max.x
 
     def move_to(self, new_center: Vec2) -> Self:
-        return self.__class__(size=self.size, center=new_center)
+        return self.__class__(self.size, new_center)
 
     def move(self, shift: Vec2) -> Self:
         return self.move_to(self.center + shift)
@@ -330,13 +350,13 @@ class Rc:
         """
         Return a new `other` Rc moved so that `anchor` of this Rc and the `other` are aligned.
         """
-        return Rc(size=other.size, center=self.place_center(other, place))
+        return Rc(other.size, self.place_center(other, place))
 
     def apply_padding(self, padding: Mm) -> Rc:
         """
         Apply padding to the Rc, expanding its size by `padding` amount but not shifting its center.
         """
-        return Rc(size=self.size + Vec2(2 * padding, 2 * padding), center=self.center)
+        return Rc(self.size + Vec2(2 * padding, 2 * padding), self.center)
 
     # def centered_bounding(self) -> Rc:
     #     """
@@ -347,8 +367,8 @@ class Rc:
 
     def form_bx(self, front: Mm, back: Mm) -> Bx:
         return Bx(
-            size=Vec3(self.size.x, self.size.y, back - front),
-            center=Vec3(self.center.x, self.center.y, (back + front) / 2),
+            Vec3(self.size.x, self.size.y, back - front),
+            Vec3(self.center.x, self.center.y, (back + front) / 2),
         )
 
     @staticmethod
@@ -394,7 +414,6 @@ class Rc:
             raise NotImplementedError()
 
 
-
 # ------------------------------------------------------------------------------
 # 3D Classes and Enums
 # ------------------------------------------------------------------------------
@@ -416,7 +435,7 @@ class Dir3(Enum):
     A direction in 3d space.
 
     A Dir3 is not a vector, but used to specify the sections, edges, and corners of a cube.
-    For a 2x2x2 cube centered at 0, 0, the x, y, z values of the enum will specify the corner edge or an center sections.
+    For a 2x2x2 cube centered at 0, 0, the x, y, z values of the enum will specify the corner edge or a center sections.
 
     See Also:
         AxDir3 - Subset directions of Dir3
@@ -484,53 +503,53 @@ class Dir3(Enum):
         self.y = y
         self.z = z
 
-    @classmethod
-    def corners(cls):
+    @staticmethod
+    def corners() -> frozenset[Dir3]:
         """A set of Dir3's which represent corners"""
         return frozenset(
             {
-                cls.CORNER_LF_BK_BT,
-                cls.CORNER_LF_BK_TP,
-                cls.CORNER_LF_FT_BT,
-                cls.CORNER_LF_FT_TP,
-                cls.CORNER_RT_BK_BT,
-                cls.CORNER_RT_BK_TP,
-                cls.CORNER_RT_FT_BT,
-                cls.CORNER_RT_FT_TP,
+                Dir3.CORNER_LF_BK_BT,
+                Dir3.CORNER_LF_BK_TP,
+                Dir3.CORNER_LF_FT_BT,
+                Dir3.CORNER_LF_FT_TP,
+                Dir3.CORNER_RT_BK_BT,
+                Dir3.CORNER_RT_BK_TP,
+                Dir3.CORNER_RT_FT_BT,
+                Dir3.CORNER_RT_FT_TP,
             }
         )
 
-    @classmethod
-    def edges(cls):
+    @staticmethod
+    def edges() -> frozenset[Dir3]:
         """A set of Dir3's which represent edges"""
         return frozenset(
             {
-                cls.EDGE_BK_BT,
-                cls.EDGE_BK_TP,
-                cls.EDGE_FT_BT,
-                cls.EDGE_FT_TP,
-                cls.EDGE_LF_BK,
-                cls.EDGE_LF_BT,
-                cls.EDGE_LF_FT,
-                cls.EDGE_LF_TP,
-                cls.EDGE_RT_BK,
-                cls.EDGE_RT_BT,
-                cls.EDGE_RT_FT,
-                cls.EDGE_RT_TP,
+                Dir3.EDGE_BK_BT,
+                Dir3.EDGE_BK_TP,
+                Dir3.EDGE_FT_BT,
+                Dir3.EDGE_FT_TP,
+                Dir3.EDGE_LF_BK,
+                Dir3.EDGE_LF_BT,
+                Dir3.EDGE_LF_FT,
+                Dir3.EDGE_LF_TP,
+                Dir3.EDGE_RT_BK,
+                Dir3.EDGE_RT_BT,
+                Dir3.EDGE_RT_FT,
+                Dir3.EDGE_RT_TP,
             }
         )
 
     @classmethod
-    def sides(cls):
+    def sides(cls) -> frozenset[Dir3]:
         """A set of Dir3's which represent side directions"""
         return frozenset(
             {
-                cls.SIDE_RIGHT,
-                cls.SIDE_RIGHT,
-                cls.SIDE_FRONT,
-                cls.SIDE_BACK,
-                cls.SIDE_TOP,
-                cls.SIDE_BOTTOM,
+                Dir3.SIDE_RIGHT,
+                Dir3.SIDE_RIGHT,
+                Dir3.SIDE_FRONT,
+                Dir3.SIDE_BACK,
+                Dir3.SIDE_TOP,
+                Dir3.SIDE_BOTTOM,
             }
         )
 
@@ -604,15 +623,15 @@ class AxDir3(Enum):
         self.z = z
 
     @property
-    def is_x(self):
+    def is_x(self) -> bool:
         return self.x != AxDir.CENTER
 
     @property
-    def is_y(self):
+    def is_y(self) -> bool:
         return self.y != AxDir.CENTER
 
     @property
-    def is_z(self):
+    def is_z(self) -> bool:
         return self.z != AxDir.CENTER
 
     def __neg__(self) -> AxDir3:
@@ -682,19 +701,40 @@ class Vec3:
         return self.x, self.y, self.z
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, init=False)
 class Bx:
     """
     Represents an axis-aligned 3d box.
     """
 
+    # pyrefly: ignore[uninitialized-instance-variable]
     size: Vec3
     """Size of the box"""
     center: Vec3 = Vec3(0, 0, 0)
     """Center of the box"""
 
-    def __post_init__(self) -> None:
-        if self.size.x < 0 or self.size.y < 0 or self.size.z < 0:
+    def __init__(self, *args: Mm | Vec3) -> None:
+        match len(args):
+            case 1 if isinstance(args[0], Vec3):
+                object.__setattr__(self, "size", args[0])
+            case 2 if isinstance(args[0], Vec3):
+                object.__setattr__(self, "size", args[0])
+                object.__setattr__(self, "center", args[1])
+            case 3 if isinstance(args[0], int | float) and isinstance(args[1], int | float) and isinstance(args[2], int | float):
+                object.__setattr__(self, "size", Vec3(args[0], args[1], args[2]))
+            case 6 if (
+                isinstance(args[0], int | float)
+                and isinstance(args[1], int | float)
+                and isinstance(args[2], int | float)
+                and isinstance(args[3], int | float)
+                and isinstance(args[4], int | float)
+                and isinstance(args[5], int | float)
+            ):
+                object.__setattr__(self, "size", Vec3(args[0], args[1], args[2]))
+                object.__setattr__(self, "center", Vec3(args[3], args[4], args[5]))
+            case _:
+                raise ValueError("Improper arguments, must be 3 or 6 Mm or 1 or 2 Vec3")
+        if self.size.x < 0 or self.size.y < 0:
             raise ValueError("Bx cannot have a negative size")
 
     @classmethod
@@ -725,8 +765,8 @@ class Bx:
         if allow_inversion and front > back:
             front, back = back, front
         return cls(
-            size=Vec3(right - left, back - front, top - bottom),
-            center=Vec3((right + left) / 2, (back + front) / 2, (top + bottom) / 2),
+            Vec3(right - left, back - front, top - bottom),
+            Vec3((right + left) / 2, (back + front) / 2, (top + bottom) / 2),
         )
 
     @classmethod
@@ -775,7 +815,7 @@ class Bx:
 
     def move_to(self, new_center: Vec3) -> Self:
         """Return a new box of the same size with specified center."""
-        return self.__class__(size=self.size, center=new_center)
+        return self.__class__(self.size, new_center)
 
     def move(self, shift: Vec3) -> Self:
         """Return a new box with the same size offset by the `shift` amount."""

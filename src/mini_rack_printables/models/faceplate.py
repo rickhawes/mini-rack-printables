@@ -10,9 +10,9 @@ from build123d import (
     Plane,
     RectangleRounded,
     Trapezoid,
-    add,
     extrude,
     mirror,
+    insert
 )
 
 from mini_rack_printables.models.dimensions import RackDims, ShelfTabDims
@@ -22,7 +22,6 @@ from ..core.feature import FeatureList, Rib
 from ..core.geometry import Mm, Vec3
 from ..core.layouts import FeatureLayout, RowLayout
 from ..core.model import Model
-from ..core.modeler import Modeler
 
 
 @final
@@ -85,7 +84,7 @@ class FacePlate(Model):
         self.layout = layout if layout is not None else RowLayout()
 
     @override
-    def render(self, modeler: Modeler) -> None:
+    def render(self) -> Model.Rendering:
         """
         Render the faceplate
 
@@ -110,7 +109,7 @@ class FacePlate(Model):
                 holes = sketch_rack_holes(
                     self.rack_units, self.style.middle_holes, self.style.half_height_bottom
                 )
-                _ = add(holes, mode=Mode.SUBTRACT)
+                _ = insert(holes, mode=Mode.SUBTRACT)
             _ = extrude(amount=plate_size.z)
 
             # ribs
@@ -130,3 +129,4 @@ class FacePlate(Model):
         # Add/subtract parts
         result = face_plate.part
         assert result is not None
+        return Model.Rendering(result)

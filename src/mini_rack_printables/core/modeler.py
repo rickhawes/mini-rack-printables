@@ -1,13 +1,14 @@
 from typing import final
 
-from build123d import Location, Part, Plane
+from build123d import Location, Part, Plane, BuildPart, insert, Mode
 
 from .elements_3d import Element3D
-from .feature import Feature
+from .feature import Feature, FeatureList
 from .geometry import Ax3, AxDir3, Bx, Dir2, Mm, Rc, Vec2, Vec3
 from .layouts import FeatureLayout
 from .model import Model
 from .piece import Piece
+from .row_column_collection import RowColumnCollection
 
 
 @final
@@ -50,7 +51,11 @@ class Modeler:
         side_center = bx.side_center(side)
         side_rc = Rc(bx.side_size(side))
         side_depth = bx.side_depth(side)
-        plane = Plane(origin=side_center.to_vector(), z_dir=z_dir.to_plane_z_dir(), x_dir=z_dir.to_plane_x_dir())
+        plane = Plane(
+            origin=side_center.to_vector(),
+            z_dir=z_dir.to_plane_z_dir(),
+            x_dir=z_dir.to_plane_x_dir(),
+        )
         return Modeler(plane, side_rc, side_depth)
 
     @classmethod
@@ -115,8 +120,42 @@ class Modeler:
         self.add_modeler(md)
         return md
 
+    def render_pieces(
+        self,
+        features: FeatureList,
+        area: Rc,
+        layout: FeatureLayout
+    ) -> list[Piece]:
+        """
+        Render all `features` using the given `plate` and `layout` algorithm.
+        """
+        pieces: list[Piece] = []
+        sub_area = layout.layout_features(features, area)
+        for feature, _, _, index in RowColumnCollection(features):
+            feature_plate = Vec3(sub_area[index].size.x, sub_area[index].size.y, self.base_depth)
+            feature_pieces = feature.render(feature_plate)
+            pieces.extend(feature_pieces)
+        return pieces
+
+    @staticmethod
+    def assemble_pieces(to_part: Part, pieces: list[Piece]) -> Part:
+        """
+        Add `pieces` with `to_part` to create the final result.
+        """
+        with BuildPart() as result:
+            _ = insert(to_part)
+            for piece in pieces:
+                _ = insert(piece.part, mode=Mode.SUBTRACT if piece.cut else Mode.ADD)
+        if result.part is None:
+            raise ValueError("Part was not created")
+        # noinspection bad-return
+        return result.part
+
+
+
+
     def render(self) -> Model.Rendering:
-        pieces = []
+        pieces: list[Piece] = []
         pieces.extend(self.pieces)
         for node in self.sub_modelers:
             pieces.extend(node.pieces)

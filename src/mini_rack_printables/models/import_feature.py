@@ -4,21 +4,19 @@ from pathlib import Path
 from typing import override
 
 from build123d import (
-    Box,
     CenterOf,
     Location,
     Mesher,
-    Mode,
     Unit,
     Vector,
     import_brep,
 )
 from build123d.topology import Shape, Solid
 
-from mini_rack_printables.models.dimensions import E
-
-from ..core.feature import Feature, FeaturePiece
+from ..core.feature import Feature
+from ..core.piece import Piece
 from ..core.geometry import Vec3
+from ..core.elements_3d import BoxElement
 
 
 class ImportFeature(Feature):
@@ -51,7 +49,7 @@ class ImportFeature(Feature):
             asset (str): The name of the asset to import.
             cutout (bool, optional): Whether to cut out the part from the enclosing model or place on top of it. Defaults to True.
         """
-        if path:
+        if path is not None:
             if not path.exists():
                 raise ValueError(f"Path does not exist: {path}")
             if not (path.suffix == self.BREP_SUFFIX or path.suffix == self.STL_SUFFIX):
@@ -108,30 +106,13 @@ class ImportFeature(Feature):
         return Feature.DesiredSize(self.size.to_2d(), False)
 
     @override
-    def render(self, plate_planes: PlatePlanes) -> list[FeaturePiece]:
+    def render(self, plate_size: Vec3) -> list[Piece]:
         if self.cutout:
             # Cutout: Cutout the bottom plane and place the imported part in the cutout
             return [
-                FeaturePiece(
-                    part=plate_planes.bottom_plane
-                    * Location((0, 0, plate_planes.depth / 2))
-                    * Box(self.size.x - E, self.size.y - E, plate_planes.depth + E).solid(),
-                    mode=Mode.SUBTRACT,
-                ),
-                FeaturePiece(
-                    part=plate_planes.bottom_plane
-                    * Location((0, 0, self.size.z / 2))
-                    * self.shape.solid(),
-                    mode=Mode.ADD,
-                ),
+                Piece(part=BoxElement(dx=self.size.x, dy=self.size.y, dz=plate_size.z).render(),cut=True),
+                Piece(self.shape.solid())
             ]
         else:
             # No cutout, render directly on the top plane
-            return [
-                FeaturePiece(
-                    part=plate_planes.top_plane
-                    * Location((0, 0, self.size.z / 2))
-                    * self.shape.solid(),
-                    mode=Mode.ADD,
-                ),
-            ]
+            return [Piece(self.shape.solid())]

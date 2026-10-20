@@ -10,8 +10,9 @@ from build123d import Sketch, extrude
 from ..core.corners import InsetCorners
 from ..core.elements_2d import Element2D, RectangleElement
 from ..core.elements_3d import sketch_ring
-from ..core.feature import Feature, FeaturePiece
-from ..core.geometry import Mm, Vec2
+from ..core.feature import Feature
+from ..core.geometry import Mm, Vec2, Vec3
+from ..core.piece import Piece
 
 
 class CornerHolder(Feature):
@@ -54,26 +55,26 @@ class CornerHolder(Feature):
         self.wall_depth = wall_depth
         self.corner_width = corner_width
         self.corner_height = corner_height
-        assert self.shape.size().x > 2 * corner_width, (
+        assert self.shape.size.x > 2 * corner_width, (
             "shape width must be greater than 2 * corner_width"
         )
-        assert self.shape.size().y > 2 * corner_height, (
+        assert self.shape.size.y > 2 * corner_height, (
             "shape height must be greater than 2 * corner_height"
         )
 
     @override
     def desired_size(self) -> Feature.DesiredSize:
-        size = self.shape.size() + Vec2(self.wall_thickness, self.wall_thickness) * 2
+        size = self.shape.size + Vec2(self.wall_thickness, self.wall_thickness) * 2
         return Feature.DesiredSize(size, False)
 
     @override
-    def render(self, plate_planes: PlatePlanes) -> list[FeaturePiece]:
+    def render(self, plate_size: Vec3) -> list[Piece]:
         # dimensions
         w, d = self.wall_thickness, self.wall_depth
         cw = self.corner_width
-        size = self.shape.size()
+        size = self.shape.size
 
         # sketch the holder shape
         cross = RectangleElement(size.x + 2 * w, size.y + 2 * w, InsetCorners(cw + 2 * w))
         sk = Sketch(sketch_ring(self.shape, w) - cross.sketch())
-        return [FeaturePiece(plate_planes.top_plane * extrude(sk, d))]
+        return [Piece(extrude(sk, d))]

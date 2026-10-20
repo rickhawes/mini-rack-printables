@@ -16,7 +16,7 @@ from mini_rack_printables import (
     TrapezoidElement,
 )
 
-from .conftest import Logger
+import conftest
 
 # test by rendering a bunch of elements
 

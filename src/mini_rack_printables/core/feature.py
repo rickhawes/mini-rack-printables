@@ -5,9 +5,8 @@ Classes for specifying features of a `Model`. Features may be related to specifi
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
-from build123d import Part, Solid
-
-from .geometry import Bx, Mm, Vec2
+from .geometry import Mm, Vec2, Vec3
+from .piece import Piece
 
 
 class Feature(ABC):
@@ -40,7 +39,7 @@ class Feature(ABC):
         """
 
     @abstractmethod
-    def render(self, base_plate: Bx) -> list[FeaturePiece]:
+    def render(self, plate_size: Vec3 ) -> list[Piece]:
         """
         Render the feature
 
@@ -49,23 +48,8 @@ class Feature(ABC):
         """
 
 
-type FeatureList = list[Feature] | list[list[Feature]]
+type FeatureList = list[list[Feature]]
 """A row-column list of features."""
-
-
-@dataclass(frozen=True)
-class FeaturePiece:
-    """
-    Represents the output of rendering a `ModelFeature`, containing the solid and
-    the add mode (i.e. location and combination mode).
-
-    Attributes:
-        part: The solid for the part located by the part
-        subtract: Mode of the solid's addition (i.e. SUBTRACT, ADD)
-    """
-
-    part: Solid | Part
-    subtract: bool = False
 
 
 @dataclass(frozen=True)

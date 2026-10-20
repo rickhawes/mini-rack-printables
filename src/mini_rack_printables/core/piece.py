@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from build123d import Part
+from build123d import Part, Solid
 
 
 @dataclass(frozen=True)
@@ -14,7 +14,7 @@ class Piece:
         cut: bool - subtract the part instead of the normal add
     """
 
-    part: Part
+    part: Part | Solid
     """The part of the model"""
     cut: bool = False
     """Subtract the part, otherwise add the part"""

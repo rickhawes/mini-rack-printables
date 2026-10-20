@@ -53,6 +53,9 @@ docstring-code-format = true
 filterwarnings = [
     'ignore::DeprecationWarning'
 ]
+pythonpath = [
+  "."
+]
 
 [tool.ty]
 

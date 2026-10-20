@@ -76,7 +76,7 @@ class RectangleElement(Element2D):
         height: Mm,
         corners: Mm | Corners | None = None,
         fill: Fill | None = None,
-    ):
+    ) -> None:
         """
         Args:
             width (Mm): The width of the rectangle.
@@ -133,10 +133,10 @@ class RectangleElement(Element2D):
                     self.corners.draw(l_bottom @ 1, l_left @ 0, Corners.BOTTOM_LEFT)
                     self.corners.draw(l_left @ 1, l_top @ 0, Corners.TOP_LEFT)
                 _ = make_face()
-            return sk.sketch
+            return Sketch(sk.sketch)
 
         def hole_fill() -> Sketch:
-            assert self.fill, "fill must be provided"
+            assert self.fill is not None, "fill must be provided"
             # make a sketch of the holes
             #
             cs = self.corners.size
@@ -147,10 +147,10 @@ class RectangleElement(Element2D):
             sk += Face(outline, holes)
             return sk
 
-        if self.fill:
-            return hole_fill()
-        else:
+        if self.fill is None:
             return solid_fill()
+        else:
+            return hole_fill()
 
 
 class SlotElement(Element2D):
@@ -159,7 +159,7 @@ class SlotElement(Element2D):
     width: Mm
     height: Mm
 
-    def __init__(self, width: Mm, height: Mm):
+    def __init__(self, width: Mm, height: Mm) -> None:
         """
         Args:
             width (Mm): The width of the slot.
@@ -262,7 +262,7 @@ class RightTriangleElement(Element2D):
     height: Mm
     flip: bool
 
-    def __init__(self, width: Mm, height: Mm, flip: bool = False):
+    def __init__(self, width: Mm, height: Mm, flip: bool = False) -> None:
         """
         Args:
             width (Mm): The width of the triangle.
@@ -291,7 +291,7 @@ class AlignedElements(Element2D):
     axis: Ax2
     align: AxDir
 
-    def __init__(self, elements: list[Element2D], axis: Ax2 = Ax2.X, align: AxDir = AxDir.CENTER):
+    def __init__(self, elements: list[Element2D], axis: Ax2 = Ax2.X, align: AxDir = AxDir.CENTER) -> None:
         self.elements = elements
         self.axis = axis
         self.align = align

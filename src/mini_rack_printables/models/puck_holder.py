@@ -1,14 +1,15 @@
 from dataclasses import dataclass
 from typing import override
 
-from build123d import Box, BuildPart, BuildSketch, Location, Mode, Part, Pos, add, extrude
+from build123d import Box, BuildPart, BuildSketch, Location, Mode, Part, Pos, insert, extrude
 
 from ..core.corners import InsetCorners, RoundedCorners, SelectedCorners
 from ..core.elements_2d import RectangleElement
 from ..core.elements_3d import make_plate
-from ..core.feature import Feature, FeaturePiece
+from ..core.feature import Feature
 from ..core.fills import HexHoles
 from ..core.geometry import Mm, Vec2, Vec3
+from ..core.piece import Piece
 
 
 class PuckHolder(Feature):
@@ -44,7 +45,7 @@ class PuckHolder(Feature):
         device_size: Vec3,
         device_rounding: Mm = 1.0,
         style: Style = PLAIN,
-    ):
+    ) -> None:
         """
         Initialize a holder with the given style, device size, and optional label, align, shift, and padding.
 
@@ -74,12 +75,12 @@ class PuckHolder(Feature):
         return Feature.DesiredSize(size)
 
     @override
-    def render(self, plate_planes: PlatePlanes) -> list[FeaturePiece]:
+    def render(self, plate_size: Vec3) -> list[Piece]:
         # geometry
         dx, dy, dz = self.device_size.to_tuple()
         r = self.device_rounding
         walls_depth = self.device_size.z - r
-        walls_z = r - (plate_planes.depth if self.style.has_cutout else 0)
+        walls_z = r - (plate_size.z if self.style.has_cutout else 0)
         w = self.style.wall_thickness
         e = self.style.corner_edges
         dc = e  # corner width
@@ -89,14 +90,16 @@ class PuckHolder(Feature):
             Make the block of the holder by sketching the device block + extra for the corners.
             """
             with BuildSketch() as sk:
-                _ = add(
+                _ = insert(
                     RectangleElement(dx + 2 * w, dy + 2 * w, self.style.corner_rounding).sketch()
                 )
-                _ = add(
+                _ = insert(
                     RectangleElement(dx + 2 * w, dy + 2 * w, InsetCorners(w + e)).sketch(),
                     mode=Mode.SUBTRACT,
                 )
-                _ = add(RectangleElement(dx, dy).sketch())
+                _ = insert(RectangleElement(dx, dy).sketch())
+            assert sk.sketch is not None
+            # pyrefly: ignore[bad-argument-type]
             return Location((0, 0, walls_z)) * extrude(sk.sketch, amount=walls_depth)
 
         def make_walls() -> Part:
@@ -107,13 +110,13 @@ class PuckHolder(Feature):
             side = make_plate(Vec3(walls_depth, dy - 2 * dc, w), HexHoles())
             # place around a box the size of the device
             device_box = Pos(0, 0, walls_depth / 2 + walls_z) * Box(dx, dy, walls_depth)
-            side_locs = select_locations(device_box, [Direction.RIGHT, Direction.LEFT])
-            top_locs = select_locations(device_box, [Direction.TOP, Direction.BOTTOM])
-            with BuildPart() as pb:
-                _ = add(top_locs[0] * top)
-                _ = add(side_locs[0] * side)
-                _ = add(top_locs[1] * top)
-                _ = add(side_locs[1] * side)
+            # side_locs = select_locations(device_box, [Direction.RIGHT, Direction.LEFT])
+            # top_locs = select_locations(device_box, [Direction.TOP, Direction.BOTTOM])
+            # with BuildPart() as pb:
+            #     _ = insert(top_locs[0] * top)
+            #     _ = insert(side_locs[0] * side)
+            #     _ = insert(top_locs[1] * top)
+            #     _ = insert(side_locs[1] * side)
             assert pb.part is not None
             return pb.part
 
@@ -135,6 +138,6 @@ class PuckHolder(Feature):
         holder += make_walls()
 
         return [
-            FeaturePiece(plate_planes.top_plane * holder),
-            FeaturePiece(plate_planes.bottom_plane * make_puck_cutout(), Mode.SUBTRACT),
+            Piece(plate_planes.top_plane * holder),
+            Piece(plate_planes.bottom_plane * make_puck_cutout(), cut=True),
         ]

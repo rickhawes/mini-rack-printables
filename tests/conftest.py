@@ -2,11 +2,11 @@
 Fixture to display on OCP Viewer the output of each test
 """
 
-import sys
-from typing import final
+from collections.abc import Generator
+from mini_rack_printables import ModelLogger
 
 import pytest
-from build123d import Align, Color, Compound, Location, Part, Rectangle, Sketch, Text
+from build123d import Align, Color, Compound, Location, Rectangle, Sketch, Text
 from ocp_vscode import Camera, push_object, reset_show, show_objects
 
 STD_SPACING = 80
@@ -15,42 +15,20 @@ TEXT_BOX_HEIGHT = 10
 MAX_ELEMENTS_PER_ROW = 6
 
 
-@final
-class Logger:
-    @final
-    class LogEntry:
-        def __init__(self, group_name: str, function_name: str, part: Compound | Part):
-            self.group_name = group_name
-            self.function_name = function_name
-            self.part = part
-            self.size = part.bounding_box().size
-
-    entries: dict[str, list[LogEntry]] = {}
-
-    def log(self, part: Compound | Part, group: str | None = None):
-        frame = sys._getframe(1)  # pyright: ignore[reportPrivateUsage]
-        assert frame is not None
-        group_name = group if group is not None else frame.f_globals["__name__"]
-        function_name = frame.f_code.co_name
-        entry = Logger.LogEntry(group_name, function_name, part)
-        if group_name not in self.entries:
-            self.entries[group_name] = []
-        self.entries[group_name].append(entry)
-
 
 @pytest.fixture(scope="session")
-def viewer_logger():
+def viewer_logger()-> Generator[ModelLogger, None, None]:
     # Start of the session
-    logger = Logger()
+    logger = ModelLogger()
     yield logger
 
     # End of the session
     reset_show()
 
-    def Label(text: str) -> Sketch:
-        label = Rectangle(STD_SPACING - 10, TEXT_BOX_HEIGHT)
-        label -= Text(text, font_size=4, align=(Align.CENTER, Align.CENTER))
-        sk = Sketch(label)
+    def label(text: str) -> Sketch:
+        rect = Rectangle(STD_SPACING - 10, TEXT_BOX_HEIGHT)
+        rect -= Text(text, font_size=4, align=(Align.CENTER, Align.CENTER))
+        sk = Sketch(rect)
         sk.color = Color("white")
         return sk
 
@@ -58,7 +36,7 @@ def viewer_logger():
     x, y = 0, 0
     for group_name, entries in logger.entries.items():
         # A group label
-        group_label = Location((-STD_SPACING - 10, y, 0)) * Label(group_name)
+        group_label = Location((-STD_SPACING - 10, y, 0)) * label(group_name)
         push_object(group_label, name=group_name)
 
         row = 0
@@ -70,7 +48,7 @@ def viewer_logger():
                     children=[
                         entry.part,
                         Location((0, -STD_SPACING / 2 + TEXT_BOX_HEIGHT / 2, 0))
-                        * Label(entry.function_name),
+                        * label(entry.function_name),
                     ],
                 )
                 push_object(c, name=entry.function_name)

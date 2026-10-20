@@ -20,11 +20,11 @@ from .core.elements_3d import (
     Element3D,
     PrismElement,
 )
-from .core.feature import Feature, FeaturePiece, Rib
+from .core.feature import Feature, FeatureList, Rib
 from .core.fills import CircleHoles, Fill, HexHoles, SquareHoles
 from .core.geometry import Ax2, Ax3, AxDir, AxDir2, AxDir3, Bx, Degree, Dir2, Mm, Rc, Vec2, Vec3
 from .core.layouts import FeatureLayout, GridLayout, MeasuredRowsColumns, RowLayout
-from .core.model import Model
+from .core.model import Model, ModelLogger
 from .core.modeler import Modeler
 from .core.row_column_collection import RowColumnCollection
 from .models.corner_holder import CornerHolder
@@ -62,7 +62,7 @@ __all__ = [
     "FacePlate",
     "Feature",
     "FeatureLayout",
-    "FeaturePiece",
+    "FeatureList",
     "Fill",
     "GridLayout",
     "HexHoles",
@@ -74,6 +74,7 @@ __all__ = [
     "Mm",
     "Model",
     "Modeler",
+    "ModelLogger",
     "PrismElement",
     "PuckHolder",
     "RackDims",

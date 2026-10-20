@@ -6,9 +6,11 @@ from build123d import Box, Mode, Part, Pos, Sketch, extrude
 from ..core.corners import InsetCorners
 from ..core.elements_2d import RectangleElement
 from ..core.elements_3d import extrude_sketch, make_plate, sketch_ring
-from ..core.feature import Feature, FeaturePiece, Rib
+from ..core.feature import Feature, Rib
 from ..core.fills import HexHoles
 from ..core.geometry import Mm, Vec2, Vec3
+from ..core.piece import Piece
+
 
 
 class WallHolder(Feature):
@@ -50,7 +52,7 @@ class WallHolder(Feature):
         device_size: Vec3 | None = None,
         device_rounding: Mm = 1.0,
         style: Style = BACK_LIP,
-    ):
+    ) -> None:
         """
         Initialize a holder with the given style, device size, and optional label, align, shift, and padding.
 
@@ -74,7 +76,7 @@ class WallHolder(Feature):
         return Feature.DesiredSize(size)
 
     @override
-    def render(self, plate_planes: PlatePlanes) -> list[FeaturePiece]:
+    def render(self, plate_size: Vec3) -> list[Piece]:
         # geometry
         dx, dy, r = self.device_size.x, self.device_size.y, self.device_rounding
         holder_depth = (
@@ -144,8 +146,8 @@ class WallHolder(Feature):
 
         if self.style.has_cutout:
             return [
-                FeaturePiece(plate_planes.top_plane * holder),
-                FeaturePiece(plate_planes.bottom_plane * make_cutout(), Mode.SUBTRACT),
+                Piece(holder),
+                Piece(make_cutout(), cut=True),
             ]
         else:
-            return [FeaturePiece(plate_planes.top_plane * holder)]
+            return [Piece(holder)]
