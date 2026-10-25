@@ -1,6 +1,3 @@
-import build123d as bd
-from ocp_vscode import show
-
 from mini_rack_printables import CircleElement, Cutout, Faceplate
 
 #
@@ -8,8 +5,7 @@ from mini_rack_printables import CircleElement, Cutout, Faceplate
 #
 
 plate = Faceplate(
-    rack_units=1.0,
-    features=[[Cutout(CircleElement(10.0), rib=Faceplate.STD_RIB)]]
+    rack_units=1.0, features=[[Cutout(CircleElement(10.0), rib=Faceplate.STD_RIB)]]
 ).render()
 
 plate.show()

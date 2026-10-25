@@ -46,8 +46,8 @@ class HexFill(HolePattern):
     @override
     def locations(self, size: Vec2, inset: Vec2) -> LocationList:
         cx, cy = (
-            math.floor((size - 2*inset).x / (2 * self.spacing)),
-            math.floor(((size - 2*inset).y - self.spacing) / (2 * self.spacing)),
+            math.floor((size - 2 * inset).x / (2 * self.spacing)),
+            math.floor(((size - 2 * inset).y - self.spacing) / (2 * self.spacing)),
         )
         return HexLocations(self.spacing, cx, cy) if cx > 0 and cy > 0 else LocationList([])
 
@@ -69,8 +69,8 @@ class CircleFill(HolePattern):
     @override
     def locations(self, size: Vec2, inset: Vec2) -> LocationList:
         cx, cy = (
-            math.floor((size - 2*inset).x  / (2 * self.spacing)),
-            math.floor(((size - 2*inset).y - self.spacing) / (2 * self.spacing)),
+            math.floor((size - 2 * inset).x / (2 * self.spacing)),
+            math.floor(((size - 2 * inset).y - self.spacing) / (2 * self.spacing)),
         )
         return HexLocations(self.spacing, cx, cy) if cx > 0 and cy > 0 else LocationList([])
 
@@ -90,8 +90,11 @@ class SquareFill(HolePattern):
         self.width = width
 
     @override
-    def locations(self,size: Vec2, inset: Vec2) -> LocationList:
-        cx, cy = math.floor((size - 2*inset).x / self.spacing), math.floor((size - 2*inset).y / self.spacing)
+    def locations(self, size: Vec2, inset: Vec2) -> LocationList:
+        cx, cy = (
+            math.floor((size - 2 * inset).x / self.spacing),
+            math.floor((size - 2 * inset).y / self.spacing),
+        )
         return (
             GridLocations(self.spacing, self.spacing, cx, cy)
             if cx > 0 and cy > 0

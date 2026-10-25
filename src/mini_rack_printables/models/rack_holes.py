@@ -97,7 +97,6 @@ class RackHoleElement(SlotElement):
 
 
 class RackHolePattern(HolePattern):
-
     def __init__(
         self,
         rack_units: float,

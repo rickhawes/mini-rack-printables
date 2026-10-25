@@ -20,11 +20,13 @@ from build123d import (
     SlotOverall,
     Trapezoid,
     make_face,
+    offset,
 )
 
 from .corners import Corners, RoundedCorners, SquareCorners
 from .geometry import Ax2, AxDir, Mm, Rc, Vec2
 from .hole_patterns import HolePattern
+from .print_dims import E
 
 
 class Element2D(ABC):
@@ -357,7 +359,7 @@ class LocatedElement(Element2D):
 
 
 class CutoutElement(Element2D):
-    """Create an element that combines multiple elements"""
+    """Create an element that has a `base` with a `cutout` elements"""
 
     base: Element2D
     cutout: Element2D
@@ -380,3 +382,32 @@ class CutoutElement(Element2D):
         return Sketch(
             self.base.sketch() - Location(self.cutout_offset.to_vector()) * self.cutout.sketch()
         )
+
+
+class RingElement(Element2D):
+    """Create an element that has a `base` with a `cutout` elements"""
+
+    base: Element2D
+    """The base shape"""
+    outset: Mm
+    """The outset amount (may be negative for an inset)"""
+
+    def __init__(self, base: Element2D, outset: Mm) -> None:
+        if abs(outset) < E:
+            raise ValueError("outset must not be 0")
+        self.base = base
+        self.outset = outset
+
+    @property
+    def size(self) -> Vec2:
+        return (
+            self.base.size
+            if self.outset < 0
+            else self.base.size + Vec2(2 * self.outset, 2 * self.outset)
+        )
+
+    def sketch(self) -> Sketch:
+        base = self.base.sketch()
+        outset = offset(base, self.outset)
+        inner, outer = (base, outset) if self.outset < 0 else (outset, base)
+        return Sketch(outer - inner)

@@ -5,7 +5,7 @@ from build123d import Location, Part, Plane, Sketch, extrude, mirror
 
 from mini_rack_printables.models.rack_dims import RackDims, ShelfTabDims, rack_units_to_mm
 
-#from mini_rack_printables.models.holes import sketch_rack_holes
+# from mini_rack_printables.models.holes import sketch_rack_holes
 from ..core.corners import SquareCorners
 from ..core.elements_2d import Element2D, RectangleElement, TrapezoidElement
 from ..core.feature import FeatureList

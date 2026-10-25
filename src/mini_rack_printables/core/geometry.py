@@ -439,16 +439,22 @@ class Ax3(Enum):
 
     def to_positive(self) -> AxDir3:
         match self:
-            case Ax3.X: return AxDir3.X_PLUS
-            case Ax3.Y: return AxDir3.Y_PLUS
-            case Ax3.Z: return AxDir3.Z_PLUS
+            case Ax3.X:
+                return AxDir3.X_PLUS
+            case Ax3.Y:
+                return AxDir3.Y_PLUS
+            case Ax3.Z:
+                return AxDir3.Z_PLUS
 
     def to_axis(self) -> Axis:
-        """ To a build123d axis """
+        """To a build123d axis"""
         match self:
-            case Ax3.X: return Axis.X
-            case Ax3.Y: return Axis.Y
-            case Ax3.Z: return Axis.Z
+            case Ax3.X:
+                return Axis.X
+            case Ax3.Y:
+                return Axis.Y
+            case Ax3.Z:
+                return Axis.Z
 
 
 class Dir3(Enum):

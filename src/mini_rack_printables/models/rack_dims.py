@@ -87,4 +87,3 @@ class Screw1032Dims(float, Enum):
 def rack_units_to_mm(units: float) -> Mm:
     """Converts rack units to millimeters"""
     return units * RackDims.HEIGHT_1U
-

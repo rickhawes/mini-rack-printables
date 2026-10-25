@@ -4,7 +4,7 @@ from typing import final, override
 from ..core.elements_2d import RectangleElement, TrapezoidElement
 from ..core.elements_3d import PrismElement
 from ..core.feature import FeatureList, Rib
-from ..core.geometry import AxDir3, Dir2, Mm, Vec2, Vec3
+from ..core.geometry import AxDir3, Dir2, Mm, Vec2, Vec3, Rc
 from ..core.layouts import Layout, RowLayout
 from ..core.model import Model
 from ..core.modeler import Modeler
@@ -82,7 +82,7 @@ class Faceplate(Model):
             A compound shape of the faceplate.
         """
         plate_size = Vec2(RackDims.WIDTH_10INCH, self.rack_units * RackDims.HEIGHT_1U)
-        feature_area = Vec2(ShelfTabDims.MAX_DX_TABS, plate_size.y - 2 * self.style.rib.width)
+        feature_area = Rc(ShelfTabDims.MAX_DX_TABS, plate_size.y - 2 * self.style.rib.width)
 
         # form a round-rect base with cutout for the holes of the rack screws
         base_2d = RectangleElement(
@@ -100,46 +100,20 @@ class Faceplate(Model):
 
         # ribs
         if self.style.rib.depth > 0:
+
             def add_rib(dir2: Dir2) -> None:
-                rib_size = Vec3(feature_area.x, self.style.rib.width, self.style.rib.depth)
+                rib_size = Vec3(feature_area.size.x, self.style.rib.width, self.style.rib.depth)
                 rib_bx = md.place_bx(rib_size, dir2)
                 # place the sub assembly on the side
                 rib_md = md.add_modeler_on_bx(rib_bx, AxDir3.Y_MINUS, AxDir3.Y_PLUS)
                 rib_elem = PrismElement(TrapezoidElement(rib_size.x, rib_size.z, 30), rib_size.y)
                 rib_md.add_element(rib_elem)
+
             add_rib(Dir2.Y_PLUS)
             add_rib(Dir2.Y_MINUS)
 
         # features
         if self.features is not None:
-            pass # TODO
+            md.add_features(self.features, feature_area, self.layout)
 
-
-        # with BuildPart() as face_plate:
-        #     # baseplate
-        #     with BuildSketch():
-        #         # plate
-        #         _ = RectangleRounded(plate_size.x, plate_size.y, self.style.rounding)
-        #         # screw holes
-        #         holes = sketch_rack_holes(
-        #             self.rack_units, self.style.middle_holes, self.style.half_height_bottom
-        #         )
-        #         _ = insert(holes, mode=Mode.SUBTRACT)
-        #     _ = extrude(amount=plate_size.z)
-        #
-        #     # ribs
-        #     if self.style.rib.width > 0:
-        #         with BuildPart() as rib:
-        #             # orient the extrusion to point in the Y-Axis
-        #             side_plane = (
-        #                 Plane(face_plate.faces().sort_by(Axis.Y)[0])
-        #                 .rotated((180, 180, 0))
-        #                 .moved(Location((0, (plate_size.z + self.style.rib.depth) / 2, 0)))
-        #             )
-        #             with BuildSketch(side_plane):
-        #                 _ = Trapezoid(part_area_size.x, self.style.rib.depth, 30)
-        #             _ = extrude(amount=self.style.rib.width)
-        #         _ = mirror(rib.part, Plane.XZ)  # place on both sides
-
-        # Add/subtract parts
         return md.render()

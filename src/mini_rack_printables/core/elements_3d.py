@@ -10,7 +10,7 @@ from typing import override
 
 from build123d import Cone, Cylinder, Location, Part, Sketch, extrude, offset
 
-from .elements_2d import Element2D, RectangleElement
+from .elements_2d import Element2D, RectangleElement, RingElement
 from .geometry import Degree, Mm, Vec3
 from .hole_patterns import HolePattern
 
@@ -51,6 +51,10 @@ class PrismElement(Element3D):
         return Location((0, 0, -self.amount / 2)) * extrude(
             self.element.sketch(), amount=self.amount, taper=self.taper
         )
+
+class TubeElement(PrismElement):
+    def __init__(self, base: Element2D, thickness: Mm, amount: Mm) -> None:
+        super().__init__(RingElement(base, thickness), amount)
 
 
 class BoxElement(PrismElement):
