@@ -52,6 +52,7 @@ class PrismElement(Element3D):
             self.element.sketch(), amount=self.amount, taper=self.taper
         )
 
+
 class TubeElement(PrismElement):
     def __init__(self, base: Element2D, thickness: Mm, amount: Mm) -> None:
         super().__init__(RingElement(base, thickness), amount)

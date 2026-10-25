@@ -409,5 +409,5 @@ class RingElement(Element2D):
     def sketch(self) -> Sketch:
         base = self.base.sketch()
         outset = offset(base, self.outset)
-        inner, outer = (base, outset) if self.outset < 0 else (outset, base)
+        inner, outer = (base, outset) if self.outset > 0 else (outset, base)
         return Sketch(outer - inner)

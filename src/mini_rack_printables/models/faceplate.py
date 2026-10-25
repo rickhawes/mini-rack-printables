@@ -4,7 +4,7 @@ from typing import final, override
 from ..core.elements_2d import RectangleElement, TrapezoidElement
 from ..core.elements_3d import PrismElement
 from ..core.feature import FeatureList, Rib
-from ..core.geometry import AxDir3, Dir2, Mm, Vec2, Vec3, Rc
+from ..core.geometry import AxDir3, Dir2, Mm, Rc, Vec2, Vec3
 from ..core.layouts import Layout, RowLayout
 from ..core.model import Model
 from ..core.modeler import Modeler

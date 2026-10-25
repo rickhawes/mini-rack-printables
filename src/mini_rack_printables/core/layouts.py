@@ -9,9 +9,9 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import override
 
-from .print_dims import E
 from .feature import Feature, FeatureList
 from .geometry import Dir2, Mm, Rc, Vec2
+from .print_dims import E
 from .row_column_collection import RowColumnCollection
 
 

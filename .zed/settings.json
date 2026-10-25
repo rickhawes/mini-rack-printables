@@ -5,21 +5,11 @@
   "document_symbols": "on",
   "semantic_tokens": "combined",
   "lsp": {
-    "basedpyright": {
-      "binary": {
-        "path": ".venv/bin/basedpyright-langserver",
-        "arguments": ["--stdio"]
-      }
-    }
   },
   "languages": {
     "Python": {
       "show_completions_on_input": true,
-      "language_servers": [
-        "basedpyright",
-        "!pyright",
-        "!pylsp"
-      ]
+      "language_servers": ["pyrefly", "!pyright", "!pylsp"]
     }
   }
 }

@@ -24,7 +24,7 @@ class Model(ABC):
     class Rendering:
         """The rendering of a model and the operations that can be performed"""
 
-        part: Part
+        part: Part | Compound
 
         def show(self) -> None:
             viewer.show(self.part)

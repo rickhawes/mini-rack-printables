@@ -1,9 +1,9 @@
 from typing import final
 
-from build123d import BuildPart, Location, Mode, Part, Plane, insert
+from build123d import Location, Part, Plane
 
 from .elements_3d import Element3D
-from .feature import Feature, FeatureList
+from .feature import FeatureList
 from .geometry import AxDir3, Bx, Dir2, Mm, Rc, Vec2, Vec3
 from .layouts import Layout
 from .model import Model
@@ -20,6 +20,7 @@ class Modeler:
         `Model` and its subclasses
     """
 
+    # the base to place things on
     origin: Vec3
     """The origin of the model being created"""
     z_dir: AxDir3
@@ -28,12 +29,14 @@ class Modeler:
     """The base bounds of the model"""
     base_depth: Mm
     """The base depth of the model"""
+    _plane: Plane
+    """The plane of the model to place elements"""
+
+    # Output
     pieces: list[Piece]
     """The pieces placed on this model"""
     sub_modelers: list[Modeler]
     """Modelers attached to this model"""
-    _plane: Plane
-    """The plane of the model to place elements"""
 
     def __init__(
         self,
@@ -42,6 +45,13 @@ class Modeler:
         base_bounds: Rc | None = None,
         base_depth: Mm = 0,
     ) -> None:
+        """
+        Args:
+            origin (Vec3) - Origin of the baseplate
+            z_dir (AxDir3) -
+            base_bounds -
+            base_depth -
+        """
         self.origin = origin
         self.z_dir = z_dir
         self._plane = Plane(
@@ -111,9 +121,6 @@ class Modeler:
         """Add a piece to the model"""
         self.pieces.extend(pieces)
 
-    def layout_features(self, features: list[Feature], layout: Layout) -> None:
-        pass
-
     def add_modeler(self, child: Modeler) -> None:
         self.sub_modelers.append(child)
 
@@ -138,7 +145,7 @@ class Modeler:
         pieces: list[Piece] = []
         sections = layout.layout_features(features, area)
         for section in sections:
-            z = self.origin.z - self.base_depth/2
+            z = self.origin.z - self.base_depth / 2
             center = (section.origin - section.bounds.center).to_3d(z)
             size = Vec3(section.bounds.size.x, section.bounds.size.y, self.base_depth)
             feature_plate = Bx(size, center)
@@ -163,15 +170,15 @@ class Modeler:
         part = Part(Part(add_parts) - Part(sub_parts))
         return Model.Rendering(part)
 
-    @staticmethod
-    def _assemble_pieces(pieces: list[Piece]) -> Part:
-        """
-        Add `pieces` with `to_part` to create the final result.
-        """
-        with BuildPart() as result:
-            for piece in pieces:
-                _ = insert(piece.part, mode=Mode.SUBTRACT if piece.cut else Mode.ADD)
-        if result.part is None:
-            raise ValueError("Part was not created")
-        # noinspection bad-return
-        return result.part
+    # @staticmethod
+    # def _assemble_pieces(pieces: list[Piece]) -> Part:
+    #     """
+    #     Add `pieces` with `to_part` to create the final result.
+    #     """
+    #     with BuildPart() as result:
+    #         for piece in pieces:
+    #             _ = insert(piece.part, mode=Mode.SUBTRACT if piece.cut else Mode.ADD)
+    #     if result.part is None:
+    #         raise ValueError("Part was not created")
+    #     # noinspection bad-return
+    #     return result.part

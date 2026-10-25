@@ -3,9 +3,9 @@ from typing import override
 from ..core.elements_2d import Element2D
 from ..core.elements_3d import PrismElement, TubeElement
 from ..core.feature import Feature, Rib
-from ..core.geometry import Vec2, Bx
-from ..core.piece import Piece
+from ..core.geometry import Bx, Vec2
 from ..core.modeler import Modeler
+from ..core.piece import Piece
 
 
 class Cutout(Feature):
