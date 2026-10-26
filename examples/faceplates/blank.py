@@ -10,4 +10,4 @@ plate = Faceplate(rack_units=1.0).render()
 plate.show()
 
 # Export the plate to a STEP file
-plate.export("outputs/blank_face_plate.step")
+plate.export_step("outputs/blank_face_plate.step")

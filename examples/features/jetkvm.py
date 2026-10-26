@@ -1,5 +1,3 @@
-from ocp_vscode import show
-
 from mini_rack_printables import JetKVM, XRayModel
 
 #
@@ -8,4 +6,4 @@ from mini_rack_printables import JetKVM, XRayModel
 plate = XRayModel(JetKVM(), only_adds=False).render()
 
 # Show the plate in the OCP viewer
-show(plate)
+plate.show()

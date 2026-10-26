@@ -29,7 +29,7 @@ class Model(ABC):
         def show(self) -> None:
             viewer.show(self.part)
 
-        def export(self, filename: str) -> None:
+        def export_step(self, filename: str) -> None:
             if not export_step(self.part, filename):
                 raise IOError("File not saved")
 

@@ -1,5 +1,3 @@
-from ocp_vscode import show
-
 from mini_rack_printables import CornerHolder, RectangleElement, XRayModel
 
 #
@@ -9,4 +7,4 @@ holder = CornerHolder(RectangleElement(100, 100, 5), corner_width=12, corner_hei
 plate = XRayModel(holder, only_adds=False).render()
 
 # Show the plate in the OCP viewer
-show(plate)
+plate.show()

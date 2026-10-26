@@ -3,6 +3,7 @@ Classes for specifying features of a `Model`. Features may be related to specifi
 """
 
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import override
 
@@ -52,8 +53,8 @@ class Feature(ABC):
         """
 
 
-type FeatureList = list[list[Feature]]
-"""A row-column list of features."""
+type FeatureList = Sequence[Sequence[Feature]]
+"""A row-column sequence of features."""
 
 
 @dataclass(frozen=True)

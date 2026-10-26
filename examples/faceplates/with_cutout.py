@@ -10,4 +10,4 @@ plate = Faceplate(
 
 plate.show()
 
-plate.export("outputs/face_plate_with_cutout.step")
+plate.export_step("outputs/face_plate_with_cutout.step")

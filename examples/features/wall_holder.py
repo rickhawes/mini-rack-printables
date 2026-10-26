@@ -1,5 +1,3 @@
-from ocp_vscode import show
-
 from mini_rack_printables import Vec3, WallHolder, XRayModel
 
 #
@@ -9,4 +7,4 @@ holder = WallHolder(device_size=Vec3(60, 30, 40), device_rounding=1.0, style=Wal
 plate = XRayModel(holder, only_adds=False).render()
 
 # Show the plate in the OCP viewer
-show(plate)
+plate.show()

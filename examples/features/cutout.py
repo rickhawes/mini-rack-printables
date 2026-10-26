@@ -1,5 +1,3 @@
-from ocp_vscode import show
-
 from mini_rack_printables import Cutout, Faceplate, SlotElement, XRayModel
 
 #
