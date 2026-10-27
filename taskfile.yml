@@ -34,6 +34,12 @@ tasks:
     cmds:
       - uv run pytest --durations=5 {{.CLI_ARGS}}
 
+  fix-imports:
+    desc: "ISort the import statements"
+    deps: [init]
+    cmds:
+      - uv run ruff check --select I --fix .
+
   lint:
     desc: "Check linting and formatting with ruff"
     deps: [init]

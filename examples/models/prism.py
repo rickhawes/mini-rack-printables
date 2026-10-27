@@ -1,12 +1,11 @@
-from mini_rack_printables import BoxElement, Model
+from mini_rack_printables import Assembler, BoxElement, Model
 
 
-class ElementModel(Model):
-    def render(self) -> Model.Rendering:
-        bx = BoxElement(20, 20, 10)
-        part = bx.render()
-        return Model.Rendering(part)
+def render() -> Model.Rendering:
+    bx = BoxElement(20, 20, 10)
+    maker = Assembler.make_with_element(bx)
+    return maker.render()
 
 
-rendering = ElementModel().render()
+rendering = render()
 rendering.show()

@@ -1,13 +1,15 @@
 from dataclasses import dataclass
 from typing import final, override
 
-from ..core.elements_2d import RectangleElement, TrapezoidElement
-from ..core.elements_3d import PrismElement
+from mini_rack_printables.core.elements_3d import PlateElement
+
+from ..core.assembler import Assembler
+from ..core.elements_2d import TrapezoidElement
+from ..core.elements_3d import PlateElement, PrismElement
 from ..core.feature import FeatureList, Rib
 from ..core.geometry import AxDir3, Dir2, Mm, Rc, Vec2, Vec3
 from ..core.layouts import Layout, RowLayout
 from ..core.model import Model
-from ..core.modeler import Modeler
 from .rack_dims import RackDims, ShelfTabDims
 from .rack_holes import RackHolePattern
 
@@ -85,35 +87,36 @@ class Faceplate(Model):
         feature_area = Rc(ShelfTabDims.MAX_DX_TABS, plate_size.y - 2 * self.style.rib.width)
 
         # form a round-rect base with cutout for the holes of the rack screws
-        base_2d = RectangleElement(
+        base = PlateElement(
             plate_size.x,
             plate_size.y,
+            self.style.thickness,
             corners=self.style.rounding,
             holes=RackHolePattern(
                 self.rack_units, self.style.middle_holes, self.style.half_height_bottom
             ),
         )
-        base = PrismElement(base_2d, self.style.thickness)
 
-        # create a modeler to place the other elements
-        md = Modeler.make_with_element(base)
+        # create a assembler to place the other elements
+        maker = Assembler.make_with_element(base)
 
         # ribs
         if self.style.rib.depth > 0:
 
             def add_rib(dir2: Dir2) -> None:
                 rib_size = Vec3(feature_area.size.x, self.style.rib.width, self.style.rib.depth)
-                rib_bx = md.place_bx(rib_size, dir2)
+                rib_bx = maker.place_bounds(rib_size, Assembler.Place(origin=dir2))
                 # place the sub assembly on the side
-                rib_md = md.add_modeler_on_bx(rib_bx, AxDir3.Y_MINUS, AxDir3.Y_PLUS)
+                rib_plane_bx = rib_bx.side_bx(AxDir3.Y_MINUS)
+                rib_maker = maker.make_sub(rib_plane_bx, AxDir3.Y_PLUS)
                 rib_elem = PrismElement(TrapezoidElement(rib_size.x, rib_size.z, 30), rib_size.y)
-                rib_md.add_element(rib_elem)
+                rib_maker.place_element(rib_elem)
 
             add_rib(Dir2.Y_PLUS)
             add_rib(Dir2.Y_MINUS)
 
         # features
         if self.features is not None:
-            md.add_features(self.features, feature_area, self.layout)
+            maker.add_features(self.features, feature_area, self.layout)
 
-        return md.render()
+        return maker.render()

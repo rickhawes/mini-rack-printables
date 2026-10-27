@@ -411,3 +411,30 @@ class RingElement(Element2D):
         outset = offset(base, self.outset)
         inner, outer = (base, outset) if self.outset > 0 else (outset, base)
         return Sketch(outer - inner)
+
+
+class OutsetElement(Element2D):
+    """Create an element that is a `base` element that is outset by `amount`"""
+
+    base: Element2D
+    """The base shape"""
+    outset: Mm
+    """The outset amount (may be negative for an inset)"""
+
+    def __init__(self, base: Element2D, outset: Mm) -> None:
+        if abs(outset) < E:
+            raise ValueError("outset must not be 0")
+        self.base = base
+        self.outset = outset
+
+    @property
+    def size(self) -> Vec2:
+        return (
+            self.base.size
+            if self.outset < 0
+            else self.base.size + Vec2(2 * self.outset, 2 * self.outset)
+        )
+
+    def sketch(self) -> Sketch:
+        base = self.base.sketch()
+        return Sketch(offset(base, self.outset))

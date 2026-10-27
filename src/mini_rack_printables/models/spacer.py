@@ -1,7 +1,7 @@
 from typing import override
 
 from ..core.feature import Feature
-from ..core.geometry import Mm, Vec2, Vec3
+from ..core.geometry import Bx, Mm, Vec2
 from ..core.piece import Piece
 
 
@@ -24,5 +24,5 @@ class Spacer(Feature):
         return Feature.DesiredSize(Vec2(self.width, self.height), self.more_x, self.more_y)
 
     @override
-    def render(self, plate_size: Vec3) -> list[Piece]:
+    def render(self, plate: Bx) -> list[Piece]:
         return []

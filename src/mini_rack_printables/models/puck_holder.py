@@ -7,20 +7,28 @@ from ..core.corners import InsetCorners, RoundedCorners, SelectedCorners
 from ..core.elements_2d import RectangleElement
 from ..core.elements_3d import make_plate
 from ..core.feature import Feature
-from ..core.geometry import Mm, Vec2, Vec3
+from ..core.geometry import Bx, Mm, Vec2, Vec3
 from ..core.hole_patterns import HexFill
 from ..core.piece import Piece
 
 
 class PuckHolder(Feature):
-    """
-    A device holder for a single device on a faceplate.
-    Devices are held by friction from side, top and bottom plates.
+    """A holder for a puck-shaped device on a faceplate.
+
+    Puck holders are used to hold many different types of puck-shaped devices in a electronic rack. This feature is
+    commonly used in a Faceplate model. Devices are held by friction from side, top and bottom plates.
+
+    See Also:
+        `Faceplate` - A model that frequently uses this feature.
+        `WallHolder` - A similar holder for box shaped devices.
     """
 
     device_size: Vec3
+    """The size of the device from the front perspective."""
     device_rounding: Mm
+    """The rounding of the corners of the device"""
     style: Style
+    """The style of the corner"""
 
     @dataclass
     class Style:
@@ -46,13 +54,12 @@ class PuckHolder(Feature):
         device_rounding: Mm = 1.0,
         style: Style = PLAIN,
     ) -> None:
-        """
-        Initialize a holder with the given style, device size, and optional label, align, shift, and padding.
+        """Initialize a wall holder of a given device size and rounding.
 
         Args:
-            device_size (Vec3): The size of the device to hold. Defaults to Vector(0, 0, 0).
+            device_size (Vec3): The size of the device to hold from the front perspective. Defaults to Vector(0, 0, 0).
             device_rounding (Mm): The rounding of the device edges. Defaults to 1.0.
-            style (Style): The style of the holder.
+            style (Style): The style of the holder. Defaults to PLAIN.
         """
         assert device_rounding >= 0, "device_rounding must be non-negative"
         self.device_size = device_size
@@ -75,12 +82,12 @@ class PuckHolder(Feature):
         return Feature.DesiredSize(size)
 
     @override
-    def render(self, plate_size: Vec3) -> list[Piece]:
+    def render(self, plate: Bx) -> list[Piece]:
         # geometry
         dx, dy, dz = self.device_size.to_tuple()
         r = self.device_rounding
         walls_depth = self.device_size.z - r
-        walls_z = r - (plate_size.z if self.style.has_cutout else 0)
+        walls_z = r - (plate.size.z if self.style.has_cutout else 0)
         w = self.style.wall_thickness
         e = self.style.corner_edges
         dc = e  # corner width

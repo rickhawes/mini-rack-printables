@@ -12,11 +12,11 @@ from build123d import Compound, Part, export_step
 class Model(ABC):
     """Base-class for 3d printable models.
 
-    Every printing project has a `Model` and a `Modeler` instance. The model is a
-    subclass of the `Model` base-class and while `Modeler` is instance of this class.
+    Every printing project has a `Model`. Most use an `Assembler` instance to create models. The model is a
+    subclass of the `Model` base-class and while `Assembler` is instance of this class.
 
     See Also:
-        `Modeler` - the companion class needed to render a model
+        `Assembler` - the companion class needed to render a model
 
     """
 

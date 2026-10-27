@@ -171,6 +171,10 @@ class AxDir2(Enum):
         """True iff the AxDir is in the y direction."""
         return self.y != AxDir.CENTER
 
+    @property
+    def is_positive(self) -> bool:
+        return self in [AxDir2.X_PLUS, AxDir2.Y_PLUS]
+
     def __neg__(self) -> AxDir2:
         return AxDir2(-self.x, -self.y)
 
@@ -189,6 +193,9 @@ class AxDir2(Enum):
     def to_dir2(self) -> Dir2:
         """Covert to a Dir2."""
         return Dir2(self.x, self.y)
+
+    def to_vec2(self) -> Vec2:
+        return Vec2(self.x, self.y)
 
 
 @dataclass(frozen=True)
@@ -229,7 +236,7 @@ class Vec2:
     def __neg__(self) -> Self:
         return self.__class__(-self.x, -self.y)
 
-    def to_3d(self, z: Mm = 0) -> Vec3:
+    def to_vec3(self, z: Mm = 0) -> Vec3:
         return Vec3(self.x, self.y, z)
 
     def to_vector(self) -> Vector:
@@ -251,13 +258,18 @@ class Rc:
     center: Vec2 = Vec2(0, 0)
     """The center of the rectangle"""
 
-    def __init__(self, *args: Mm | Vec2) -> None:
+    def __init__(self, *args: Mm | Vec2 | tuple[Mm, Mm]) -> None:
         match len(args):
             case 1 if isinstance(args[0], Vec2):
                 object.__setattr__(self, "size", args[0])
+            case 1 if isinstance(args[0], tuple[int | float, int | float]):
+                object.__setattr__(self, "size", Vec2(args[0][0], args[0][1]))
             case 2 if isinstance(args[0], Vec2):
                 object.__setattr__(self, "size", args[0])
                 object.__setattr__(self, "center", args[1])
+            case 2 if isinstance(args[0], tuple) and isinstance(args[1], tuple):
+                object.__setattr__(self, "size", Vec2(args[0][0], args[0][1]))
+                object.__setattr__(self, "center", Vec2(args[1][0], args[1][1]))
             case 2 if isinstance(args[0], int | float) and isinstance(args[1], int | float):
                 object.__setattr__(self, "size", Vec2(args[0], args[1]))
             case 4 if (
@@ -661,6 +673,14 @@ class AxDir3(Enum):
     def is_z(self) -> bool:
         return self.z != AxDir.CENTER
 
+    @property
+    def is_positive(self) -> bool:
+        return self in [
+            AxDir3.X_PLUS,
+            AxDir3.Y_PLUS,
+            AxDir3.Z_PLUS,
+        ]
+
     def __neg__(self) -> AxDir3:
         return AxDir3(-self.x, -self.y, -self.z)
 
@@ -685,6 +705,9 @@ class AxDir3(Enum):
         }
         assert self in conv
         return conv[self]
+
+    def to_vec3(self) -> Vec3:
+        return Vec3(self.x, self.y, self.z)
 
 
 @dataclass(frozen=True)
@@ -740,13 +763,18 @@ class Bx:
     center: Vec3 = Vec3(0, 0, 0)
     """Center of the box"""
 
-    def __init__(self, *args: Mm | Vec3) -> None:
+    def __init__(self, *args: Mm | Vec3 | tuple[Mm, Mm, Mm]) -> None:
         match len(args):
             case 1 if isinstance(args[0], Vec3):
                 object.__setattr__(self, "size", args[0])
+            case 1 if isinstance(args[0], tuple):
+                object.__setattr__(self, "size", Vec3(args[0][0], args[0][1], args[0][2]))
             case 2 if isinstance(args[0], Vec3):
                 object.__setattr__(self, "size", args[0])
                 object.__setattr__(self, "center", args[1])
+            case 2 if isinstance(args[0], tuple) and isinstance(args[1], tuple):
+                object.__setattr__(self, "size", Vec3(args[0][0], args[0][1], args[0][2]))
+                object.__setattr__(self, "center", Vec3(args[1][0], args[1][1], args[1][2]))
             case 3 if (
                 isinstance(args[0], int | float)
                 and isinstance(args[1], int | float)
@@ -854,7 +882,7 @@ class Bx:
 
     # Information about a side of a box
 
-    def side_center(self, side: AxDir3) -> Vec3:
+    def side_bx(self, side: AxDir3) -> Bx:
         """Return the center of the specified `side`"""
         lf, rt = self.left, self.right
         fr, bk = self.front, self.back
@@ -874,8 +902,7 @@ class Bx:
             case AxDir3.BOTTOM:
                 tp = bt
 
-        side_bx = Bx.from_edges(left=lf, right=rt, front=fr, back=bk, bottom=bt, top=tp)
-        return side_bx.center
+        return Bx.from_edges(left=lf, right=rt, front=fr, back=bk, bottom=bt, top=tp)
 
     def side_size(self, side: AxDir3) -> Vec2:
         """Return the size of the specified `side`."""
@@ -899,5 +926,18 @@ class Bx:
                 return self.size.y
             case AxDir3.Z_MINUS | AxDir3.Z_PLUS:
                 return self.size.z
+            case _:
+                assert False, "Incomplete match statement"
+
+    def side_rc(self, side: AxDir3) -> Rc:
+        size = self.side_size(side)
+        center = self.side_bx(side).center
+        match side:
+            case AxDir3.X_MINUS | AxDir3.X_PLUS:
+                return Rc(size, Vec2(center.y, center.z))
+            case AxDir3.Y_MINUS | AxDir3.Y_PLUS:
+                return Rc(size, Vec2(center.x, center.z))
+            case AxDir3.Z_MINUS | AxDir3.Z_PLUS:
+                return Rc(size, Vec2(center.x, center.y))
             case _:
                 assert False, "Incomplete match statement"

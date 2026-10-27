@@ -5,13 +5,11 @@ are cut out of holder's shape.
 
 from typing import override
 
-from build123d import Sketch, extrude
-
 from ..core.corners import InsetCorners
-from ..core.elements_2d import Element2D, RectangleElement
-from ..core.elements_3d import sketch_ring
+from ..core.elements_2d import CutoutElement, Element2D, RectangleElement, RingElement
+from ..core.elements_3d import PrismElement
 from ..core.feature import Feature
-from ..core.geometry import Mm, Vec2, Vec3
+from ..core.geometry import Bx, Mm, Vec2
 from ..core.piece import Piece
 
 
@@ -68,7 +66,7 @@ class CornerHolder(Feature):
         return Feature.DesiredSize(size, False)
 
     @override
-    def render(self, plate_size: Vec3) -> list[Piece]:
+    def render(self, plate: Bx) -> list[Piece]:
         # dimensions
         w, d = self.wall_thickness, self.wall_depth
         cw = self.corner_width
@@ -76,5 +74,6 @@ class CornerHolder(Feature):
 
         # sketch the holder shape
         cross = RectangleElement(size.x + 2 * w, size.y + 2 * w, InsetCorners(cw + 2 * w))
-        sk = Sketch(sketch_ring(self.shape, w) - cross.sketch())
-        return [Piece(extrude(sk, d))]
+        holder = RingElement(self.shape, w)
+        sk = CutoutElement(holder, cross)
+        return [PrismElement(sk, d).render()]

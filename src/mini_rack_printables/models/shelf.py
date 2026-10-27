@@ -73,7 +73,7 @@ class Shelf(Model):
         )
 
     @override
-    def render(self, modeler: Modeler) -> None:
+    def render(self) -> Model.Rendering:
         # geometry
         base_size = Vec3(
             ShelfTabDims.MAX_DX_TABS,

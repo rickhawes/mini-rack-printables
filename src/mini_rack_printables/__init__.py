@@ -1,3 +1,4 @@
+from .core.assembler import Assembler
 from .core.corners import (
     BeveledCorners,
     Corners,
@@ -23,13 +24,13 @@ from .core.elements_3d import (
     Element3D,
     PrismElement,
 )
-from .core.feature import Feature, FeatureList, Rib, XRayModel
+from .core.feature import Feature, FeatureList, FeatureXRayModel, Rib
 from .core.geometry import Ax2, Ax3, AxDir, AxDir2, AxDir3, Bx, Degree, Dir2, Mm, Rc, Vec2, Vec3
 from .core.hole_patterns import CircleFill, HexFill, HolePattern, SquareFill
 from .core.layouts import GridLayout, Layout, MeasuredRowsColumns, RowLayout
 from .core.model import Model, ModelLogger
-from .core.modeler import Modeler
 from .core.row_column_collection import RowColumnCollection
+from .models.box_holder import BoxHolder
 from .models.corner_holder import CornerHolder
 from .models.cutout import Cutout
 from .models.faceplate import Faceplate
@@ -40,9 +41,9 @@ from .models.puck_holder import PuckHolder
 from .models.rack_dims import RackDims, RackScrewDims, Screw1032Dims
 from .models.shelf import Shelf
 from .models.spacer import Spacer
-from .models.wall_holder import WallHolder
 
 __all__ = [
+    "Assembler",
     "Ax2",
     "Ax3",
     "AxDir",
@@ -51,6 +52,7 @@ __all__ = [
     "AlignedElement",
     "BeveledCorners",
     "BoxElement",
+    "BoxHolder",
     "Bx",
     "CircleElement",
     "CircleFill",
@@ -65,6 +67,7 @@ __all__ = [
     "Element3D",
     "Faceplate",
     "Feature",
+    "FeatureXRayModel",
     "Layout",
     "LocatedElement",
     "FeatureList",
@@ -78,7 +81,6 @@ __all__ = [
     "MeasuredRowsColumns",
     "Mm",
     "Model",
-    "Modeler",
     "ModelLogger",
     "PrismElement",
     "PuckHolder",
@@ -101,6 +103,4 @@ __all__ = [
     "TrapezoidElement",
     "Vec2",
     "Vec3",
-    "WallHolder",
-    "XRayModel",
 ]

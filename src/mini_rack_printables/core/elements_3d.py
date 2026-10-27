@@ -10,13 +10,15 @@ from typing import override
 
 from build123d import Cone, Cylinder, Location, Part, Sketch, extrude, offset
 
+from .corners import Corners
 from .elements_2d import Element2D, RectangleElement, RingElement
 from .geometry import Degree, Mm, Vec3
 from .hole_patterns import HolePattern
+from .piece import Piece
 
 
 class Element3D(ABC):
-    """3d shapes that are composable by `Modeler`"""
+    """3d shapes that are composable by an `Assembler`"""
 
     @property
     @abstractmethod
@@ -24,7 +26,7 @@ class Element3D(ABC):
         """Returns the size of the shape in 3d."""
 
     @abstractmethod
-    def render(self) -> Part:
+    def render(self, cut: bool = False) -> Piece:
         """Extrudes the shape centered on the plane and the z-axis of the plane"""
 
 
@@ -47,10 +49,11 @@ class PrismElement(Element3D):
         return Vec3(size2d.x, size2d.y, self.amount)
 
     @override
-    def render(self) -> Part:
-        return Location((0, 0, -self.amount / 2)) * extrude(
+    def render(self, cut: bool = False) -> Piece:
+        part = Location((0, 0, -self.amount / 2)) * extrude(
             self.element.sketch(), amount=self.amount, taper=self.taper
         )
+        return Piece(part, cut)
 
 
 class TubeElement(PrismElement):
@@ -63,6 +66,20 @@ class BoxElement(PrismElement):
 
     def __init__(self, dx: Mm, dy: Mm, dz: Mm) -> None:
         super().__init__(RectangleElement(dx, dy), dz)
+
+
+class PlateElement(PrismElement):
+    """A extruded RectangleElement"""
+
+    def __init__(
+        self,
+        width: Mm,
+        height: Mm,
+        depth: Mm,
+        corners: Mm | Corners | None = None,
+        holes: HolePattern | None = None,
+    ) -> None:
+        super().__init__(RectangleElement(width, height, corners, holes), depth)
 
 
 class CylinderElement(Element3D):
@@ -81,8 +98,8 @@ class CylinderElement(Element3D):
         return Vec3(2 * self.radius, 2 * self.radius, self.height)
 
     @override
-    def render(self) -> Part:
-        return Cylinder(self.radius, self.height)
+    def render(self, cut: bool = False) -> Piece:
+        return Piece(Cylinder(self.radius, self.height), cut)
 
 
 class ConeElement(Element3D):
@@ -104,10 +121,11 @@ class ConeElement(Element3D):
         return Vec3(2 * max_radius, 2 * max_radius, self.height)
 
     @override
-    def render(self) -> Part:
-        return Location((0, 0, self.height / 2)) * Cone(
+    def render(self, cut: bool = False) -> Piece:
+        part = Location((0, 0, self.height / 2)) * Cone(
             self.base_radius, self.top_radius, self.height
         )
+        return Piece(part, cut)
 
 
 def sketch_ring(element: Element2D, wall_thickness: Mm) -> Sketch:

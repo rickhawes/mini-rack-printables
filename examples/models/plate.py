@@ -1,4 +1,4 @@
-from mini_rack_printables import BoxElement, Model, Modeler, PrismElement, SlotElement, Vec2, Vec3
+from mini_rack_printables import Assembler, BoxElement, Model, PrismElement, SlotElement, Vec2, Vec3
 from mini_rack_printables.core.elements_3d import CylinderElement
 
 
@@ -10,14 +10,14 @@ class PlateWithHoles(Model):
         hole = PrismElement(SlotElement(10, 5), self.size.z)
         stand = CylinderElement(5, 10)
 
-        # Modeler is used to assemble this model
-        md = Modeler.make_with_element(base)  # made with top side as the plane
-        md.add_element(stand, self.stand_centers())
+        # Assembler is used to assemble this model
+        maker = Assembler.make_with_element(base)  # made with top side as the plane
+        maker.add_element(stand, self.stand_centers())
 
         # place the holes on the base using the cut mode
-        md.add_element(hole, self.hole_centers(), cut=True)
+        maker.add_element(hole, self.hole_centers(), cut=True)
 
-        return md.render()
+        return maker.render()
 
     def hole_centers(self) -> list[Vec2]:
         dx = self.size.x / 2 - 10

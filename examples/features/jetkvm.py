@@ -1,9 +1,9 @@
-from mini_rack_printables import JetKVM, XRayModel
+from mini_rack_printables import FeatureXRayModel, JetKVM
 
 #
 # This example demonstrates a Jet KVM cutout.
 #
-plate = XRayModel(JetKVM(), only_adds=False).render()
+plate = FeatureXRayModel(JetKVM(), only_adds=True).render()
 
 # Show the plate in the OCP viewer
 plate.show()

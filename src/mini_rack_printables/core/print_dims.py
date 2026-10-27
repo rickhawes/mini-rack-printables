@@ -1,6 +1,4 @@
-# ------------------------------------------------
-# Printing Constants
-# ------------------------------------------------
+"""Common constant dimensions used for 3d printing"""
 
 E = 0.02
 """Small tolerance to make the imported part join with its cutout"""
