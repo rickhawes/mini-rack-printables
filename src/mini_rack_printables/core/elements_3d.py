@@ -6,7 +6,7 @@ See Also:
 """
 
 from abc import ABC, abstractmethod
-from typing import override
+from typing import override, Sequence
 
 from build123d import Cone, Cylinder, Location, Part, Sketch, extrude, offset
 
@@ -126,6 +126,35 @@ class ConeElement(Element3D):
             self.base_radius, self.top_radius, self.height
         )
         return Piece(part, cut)
+
+
+class StackElement(Element3D):
+    """TODO: Make dir and align work"""
+
+    elements: Sequence[Element3D]
+
+    def __init__(self, elements: Sequence[Element3D]) -> None:
+        self.elements = elements
+
+    @property
+    @override
+    def size(self) -> Vec3:
+        return Vec3(
+            max(e.size.x for e in self.elements),
+            max(e.size.y for e in self.elements),
+            sum(e.size.z for e in self.elements),
+        )
+
+    def render(self, cut: bool = False) -> Piece:
+        size = self.size
+        stack_dz = -size.z / 2
+        stack = Part()
+        for element in self.elements:
+            stack += (
+                Location((0, 0, stack_dz + element.size.z / 2)) * element.render(cut=False).part
+            )
+            stack_dz += element.size.z
+        return Piece(stack, cut=cut)
 
 
 def sketch_ring(element: Element2D, wall_thickness: Mm) -> Sketch:

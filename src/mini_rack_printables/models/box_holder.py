@@ -4,7 +4,7 @@ from typing import override
 from ..core.assembler import Assembler
 from ..core.corners import InsetCorners
 from ..core.elements_2d import CutoutElement, OutsetElement, RectangleElement, RingElement
-from ..core.elements_3d import PlateElement, PrismElement
+from ..core.elements_3d import PlateElement, PrismElement, StackElement
 from ..core.feature import Feature, Rib
 from ..core.geometry import AxDir3, Bx, Dir2, Mm, Vec2, Vec3
 from ..core.hole_patterns import HexFill
@@ -106,19 +106,19 @@ class BoxHolder(Feature):
                 ),
                 holder_depth,
             )
-            maker.add_element(corners)
+            maker.place_element(corners)
 
         def add_walls(maker: Assembler) -> None:
             """
             Make the walls of the holder as 4 plates with room for the corners.
             """
             # build around the a box defined by the device
-            device_bx = maker.form_place(size=Vec3(dx, dy, holder_depth), place=Dir2.CENTER)
+            device_bx = maker.place_bounds(size=Vec3(dx, dy, holder_depth))
             for side in [AxDir3.X_PLUS, AxDir3.X_MINUS, AxDir3.Y_PLUS, AxDir3.Y_MINUS]:
                 plate_sub = maker.make_sub(device_bx, side)
                 size = device_bx.side_size(side) - Vec2(2 * r, 0)
                 block = PlateElement(size.x, size.y, w, holes=HexFill())
-                plate_sub.add_element(block)
+                plate_sub.place_element(block)
 
         def add_cutout(maker: Assembler) -> None:
             """
@@ -126,18 +126,20 @@ class BoxHolder(Feature):
             """
             cutout_sub = maker.make_cutout_sub()
             if self.style.front_lip is not None:
-                stack = [
-                    PlateElement(
-                        dx - 2 * self.style.front_lip.width,
-                        dy - 2 * self.style.front_lip.width,
-                        self.style.front_lip.depth,
-                        corners=r,
-                    ),
-                    PlateElement(dx, dy, plate.size.z - self.style.front_lip.depth, r),
-                ]
-                cutout_sub.stack_elements(stack)
+                stack = StackElement(
+                    [
+                        PlateElement(
+                            dx - 2 * self.style.front_lip.width,
+                            dy - 2 * self.style.front_lip.width,
+                            self.style.front_lip.depth,
+                            corners=r,
+                        ),
+                        PlateElement(dx, dy, plate.size.z - self.style.front_lip.depth, r),
+                    ]
+                )
+                cutout_sub.place_element(stack)
             else:
-                cutout_sub.add_element(PlateElement(dx, dy, plate.size.z, r))
+                cutout_sub.place_element(PlateElement(dx, dy, plate.size.z, r))
 
         def add_back_lip(maker: Assembler) -> None:
             assert self.style.back_lip is not None
@@ -146,7 +148,7 @@ class BoxHolder(Feature):
             outer = OutsetElement(device, w)
             inner = OutsetElement(device, -self.style.back_lip.width)
             lip = PrismElement(CutoutElement(outer, inner), self.style.back_lip.depth)
-            maker.add_element(lip, Vec3(0, 0, holder_depth))
+            maker.place_element(lip, Assembler.Place(offset=Vec3(0, 0, holder_depth)))
 
         # basic holder shape
         maker = Assembler.make(plate)

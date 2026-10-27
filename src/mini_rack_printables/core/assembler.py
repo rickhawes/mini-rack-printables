@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Sequence, cast, final
 
-from build123d import Location, Part, Plane
+from build123d import Location, Part, Plane, BuildPart, insert, Mode
 
 from .elements_3d import Element3D
 from .feature import FeatureList
@@ -152,7 +152,7 @@ class Assembler:
         offset: Vec2 | Vec3 = Vec2(0, 0)
         """The offset of the center."""
 
-    def place_bounds(self, size: Vec3, place: Place) -> Bx:
+    def place_bounds(self, size: Vec3, place: Place = Place()) -> Bx:
         """The bounding box of `size` relative the assembler's plane"""
         origin = self.plane_rc.place_center(Rc(size.x, size.y), place.origin).to_vec3()
         offset = place.offset if isinstance(place.offset, Vec3) else place.offset.to_vec3()
@@ -248,8 +248,13 @@ class Assembler:
         pieces = self.all_pieces()
         add_parts = [p.part for p in pieces if not p.cut]
         sub_parts = [p.part for p in pieces if p.cut]
-        part = Part(Part(add_parts) - Part(sub_parts))
-        return Model.Rendering(part)
+        with BuildPart() as assembled_part:
+            for p in add_parts:
+                _ = insert(p)
+            for p in sub_parts:
+                _ = insert(p, mode=Mode.SUBTRACT)
+        assert assembled_part.part is not None
+        return Model.Rendering(assembled_part.part)
 
     # @staticmethod
     # def _nomarlize_centers(centers: CenterType, element_depth: Mm) -> Sequence[Vec3]:

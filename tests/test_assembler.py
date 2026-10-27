@@ -50,7 +50,7 @@ def test_assemble_two_boxes(viewer_logger: ModelLogger) -> None:
     base = BoxElement(30, 20, 10)
     node = BoxElement(2, 1.5, 1)
 
-    # place the nodes at all 9 places on the assembler's plane 
+    # place the nodes at all 9 places on the assembler's plane
     def place_boxes(maker: Assembler) -> None:
         for member in Dir2:
             if member.value == Dir2.CORNER_LF_BT.value:
@@ -59,7 +59,9 @@ def test_assemble_two_boxes(viewer_logger: ModelLogger) -> None:
             else:
                 cut = False
                 offset = Vec3(0, 0, 0)
-            maker.place_element(node, Assembler.Place(origin=Dir2(member.value), offset=offset), cut)
+            maker.place_element(
+                node, Assembler.Place(origin=Dir2(member.value), offset=offset), cut
+            )
 
     # place the nodes on the base using a assembler
     m1 = Assembler.make_with_element(base, side=AxDir3.TOP)

@@ -185,6 +185,7 @@ def test_bx_side_size() -> None:
     assert bx.side_size(AxDir3.Y_PLUS) == Vec2(4, 6)
     assert bx.side_size(AxDir3.Y_MINUS) == Vec2(4, 6)
 
+
 def test_bx_side_bx() -> None:
     bx = Bx((4, 8, 6), (1, 1, 1))
     assert bx.side_bx(AxDir3.X_MINUS) == Bx((0, 8, 6), (-1, 1, 1))
@@ -193,4 +194,3 @@ def test_bx_side_bx() -> None:
     assert bx.side_bx(AxDir3.Y_PLUS) == Bx((4, 0, 6), (1, 5, 1))
     assert bx.side_bx(AxDir3.Z_MINUS) == Bx((4, 8, 0), (1, 1, -2))
     assert bx.side_bx(AxDir3.Z_PLUS) == Bx((4, 8, 0), (1, 1, 4))
-

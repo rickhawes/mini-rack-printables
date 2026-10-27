@@ -39,6 +39,7 @@ from .models.jetkvm import JetKVM
 from .models.keystone import Keystone
 from .models.puck_holder import PuckHolder
 from .models.rack_dims import RackDims, RackScrewDims, Screw1032Dims
+from .models.rack_holes import RackHoleElement, RackHolePattern, layout_rack_screw_holes
 from .models.shelf import Shelf
 from .models.spacer import Spacer
 
@@ -78,6 +79,7 @@ __all__ = [
     "InsetCorners",
     "JetKVM",
     "Keystone",
+    "layout_rack_screw_holes",
     "MeasuredRowsColumns",
     "Mm",
     "Model",
@@ -86,6 +88,8 @@ __all__ = [
     "PuckHolder",
     "RackDims",
     "RackScrewDims",
+    "RackHoleElement",
+    "RackHolePattern",
     "Rc",
     "RectangleElement",
     "Rib",

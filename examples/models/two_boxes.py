@@ -15,7 +15,7 @@ def render() -> Model.Rendering:
     #         cut = False
     #         offset = Vec3(0, 0, 0)
     maker.place_element(node, Assembler.Place(origin=Dir2.CENTER))
-        
+
     return maker.render()
 
 
