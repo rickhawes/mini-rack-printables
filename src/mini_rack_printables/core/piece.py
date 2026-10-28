@@ -1,13 +1,15 @@
 from dataclasses import dataclass
+from typing import Self
 
 from build123d import Color, Location, Part, Plane, Solid
+from .geometry import Vec2, Vec3
 
-
-@dataclass(frozen=True)
+@dataclass
 class Piece:
     """The rendered the piece of a model.
 
-    Created by elements and features as the output of rendering.
+    Created by elements and features as the output of rendering. 
+    This is a mutabable class which is expected to 
 
     Attributes:
         part: Part - the build123d Part
@@ -19,22 +21,22 @@ class Piece:
     cut: bool = False
     """Subtract the part, otherwise add the part"""
 
-    def __mul__(self, other: Location | Plane) -> Piece:
-        """Return a piece with a location"""
-        return Piece(other * self.part, self.cut)
+    def move(self, position: Location | Vec3 | Vec2) -> Self:
+        if isinstance(position, Vec2):
+            position = Location(position.to_vector())
+        elif isinstance(position, Vec3):
+            position = Location(position.to_vector())
+        _ = self.part.move(position)
+        return self
 
-    def __rmul__(self, other: Location | Plane) -> Piece:
-        """Return a piece with a location"""
-        return Piece(other * self.part, self.cut)
-
-    def copy(
+    def set(
         self, color: Color | None = None, label: str | None = None, cut: bool | None = None
-    ) -> Piece:
-        """Add a color to the piece"""
-        part = self.part
+    ) -> Self:
+        """Set the attributes of the piece"""
         if color is not None:
-            part.color = color
+            self.part.color = color
         if label is not None:
-            part.label = label
-        new_cut = self.cut if cut is None else cut
-        return Piece(part, new_cut)
+            self.part.label = label
+        if cut is not None:
+            self.cut = cut
+        return self

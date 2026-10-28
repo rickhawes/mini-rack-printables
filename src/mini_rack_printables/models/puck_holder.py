@@ -5,7 +5,6 @@ from build123d import Box, BuildSketch, Location, Mode, Part, Pos, extrude, inse
 
 from ..core.corners import InsetCorners, RoundedCorners, SelectedCorners
 from ..core.elements_2d import RectangleElement
-from ..core.elements_3d import make_plate
 from ..core.feature import Feature
 from ..core.geometry import Bx, Mm, Vec2, Vec3
 from ..core.hole_patterns import HexFill

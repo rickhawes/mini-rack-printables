@@ -3,34 +3,24 @@ from importlib.resources import as_file, files
 from pathlib import Path
 from typing import override
 
-from build123d import CenterOf, Location, Mesher, TopoDS_Solid, Unit, Vector, import_brep
-from build123d.topology import Shape
-
-from ..core.elements_3d import BoxElement
+from ..core.elements_3d import BoxElement, ImportElement
 from ..core.feature import Feature
-from ..core.geometry import Bx, Vec3
+from ..core.geometry import Bx
 from ..core.piece import Piece
+from ..core.assembler import Assembler
 
 
 class ImportFeature(Feature):
+    """ A Feature formed using a STL or BREP file
     """
-    Make a part from a BREP file or an STL file.
-    BREP files are imported rapidly, while STL files are converted to a BREP model using the `Mesher` library which may take some time.
-    STL files can be converted to a BREP model using the `import_stl.py` script.
-    Imported shapes should have a rectangular outline, if `cutout` is True.
-    """
-
-    BREP_SUFFIX: str = ".brep"
-    STL_SUFFIX: str = ".stl"
     ASSET_PATH: str = "mini_rack_printables.assets"
-
-    path: Path | None = None
-    asset: str | None = None
+    
     cutout: bool = True
+    element: ImportElement
 
     def __init__(
         self,
-        path: Path | None = None,
+        file: str | None = None,
         asset: str | None = None,
         cutout: bool = True,
     ) -> None:
@@ -38,77 +28,36 @@ class ImportFeature(Feature):
         Initialize the ImportPart with the given path or asset name and optional parameters.
 
         Args:
-            path (Path): The path to the BREP or STL file.
+            file (Path): The path to the BREP or STL file.
             asset (str): The name of the asset to import.
             cutout (bool, optional): Whether to cut out the part from the enclosing model or place on top of it. Defaults to True.
         """
-        if path is not None:
-            if not path.exists():
-                raise ValueError(f"Path does not exist: {path}")
-            if not (path.suffix == self.BREP_SUFFIX or path.suffix == self.STL_SUFFIX):
-                raise ValueError(f"Expected BREP or STL file, got {path.suffix}")
-        elif asset is None:
-            raise ValueError("Either path or asset must be provided")
-        self.path = path
-        self.asset = asset
         self.cutout = cutout
-
-    @cached_property
-    def shape(self) -> Shape[TopoDS_Solid]:
-        """
-        Returns the shape of the part. Cached to avoid recomputing.
-        """
-
-        def convert_stl(path: Path) -> Shape[TopoDS_Solid]:
-            # Import the STL file and center it around the bounding box
-            importer = Mesher(unit=Unit.MM)
-            full_mesh = importer.read(path)[0]
-            center = Shape.combined_center([full_mesh], center_of=CenterOf.BOUNDING_BOX)
-            centered_mesh = full_mesh.move(Location((-center.X, -center.Y, -center.Z)))
-            return centered_mesh
-
-        def import_path(path: Path) -> Shape[TopoDS_Solid]:
-            match path.suffix:
-                case self.STL_SUFFIX:
-                    return convert_stl(path)
-                case self.BREP_SUFFIX:
-                    return import_brep(path)
-                case _:
-                    raise ValueError(f"Unexpected file suffix: {path.suffix}")
-
-        if self.asset is not None:
-            # assets may be zipped when stored, so extract to a temporary directory
-            with as_file(files(self.ASSET_PATH) / self.asset) as asset_path:
-                return import_path(asset_path)
-        elif self.path is not None:
-            return import_path(self.path)
+        if file is not None:
+            self.element = ImportElement(file=Path(file))
+        elif asset is not None:
+            self.element = ImportElement(asset=Path(ImportFeature.ASSET_PATH + "/" + asset))
         else:
-            raise ValueError("No asset or path specified")
-
-    @cached_property
-    def size(self) -> Vec3:
-        """
-        Returns the size of the part. Cached to avoid recomputing.
-        """
-        bbox = self.shape.bounding_box()
-        assert bbox.center() == Vector(0, 0, 0), f"Imported part is not centered: {bbox.center()}"
-        return Vec3(bbox.size.X, bbox.size.Y, bbox.size.Z)
+            raise ValueError("Either path or asset must be provided")
 
     @override
     def desired_size(self) -> Feature.DesiredSize:
-        return Feature.DesiredSize(self.size.to_2d(), False)
+        return Feature.DesiredSize(self.element.size.to_2d(), False)
 
     @override
     def render(self, plate: Bx) -> list[Piece]:
+        maker = Assembler.make(plate)
+
         if self.cutout:
-            # Cutout: Cutout the bottom plane and place the imported part in the cutout
-            return [
-                Piece(
-                    part=BoxElement(dx=self.size.x, dy=self.size.y, dz=plate.size.z).render(),
-                    cut=True,
-                ),
-                Piece(self.shape.solid()),
-            ]
+            cutout_maker = maker.make_cutout_sub()
+            # Cutout the plate first
+            box = BoxElement(dx=self.element.size.x, dy=self.element.size.y, dz=plate.size.z)
+            cutout_maker.place_element(box)
+            # Add the import element in the cutout
+            cutout_maker.place_element(self.element)
         else:
-            # No cutout, render directly on the top plane
-            return [Piece(self.shape.solid())]
+            # Add the iport element on the plate
+            maker.place_element(self.element)
+
+        return maker.all_pieces()
+

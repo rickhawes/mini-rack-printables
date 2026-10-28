@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Sequence, cast, final
 
-from build123d import Location, Part, Plane, BuildPart, insert, Mode
+from build123d import Location, Plane, BuildPart, insert, Mode
 
 from .elements_3d import Element3D
 from .feature import FeatureList
@@ -113,7 +113,7 @@ class Assembler:
             center = Vec3(0, 0, base.size.z / 2)
         bx = Bx(base.size, center)
         md = Assembler.make(bx, side)
-        piece = Location(center.to_vector()) * base.render(cut=False)
+        piece = base.render(cut=False).move(center)
         md.add_pieces([piece])
         return md
 
@@ -167,7 +167,7 @@ class Assembler:
         resolved_cut = cut if cut is not None else self.cut_default
         for p in places:
             center = self.place_bounds(element.size, p).center
-            piece = self._plane * Location(center.to_vector()) * element.render(resolved_cut)
+            piece = element.render(resolved_cut).move(self._plane * Location(center.to_vector()))
             pieces.append(piece)
         self.add_pieces(pieces)
 
@@ -246,15 +246,12 @@ class Assembler:
 
     def render(self) -> Model.Rendering:
         pieces = self.all_pieces()
-        add_parts = [p.part for p in pieces if not p.cut]
-        sub_parts = [p.part for p in pieces if p.cut]
-        with BuildPart() as assembled_part:
-            for p in add_parts:
-                _ = insert(p)
-            for p in sub_parts:
-                _ = insert(p, mode=Mode.SUBTRACT)
-        assert assembled_part.part is not None
-        return Model.Rendering(assembled_part.part)
+        with BuildPart() as builder:
+            for p in pieces:
+                mode = Mode.SUBTRACT if p.cut else Mode.ADD
+                _ = insert(p.part, mode=mode)
+        assert builder.part is not None
+        return Model.Rendering(builder.part)
 
     # @staticmethod
     # def _nomarlize_centers(centers: CenterType, element_depth: Mm) -> Sequence[Vec3]:

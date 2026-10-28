@@ -90,11 +90,11 @@ class FeatureXRayModel(Model):
         children: list[Part | Solid] = []
         for piece in pieces:
             if not piece.cut:
-                new_piece = piece.copy(color=Color("blue"), label="add")
+                new_piece = piece.set(color=Color("blue"), label="add")
                 children.append(new_piece.part)
             else:
                 if not self.only_adds:
-                    new_piece = piece.copy(color=Color("red"), label="subtract")
+                    new_piece = piece.set(color=Color("red"), label="subtract")
                     children.append(new_piece.part)
 
         return Model.Rendering(Compound(label="xray", children=children))
