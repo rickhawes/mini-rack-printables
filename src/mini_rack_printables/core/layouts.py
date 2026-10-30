@@ -147,7 +147,8 @@ class RowLayout(Layout):
                 bounds = Rc.from_edges(left, right, bottom, top)
                 min_size = Rc(feature.desired_size().min_size)
                 origin = bounds.place_center(min_size, self.place)
-                section = Layout.Section(bounds, origin, feature)
+                relative_bounds = bounds.move_to(bounds.center - origin)
+                section = Layout.Section(relative_bounds, origin, feature)
                 result.append(section)
 
                 left = right + s
@@ -224,7 +225,8 @@ class GridLayout(RowLayout):
                     bounds = Rc.from_edges(left, right, bottom, top)
                     min_size = Rc(feature.desired_size().min_size)
                     origin = bounds.place_center(min_size, self.place)
-                    section = Layout.Section(bounds, origin, feature)
+                    relative_bounds = bounds.move_to(bounds.center - origin)
+                    section = Layout.Section(relative_bounds, origin, feature)
                     result.append(section)
 
                 left = right + s

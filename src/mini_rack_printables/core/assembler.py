@@ -1,12 +1,12 @@
 from dataclasses import dataclass
 from typing import Sequence, cast, final
 
-from build123d import Location, Plane, BuildPart, insert, Mode
+from build123d import BuildPart, Location, Mode, Plane, insert
 
 from .elements_3d import Element3D
 from .feature import FeatureList
 from .geometry import AxDir3, Bx, Dir2, Mm, Rc, Vec2, Vec3
-from .layouts import Layout
+from .layouts import Layout, RowLayout
 from .model import Model
 from .piece import Piece
 
@@ -35,10 +35,12 @@ class Assembler:
     """The plane of the model to place elements"""
 
     # Output
-    pieces: list[Piece]
-    """The pieces placed on this model"""
+    parent: Assembler | None = None
+    """If this is a sub-assembler, then the parent assembler."""
     sub_assemblers: list[Assembler]
     """Assemblers attached to this model"""
+    _pieces: list[Piece] | None = None
+    """If this is a top-level assembler, all the pieces"""
 
     # properties
     @property
@@ -62,10 +64,7 @@ class Assembler:
         return self.base.side_bx(self.side).center
 
     def __init__(
-        self,
-        base: Bx,
-        side: AxDir3,
-        cut_default: bool = False,
+        self, base: Bx, side: AxDir3, cut_default: bool = False, parent: Assembler | None = None
     ) -> None:
         """
         Args:
@@ -85,8 +84,9 @@ class Assembler:
         )
 
         # accumulations
-        self.pieces = []
+        self._pieces = []
         self.sub_assemblers = []
+        self.parent = parent
 
     # #region Create assemblers and sub-assemblers
 
@@ -102,20 +102,26 @@ class Assembler:
         TODO: ...
 
         """
-        return Assembler(base, side, cut_default)
+        return Assembler(base, side, cut_default, parent=None)
 
     @classmethod
     def make_with_element(
         cls, base: Element3D, center: Vec3 | None = None, side: AxDir3 = AxDir3.Z_PLUS
     ) -> Assembler:
-        """Create top-level assembler with the `base` element as the base"""
+        """Create top-level assembler with the `base` element as the base.
+
+        Args:
+            base (Element3D) - the base object
+            center (Vec3) - relative to the XY plane
+            side (AxDir3) - the side of the base to form the assembler
+        """
         if center is None:
             center = Vec3(0, 0, base.size.z / 2)
         bx = Bx(base.size, center)
-        md = Assembler.make(bx, side)
-        piece = base.render(cut=False).move(center)
-        md.add_pieces([piece])
-        return md
+        maker = Assembler.make(bx, side)
+        piece = base.render(cut=False).moved(center)
+        maker._append_piece(piece)
+        return maker
 
     def make_sub(
         self,
@@ -125,14 +131,12 @@ class Assembler:
     ) -> Assembler:
         """Create a sub-assembler with defaults of the current assembler."""
         if base is None:
-            global_base = self.base
-        else:
-            global_base = base.move(self.origin)
+            base = self.base
         if side is None:
             side = self.side
         if cut_default is None:
             cut_default = self.cut_default
-        assembler = Assembler(global_base, side, cut_default)
+        assembler = Assembler(base, side, cut_default, parent=self)
         self.sub_assemblers.append(assembler)
         return assembler
 
@@ -163,118 +167,63 @@ class Assembler:
         self, element: Element3D, place: Place | Sequence[Place] = Place(), cut: bool | None = None
     ) -> None:
         places = [place] if isinstance(place, Assembler.Place) else place
-        pieces: list[Piece] = []
         resolved_cut = cut if cut is not None else self.cut_default
         for p in places:
             center = self.place_bounds(element.size, p).center
-            piece = element.render(resolved_cut).move(self._plane * Location(center.to_vector()))
-            pieces.append(piece)
-        self.add_pieces(pieces)
+            piece = element.render(resolved_cut)
+            self.add_piece(piece, center)
 
-    # type CenterType = Vec2 | Sequence[Vec2] | Vec3 | Sequence[Vec3] | None
-
-    # def stack_elements(
-    #     self,
-    #     elements: Sequence[Element3D],
-    #     centers: CenterType = None,
-    #     cut: bool | None = None,
-    # ) -> None:
-    #     z_offset = 0
-    #     stack_dz = 0
-    #     stack = Part()
-    #     for element in elements:
-    #         stack += (
-    #             Location((0, 0, z_offset + element.size.z / 2)) * element.render(cut=False).part
-    #         )
-    #         stack_dz += element.size.z
-    #     pieces: list[Piece] = []
-    #     for c in Assembler._nomarlize_centers(centers, stack_dz):
-    #         element_center = Location(c.to_vector())
-    #         pieces.append(Piece(self._plane * element_center * stack, self._resolve_cut(cut)))
-    #     self.add_pieces(pieces)
-
-    # def add_element(
-    #     self,
-    #     element: Element3D,
-    #     centers: CenterType = None,
-    #     cut: bool | None = None,
-    # ) -> None:
-    #     """Add a `element` to model positioned by the `centers` passed in."""
-    #     rendered = element.render(cut=self._resolve_cut(cut))
-    #     pieces: list[Piece] = []
-    #     for c in Assembler._nomarlize_centers(centers, element.size.z):
-    #         element_center = Location(c.to_vector())
-    #         pieces.append(self._plane * element_center * rendered)
-    #     self.add_pieces(pieces)
-
-    def add_pieces(self, pieces: list[Piece]) -> None:
-        """Add pieces to the model. Do not change the pieces location"""
-        self.pieces.extend(pieces)
-
-    def add_features(self, features: FeatureList, area: Rc, layout: Layout) -> None:
+    def add_features(
+        self, features: FeatureList, 
+        area: Rc | None = None,
+        layout: Layout | None = None,
+    ) -> None:
         """
         Render all `features` using the given `plate` and `layout` algorithm.
         """
-        pieces: list[Piece] = []
+        if area is None:
+            area = self.base.side_rc(self.side)
+        if layout is None:
+            layout = RowLayout()
         sections = layout.layout_features(features, area)
         for section in sections:
-            z = self.origin.z - self.plane_depth / 2
-            center = (section.origin - section.bounds.center).to_vec3(z)
             size = Vec3(section.bounds.size.x, section.bounds.size.y, self.plane_depth)
-            feature_plate = Bx(size, center)
-            feature_pieces = section.feature.render(feature_plate)
-            pieces.extend(feature_pieces)
-        self.add_pieces(pieces)
+            z = -self.plane_depth / 2
+            feature_plate = Bx(size, section.bounds.center.to_vec3(z))
+            for p in section.feature.render(feature_plate):
+                self.add_piece(p, section.origin.to_vec3(z))
 
-    # def form_place(self, size: Vec3, place: Dir2) -> Bx:
-    #     """Return Bx of `size` positioned on the base according to `place`."""
-    #     element_rc = Rc(size.to_2d())
-    #     center = self.base_bounds.place_center(element_rc, place).to_vec3(
-    #         z=size.z / 2 + self.origin.z
-    #     )
-    #     return Bx(size, center)
+    def add_piece(self, piece: Piece, position: Vec3 = Vec3(0, 0, 0)) -> None:
+        """Add pieces to the model at `position` relative to the assembler's plane."""
+        moved_piece = piece.moved(self._get_plane() * Location(position.to_vector()))
+        self._append_piece(moved_piece)
+
+    def _append_piece(self, piece: Piece) -> None:
+        """Append `piece` to the top-level assembler's list"""
+        if self.parent is None:
+            assert self._pieces is not None
+            self._pieces.append(piece)
+        else:
+            self.parent._append_piece(piece)
+
+    def _get_plane(self) -> Plane | Location:
+        if self.parent is None:
+            return self._plane
+        else:
+            return self.parent._get_plane() * self._plane
 
     def all_pieces(self) -> list[Piece]:
-        """
-        Return a list of all `Piece`s in the assembler including the ones in sub-assemblers
-        """
-        pieces: list[Piece] = []
-        pieces.extend(self.pieces)
-        for node in self.sub_assemblers:
-            pieces.extend(node.all_pieces())
-        return pieces
+        """All the pieces in the top and sub assemblers."""
+        if self._pieces is None:
+            assert self.parent is not None
+            return self.parent.all_pieces()
+        else:
+            return self._pieces
 
-    def render(self) -> Model.Rendering:
-        pieces = self.all_pieces()
+    def make_rendering(self) -> Model.Rendering:
         with BuildPart() as builder:
-            for p in pieces:
+            for p in self.all_pieces():
                 mode = Mode.SUBTRACT if p.cut else Mode.ADD
                 _ = insert(p.part, mode=mode)
         assert builder.part is not None
         return Model.Rendering(builder.part)
-
-    # @staticmethod
-    # def _nomarlize_centers(centers: CenterType, element_depth: Mm) -> Sequence[Vec3]:
-    #     if centers is None:
-    #         return [Vec3(0, 0, element_depth / 2)]
-    #     elif isinstance(centers, Vec2):
-    #         return [Vec3(centers.x, centers.y, element_depth / 2)]
-    #     elif isinstance(centers, Vec3):
-    #         return [centers]
-    #     elif isinstance(centers[0], Vec2):
-    #         return [Vec3(v.x, v.y, element_depth / 2) for v in centers]
-    #     else:
-    #         return centers
-
-    # @staticmethod
-    # def _assemble_pieces(pieces: list[Piece]) -> Part:
-    #     """
-    #     Add `pieces` with `to_part` to create the final result.
-    #     """
-    #     with BuildPart() as result:
-    #         for piece in pieces:
-    #             _ = insert(piece.part, mode=Mode.SUBTRACT if piece.cut else Mode.ADD)
-    #     if result.part is None:
-    #         raise ValueError("Part was not created")
-    #     # noinspection bad-return
-    #     return result.part

@@ -6,12 +6,27 @@ See Also:
 """
 
 from abc import ABC, abstractmethod
-from typing import override, Sequence
 from functools import cached_property
 from importlib.resources import as_file, files
 from pathlib import Path
+from typing import Sequence, override
 
-from build123d import Cone, Cylinder, Location, Part, Sketch, extrude, offset, Mesher, TopoDS_Solid, Unit, Vector, import_brep, Shape, CenterOf
+from build123d import (
+    CenterOf,
+    Cone,
+    Cylinder,
+    Location,
+    Mesher,
+    Part,
+    Shape,
+    Sketch,
+    TopoDS_Solid,
+    Unit,
+    Vector,
+    extrude,
+    import_brep,
+    offset,
+)
 
 from .corners import Corners
 from .elements_2d import Element2D, RectangleElement, RingElement
@@ -160,9 +175,9 @@ class StackElement(Element3D):
         return Piece(stack, cut=cut)
 
 
-class ImportElement(Element3D): 
+class ImportElement(Element3D):
     """An block formed from a BREP file or an STL file.
-    
+
     BREP files are imported rapidly, while STL files are converted to a BREP model using the `Mesher` library which may take some time.
     STL files can be converted to a BREP model using the `import_stl.py` script.
     """
@@ -245,26 +260,27 @@ class ImportElement(Element3D):
     def render(self, cut: bool = False) -> Piece:
         return Piece(self.shape.solid(), cut)
 
+
 # def sketch_ring(element: Element2D, wall_thickness: Mm) -> Sketch:
 #     """
 #     Make a 2d ring from the element shape.
-# 
+#
 #     Args:
 #         element (Element2D): The shape of the ring.
 #         wall_thickness (Mm): The thickness of the ring wall.
-# 
+#
 #     Returns:
 #         Part: The extruded ring of the basic shape.
 #     """
 #     inner = element.sketch()
 #     outer = offset(inner, wall_thickness)
 #     return Sketch(outer - inner)
-# 
-# 
+#
+#
 # def extrude_tube(element: Element2D, wall_thickness: Mm, amount: Mm) -> Part:
 #     """
 #     Make a 3d tube from the element shape by outsetting the shape and extruding it along the Z axis.
-# 
+#
 #     Args:
 #         element (Element2D): The shape of the tube.
 #         wall_thickness (Mm): The thickness of the tube wall.
@@ -274,12 +290,12 @@ class ImportElement(Element3D):
 #     """
 #     sketch = sketch_ring(element, wall_thickness)
 #     return Location((0, 0, -amount / 2)) * extrude(sketch, amount)
-# 
-# 
+#
+#
 # def extrude_sketch(sketch: Sketch, amount: Mm) -> Part:
 #     """
 #     Extrude a sketch along the Z axis.
-# 
+#
 #     Args:
 #         sketch (Sketch): The sketch to extrude.
 #         amount (Mm): The amount to extrude the sketch in the Z direction.
@@ -287,16 +303,16 @@ class ImportElement(Element3D):
 #         Part: The extruded sketch.
 #     """
 #     return Location((0, 0, -amount / 2)) * extrude(sketch, amount)
-# 
-# 
+#
+#
 # def make_plate(size: Vec3, holes: HolePattern | None = None) -> Part:
 #     """
 #     Make a plate of the given size and fill pattern.
-# 
+#
 #     Args:
 #         size (VectorLike): The size of the plate.
 #         holes (HolePattern, optional): The fill pattern of the plate. Defaults to SOLID.
-# 
+#
 #     Returns:
 #         Part: The extruded plate.
 #     """

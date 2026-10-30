@@ -3,18 +3,18 @@ from importlib.resources import as_file, files
 from pathlib import Path
 from typing import override
 
+from ..core.assembler import Assembler
 from ..core.elements_3d import BoxElement, ImportElement
 from ..core.feature import Feature
 from ..core.geometry import Bx
 from ..core.piece import Piece
-from ..core.assembler import Assembler
 
 
 class ImportFeature(Feature):
-    """ A Feature formed using a STL or BREP file
-    """
+    """A Feature formed using a STL or BREP file"""
+
     ASSET_PATH: str = "mini_rack_printables.assets"
-    
+
     cutout: bool = True
     element: ImportElement
 
@@ -60,4 +60,3 @@ class ImportFeature(Feature):
             maker.place_element(self.element)
 
         return maker.all_pieces()
-

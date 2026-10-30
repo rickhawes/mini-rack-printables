@@ -2,10 +2,10 @@ from mini_rack_printables import (
     BoxHolder,
     CornerHolder,
     FeatureXRayModel,
+    ModelLogger,
     PuckHolder,
     RectangleElement,
     Vec3,
-    ModelLogger,
 )
 
 
@@ -36,6 +36,7 @@ def test_no_cutout(viewer_logger: ModelLogger) -> None:
     compound = xray.render()
     rendering = xray.render()
     viewer_logger.log(rendering.part)
+
 
 def test_puck_holder(viewer_logger: ModelLogger) -> None:
     holder = PuckHolder(device_size=Vec3(80, 20, 80), device_rounding=10)

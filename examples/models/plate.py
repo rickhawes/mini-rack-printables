@@ -1,5 +1,13 @@
-from mini_rack_printables import Assembler, BoxElement, Model, PrismElement, SlotElement, Vec2, Vec3
-from mini_rack_printables.core.elements_3d import CylinderElement
+from mini_rack_printables import (
+    Assembler,
+    BoxElement,
+    CylinderElement,
+    Model,
+    PrismElement,
+    SlotElement,
+    Vec2,
+    Vec3,
+)
 
 
 class PlateWithHoles(Model):
@@ -11,13 +19,15 @@ class PlateWithHoles(Model):
         stand = CylinderElement(5, 10)
 
         # Assembler is used to assemble this model
-        maker = Assembler.make_with_element(base)  # made with top side as the plane
-        maker.add_element(stand, self.stand_centers())
+        maker = Assembler.make_with_element(base)
+        cutout_maker = maker.make_cutout_sub()
+        # made with top side as the plane
+        maker.place_element(stand, [Assembler.Place(offset=p) for p in self.stand_centers()])
 
         # place the holes on the base using the cut mode
-        maker.add_element(hole, self.hole_centers(), cut=True)
+        cutout_maker.place_element(hole, [Assembler.Place(offset=p) for p in self.hole_centers()])
 
-        return maker.render()
+        return maker.make_rendering()
 
     def hole_centers(self) -> list[Vec2]:
         dx = self.size.x / 2 - 10

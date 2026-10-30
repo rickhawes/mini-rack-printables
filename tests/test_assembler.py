@@ -1,6 +1,19 @@
+from mini_rack_printables.core.piece import Piece
+from typing import override
 from build123d import Vector
 
-from mini_rack_printables import Assembler, AxDir3, BoxElement, Bx, Dir2, ModelLogger, Rc, Vec3
+from mini_rack_printables import (
+    Assembler,
+    AxDir3,
+    BoxElement,
+    Bx,
+    Dir2,
+    Feature,
+    ModelLogger,
+    Rc,
+    Vec2,
+    Vec3,
+)
 
 
 def test_make() -> None:
@@ -66,16 +79,41 @@ def test_assemble_two_boxes(viewer_logger: ModelLogger) -> None:
     # place the nodes on the base using a assembler
     m1 = Assembler.make_with_element(base, side=AxDir3.TOP)
     place_boxes(m1)
-    viewer_logger.log(m1.render().part)
+    viewer_logger.log(m1.make_rendering().part)
 
     # different side and orientation, but the same placement code works as expected.
     # notice that the placed nodes have an orientation that matches the side's orientation
     m2 = Assembler.make_with_element(base, side=AxDir3.Z_MINUS)
     place_boxes(m2)
-    viewer_logger.log(m2.render().part)
+    viewer_logger.log(m2.make_rendering().part)
 
     # different side and orientation, but the same placement code works as expected.
     # notice that the placed nodes have an orientation that matches the side's orientation
     m3 = Assembler.make_with_element(base, side=AxDir3.Y_MINUS)
     place_boxes(m3)
-    viewer_logger.log(m3.render().part)
+    viewer_logger.log(m3.make_rendering().part)
+
+
+def test_add_features(viewer_logger: ModelLogger) -> None:
+    class TestFeature(Feature):
+        @override
+        def desired_size(self) -> Feature.DesiredSize:
+            return Feature.DesiredSize(Vec2(10, 10))
+            
+        @override
+        def render(self, plate: Bx) -> list[Piece]:
+            maker = Assembler.make(plate)
+            maker_cutout = maker.make_cutout_sub()
+            maker_cutout.place_element(BoxElement(10, 10, 10))
+            return maker.all_pieces()
+            
+    base = BoxElement(50, 50, 10)
+    m1 = Assembler.make_with_element(base, side=AxDir3.TOP)
+    m1.add_features([[TestFeature()]])
+    r1 = m1.make_rendering()
+    # assert m1._pieces is not None and len(m1._pieces) == 2
+    # assert m1.origin == Vec3(0, 0, 10)
+    # assert m1._pieces[0].part.position == Vector(0, 0, 5)
+    # assert m1._pieces[1].part.position == Vector(0, 0, 5)
+    # assert r1.part.position == Vector(0, 0, 5)
+    viewer_logger.log(r1.part)

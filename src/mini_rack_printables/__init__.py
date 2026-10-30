@@ -21,7 +21,9 @@ from .core.elements_2d import (
 from .core.elements_3d import (
     BoxElement,
     ConeElement,
+    CylinderElement,
     Element3D,
+    ImportElement,
     PrismElement,
 )
 from .core.feature import Feature, FeatureList, FeatureXRayModel, Rib
@@ -62,6 +64,7 @@ __all__ = [
     "Corners",
     "Cutout",
     "CutoutElement",
+    "CylinderElement",
     "Degree",
     "Dir2",
     "Element2D",
@@ -75,6 +78,7 @@ __all__ = [
     "HolePattern",
     "GridLayout",
     "HexFill",
+    "ImportElement",
     "ImportFeature",
     "InsetCorners",
     "JetKVM",
