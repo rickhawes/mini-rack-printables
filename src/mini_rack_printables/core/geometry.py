@@ -829,6 +829,26 @@ class Bx:
         )
 
     @classmethod
+    def from_side_rc(
+        cls,
+        side: AxDir3,
+        rc: Rc,
+        depth: Mm = 0,
+        offset: Mm = 0,
+    ) -> Bx:
+        """Create a from a side, rc, and depth."""
+        center = offset
+        match side:
+            case AxDir3.X_MINUS | AxDir3.X_PLUS:
+                return Bx(depth, rc.size.x, rc.size.y, center, rc.center.x, rc.center.y)
+            case AxDir3.Y_MINUS | AxDir3.Y_PLUS:
+                return Bx(rc.size.x, depth, rc.size.y, rc.center.x, center, rc.center.y)
+            case AxDir3.Z_MINUS | AxDir3.Z_PLUS:
+                return Bx(rc.size.x, rc.size.y, depth, rc.center.x, rc.center.y, center)
+            case _:
+                raise ValueError("unexpected side")
+
+    @classmethod
     def union(cls, r1: Bx, r2: Bx) -> Self:
         """Form the box that bound two boxes."""
         return cls.from_edges(

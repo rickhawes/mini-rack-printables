@@ -9,6 +9,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import override
 
+from .assembler import Assembler
 from .feature import Feature, FeatureList
 from .geometry import Dir2, Mm, Rc, Vec2
 from .print_dims import E
@@ -38,6 +39,15 @@ class Layout(ABC):
             features (Feature): The features to layout
             area (Rc): The area to place the features on
         """
+
+    def render_features(self, features: FeatureList, area: Rc, maker: Assembler) -> None:
+        """
+        Render all `features` using the given `plate` and `layout` algorithm.
+        """
+        sections = self.layout_features(features, area)
+        for section in sections:
+            section_mkr = maker.make_section_sub(section.bounds)
+            section.feature.render(section_mkr)
 
 
 @dataclass(frozen=True)

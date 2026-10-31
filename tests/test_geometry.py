@@ -194,3 +194,12 @@ def test_bx_side_bx() -> None:
     assert bx.side_bx(AxDir3.Y_PLUS) == Bx((4, 0, 6), (1, 5, 1))
     assert bx.side_bx(AxDir3.Z_MINUS) == Bx((4, 8, 0), (1, 1, -2))
     assert bx.side_bx(AxDir3.Z_PLUS) == Bx((4, 8, 0), (1, 1, 4))
+
+
+def test_bx_from_side_rc() -> None:
+    bx = Bx(Vec3(4, 8, 6), Vec3(1, 1, 1))
+    for side in [AxDir3.Z_PLUS, AxDir3.Z_MINUS, AxDir3.Y_PLUS, AxDir3.X_MINUS]:
+        side_rc = bx.side_rc(side)
+        side_depth = bx.side_depth(side)
+        bx_from = Bx.from_side_rc(side, side_rc, side_depth, 1)
+        assert bx_from == bx

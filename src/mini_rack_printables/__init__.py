@@ -31,6 +31,7 @@ from .core.geometry import Ax2, Ax3, AxDir, AxDir2, AxDir3, Bx, Degree, Dir2, Mm
 from .core.hole_patterns import CircleFill, HexFill, HolePattern, SquareFill
 from .core.layouts import GridLayout, Layout, MeasuredRowsColumns, RowLayout
 from .core.model import Model, ModelLogger
+from .core.piece import Piece
 from .core.row_column_collection import RowColumnCollection
 from .models.box_holder import BoxHolder
 from .models.corner_holder import CornerHolder
@@ -83,6 +84,7 @@ __all__ = [
     "InsetCorners",
     "JetKVM",
     "Keystone",
+    "Piece",
     "layout_rack_screw_holes",
     "MeasuredRowsColumns",
     "Mm",
