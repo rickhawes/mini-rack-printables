@@ -19,17 +19,17 @@ from mini_rack_printables import Keystone, faceplate, FaceplateStyle
 #
 
 # A 1u faceplace with ribs and one row with 3 network keystone cutouts. 
-plate = faceplate(
+model = faceplate(
     rack_units=1.0, 
     style=FaceplateSytle(rib=FaceplateSytle.STD_RIB),
     features=[[Keystone()] * 3]
 )
 
-# Show the plate in the OCP viewer
-plate.show()
+# Show the model in the OCP viewer
+model.show()
 
-# Export the plate as a STEP file as well
-plate.export_step("outputs/faceplate_with_keystone.step")
+# Export the model as a STEP file as well
+model.export_step("outputs/faceplate_with_keystone.step")
 ```
 
 ## Directory Structure

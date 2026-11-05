@@ -1,8 +1,6 @@
-from mini_rack_printables import faceplate
+"""This example demonstrates a blank faceplate with a rib."""
 
-#
-# This example demonstrates a blank faceplate with a rib.
-#
+from mini_rack_printables import faceplate
 
 plate = faceplate(rack_units=1.0)
 

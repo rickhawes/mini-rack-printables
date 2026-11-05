@@ -1,18 +1,14 @@
 """
-Classes for specifying features of a `Model`. Features may be related to specific devices or general concepts like cutouts.
+Classes for specifying features of a `Model`. Features may be related to specific
+devices or general concepts like cutouts.
 """
 
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import override
-
-from build123d import Color, Compound, Part, Solid
 
 from .assembler import Assembler
-from .geometry import AxDir3, Bx, Mm, Vec2, Vec3
-from .piece import Piece
-from .rendering import Rendering
+from .geometry import Mm, Vec2
 
 
 class Feature(ABC):
@@ -24,7 +20,8 @@ class Feature(ABC):
     class DesiredSize:
         """
         Represents the desired size of a `ModelPart` on a plate.
-        Contains the minimum size and a flag if the feature wants more space than the minimum size.
+        Contains the minimum size and a flag if the feature wants more space than the
+        minimum size.
         """
 
         min_size: Vec2
@@ -41,7 +38,8 @@ class Feature(ABC):
         The part will always get at least the minimum size of the plate.
 
         Returns:
-            DesiredSize: The minimum size and the expand flag of the plate for rendering.
+            DesiredSize: The minimum size and the expand flag of the plate for
+                rendering.
         """
 
     @abstractmethod

@@ -8,26 +8,13 @@ See Also:
     `Assembler` - to place blocks on top of each other
 """
 
+import functools
+import importlib.resources
+import pathlib
 from abc import ABC, abstractmethod
-from functools import cached_property
-from importlib.resources import as_file, files
-from pathlib import Path
 from typing import Sequence, override
 
-from build123d import (
-    CenterOf,
-    Cone,
-    Cylinder,
-    Location,
-    Mesher,
-    Part,
-    Shape,
-    TopoDS_Solid,
-    Unit,
-    Vector,
-    extrude,
-    import_brep,
-)
+import build123d as bd
 
 from .corners import Corners
 from .figures import Figure, RectangleFigure, RingFigure
@@ -82,8 +69,8 @@ class ExtrudedBlock(Block):
 
     @override
     def render(self, cut: bool = False) -> Piece:
-        extrusion = extrude(self.figure.sketch(), self.amount, taper=self.taper)
-        part = Location((0, 0, -self.amount / 2)) * extrusion
+        extrusion = bd.extrude(self.figure.sketch(), self.amount, taper=self.taper)
+        part = bd.Location((0, 0, -self.amount / 2)) * extrusion
         return Piece(part, cut)
 
 
@@ -128,7 +115,7 @@ class ConeBlock(Block):
 
     @override
     def render(self, cut: bool = False) -> Piece:
-        part = Location((0, 0, self.height / 2)) * Cone(
+        part = bd.Location((0, 0, self.height / 2)) * bd.Cone(
             self.base_radius, self.top_radius, self.height
         )
         return Piece(part, cut)
@@ -155,7 +142,7 @@ class CylinderBlock(Block):
 
     @override
     def render(self, cut: bool = False) -> Piece:
-        return Piece(Cylinder(self.radius, self.height), cut)
+        return Piece(bd.Cylinder(self.radius, self.height), cut)
 
 
 class PlateBlock(ExtrudedBlock):
@@ -179,24 +166,26 @@ class PlateBlock(ExtrudedBlock):
 class ImportBlock(Block):
     """An block formed from a BREP file or an STL file.
 
-    BREP files are imported rapidly, while STL files are converted to a BREP model using the `Mesher` library which may take some time.
+    BREP files are imported rapidly, while STL files are converted to a
+    BREP model using the `Mesher` library which may take some time.
     STL files can be converted to a BREP model using the `import_stl.py` script.
     """
 
     BREP_SUFFIX: str = ".brep"
     STL_SUFFIX: str = ".stl"
 
-    file: Path | None = None
+    file: pathlib.Path | None = None
     asset: str | None = None
     asset_folder: str | None = None
 
     def __init__(
         self,
-        file: Path | None = None,
-        asset: Path | None = None,
+        file: pathlib.Path | None = None,
+        asset: pathlib.Path | None = None,
     ) -> None:
         """
-        Initialize the ImportBlock with the given path or asset name and optional parameters.
+        Initialize the ImportBlock with the given path or asset
+        name and optional parameters.
 
         Args:
             file (Path): The path to the BREP or STL file.
@@ -205,7 +194,7 @@ class ImportBlock(Block):
         if file is not None:
             if not file.exists():
                 raise ValueError(f"Path does not exist: {file}")
-            if not (file.suffix == self.BREP_SUFFIX or file.suffix == self.STL_SUFFIX):
+            if not (file.suffix in [self.BREP_SUFFIX, self.STL_SUFFIX]):
                 raise ValueError(f"Expected BREP or STL file, got {file.suffix}")
             self.file = file
         elif asset is not None:
@@ -216,45 +205,50 @@ class ImportBlock(Block):
         else:
             raise ValueError("Either path or asset must be provided")
 
-    @cached_property
-    def shape(self) -> Shape[TopoDS_Solid]:
+    @functools.cached_property
+    def shape(self) -> bd.Shape[bd.TopoDS_Solid]:
         """
         Returns the shape of the part. Cached to avoid re-importing.
         """
 
-        def convert_stl(path: Path) -> Shape[TopoDS_Solid]:
+        def convert_stl(path: pathlib.Path) -> bd.Shape[bd.TopoDS_Solid]:
             # Import the STL file and center it around the bounding box
-            importer = Mesher(unit=Unit.MM)
+            importer = bd.Mesher(unit=bd.Unit.MM)
             full_mesh = importer.read(path)[0]
-            center = Shape.combined_center([full_mesh], center_of=CenterOf.BOUNDING_BOX)
-            centered_mesh = full_mesh.move(Location((-center.X, -center.Y, -center.Z)))
+            center = bd.Shape.combined_center(
+                [full_mesh], center_of=bd.CenterOf.BOUNDING_BOX
+            )
+            centered_mesh = full_mesh.move(
+                bd.Location((-center.X, -center.Y, -center.Z))
+            )
             return centered_mesh
 
-        def import_path(path: Path) -> Shape[TopoDS_Solid]:
+        def import_path(path: bd.Path) -> bd.Shape[bd.TopoDS_Solid]:
             match path.suffix:
                 case self.STL_SUFFIX:
                     return convert_stl(path)
                 case self.BREP_SUFFIX:
-                    return import_brep(path)
+                    return bd.import_brep(path)
                 case _:
                     raise ValueError(f"Unexpected file suffix: {path.suffix}")
 
         if self.asset_folder is not None and self.asset is not None:
             # assets may be zipped when stored, so extract to a temporary directory
-            with as_file(files(self.asset_folder) / self.asset) as asset_path:
+            resource_path = importlib.resources.files(self.asset_folder) / self.asset
+            with importlib.resources.as_file(resource_path) as asset_path:
                 return import_path(asset_path)
         elif self.file is not None:
             return import_path(self.file)
         else:
             raise ValueError("No asset or path specified")
 
-    @cached_property
+    @functools.cached_property
     def size(self) -> Vec3:
         """
         Returns the size of the import. Cached to avoid recomputing.
         """
         bbox = self.shape.bounding_box()
-        assert bbox.center() == Vector(0, 0, 0), (
+        assert bbox.center() == bd.Vector(0, 0, 0), (
             f"Imported part is not centered: {bbox.center()}"
         )
         return Vec3(bbox.size.X, bbox.size.Y, bbox.size.Z)
@@ -284,9 +278,9 @@ class StackBlock(Block):
     def render(self, cut: bool = False) -> Piece:
         size = self.size
         stack_dz = -size.z / 2
-        stack = Part()
+        stack = bd.Part()
         for blk in self.blocks:
-            loc = Location((0, 0, stack_dz + blk.size.z / 2))
+            loc = bd.Location((0, 0, stack_dz + blk.size.z / 2))
             stack += loc * blk.render(cut=False).part
             stack_dz += blk.size.z
         return Piece(stack, cut=cut)

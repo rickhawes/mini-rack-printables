@@ -1,3 +1,8 @@
+"""
+This example demonstrates a faceplate with a RowLayout containing 3 cutouts.
+Each cutout has a different alignment and padding and shift amount.
+"""
+
 from mini_rack_printables import (
     CircleFigure,
     Cutout,
@@ -8,22 +13,17 @@ from mini_rack_printables import (
     SlotFigure,
     faceplate,
 )
-from mini_rack_printables.models.faceplate import FaceplateStyle
 
-#
-# This example demonstrates a faceplate with a RowLayout containing 3 cutouts.
-# Each cutout has a different alignment and padding and shift amount.
-#
-
-# Cutout
-partLeft = Cutout(CircleFigure(5.0))
-partCenter = Cutout(RectangleFigure(10.0, 5.0))
-partRight = Cutout(SlotFigure(10.0, 5.0), rib=FaceplateStyle.STD_RIB)
-
-# A basic faceplate with row layout
+# A faceplate in with features a declarative style.
 plate = faceplate(
     rack_units=1.0,
-    features=[[partLeft, partCenter, partRight]],
+    features=[
+        [
+            Cutout(CircleFigure(5.0)),
+            Cutout(RectangleFigure(10.0, 5.0)),
+            Cutout(SlotFigure(10.0, 5.0), rib=FaceplateStyle.STD_RIB),
+        ]
+    ],
     layout=RowLayout(place=Dir2.SIDE_BOTTOM),
 )
 

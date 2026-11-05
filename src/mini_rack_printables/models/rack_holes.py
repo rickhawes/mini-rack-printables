@@ -5,7 +5,7 @@ Functions to draw and layout shapes for the common holes and patterns.
 import math
 from typing import Sequence
 
-from build123d import Location, Sketch
+import build123d as bd
 
 from mini_rack_printables.models.rack_dims import (
     RackDims,
@@ -123,11 +123,11 @@ class RackHolePattern(HolePattern):
     def inset(self) -> Mm:
         return 0
 
-    def locations(self, size: Vec2) -> Sequence[Location]:
+    def locations(self, size: Vec2) -> Sequence[bd.Location]:
         locs = layout_rack_screw_holes(
             self.rack_units, self.middle_holes, self.half_height_bottom
         )
-        return [Location(l.to_vector()) for l in locs]
+        return [bd.Location(l.to_vector()) for l in locs]
 
-    def sketch(self) -> Sketch:
+    def sketch(self) -> bd.Sketch:
         return RackHoleFigure().sketch()

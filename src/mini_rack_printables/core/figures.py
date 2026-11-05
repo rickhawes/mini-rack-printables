@@ -1,5 +1,6 @@
 """
-2d figures for models. Figures are the primitives that make up models and parts. They are built to be easily combined and rendered.
+2d figures for models. Figures are the primitives that make up models and parts.
+They are built to be easily combined and rendered.
 """
 
 import math
@@ -7,23 +8,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Sequence, override
 
-from build123d import (
-    BuildLine,
-    BuildSketch,
-    Circle,
-    Face,
-    Line,
-    Location,
-    Mode,
-    Polyline,
-    Rectangle,
-    RectangleRounded,
-    Sketch,
-    SlotOverall,
-    Trapezoid,
-    make_face,
-    offset,
-)
+import build123d as bd
 
 from .corners import Corners, RoundedCorners, SquareCorners
 from .geometry import Ax2, AxDir, Degree, Mm, Rc, Vec2
@@ -37,6 +22,8 @@ from .print_dims import E
 
 @dataclass(frozen=True)
 class Op2:
+    """Wrap the figure in this class to specify how to combine figures."""
+
     figure: Figure
     """Figure to combine"""
     pos: Vec2 = Vec2(0, 0)
@@ -46,11 +33,13 @@ class Op2:
     cut: bool = False
     """cut (i.e. subtract) the figure"""
 
-    def to_location(self) -> Location:
-        return Location((self.pos.y, self.pos.y), angle=self.angle)
+    def to_location(self) -> bd.Location:
+        """Covert `pos` to `Location`."""
+        return bd.Location((self.pos.y, self.pos.y), angle=self.angle)
 
-    def to_mode(self) -> Mode:
-        return Mode.SUBTRACT if self.cut else Mode.ADD
+    def to_mode(self) -> bd.Mode:
+        """Convert `cut` to the `Mode`."""
+        return bd.Mode.SUBTRACT if self.cut else bd.Mode.ADD
 
     def to_bounds(self) -> Rc:
         """Return the bounding rectangle of the shape with the given `op`"""
@@ -71,14 +60,18 @@ class Figure(ABC):
         """Returns the size of the shape in 2d without any rotation"""
 
     @abstractmethod
-    def sketch(self) -> Sketch:
-        """Draw the outline of the shape according to the `op` ignoring the `op.block` field."""
+    def sketch(self) -> bd.Sketch:
+        """Draw the outline of the shape according to the `op` ignoring
+        the `op.block` field."""
 
     def calc_interior(self, inset: Vec2) -> Rc:
-        """Calculate an area that is in the interior of this figure with the specified inset.
+        """Calculate an area that is in the interior of this figure
+        with the specified inset.
 
-        Used to optimize hole fills. Return an empty rect if not easily calculated.
+        Used to optimize hole fills. Return an empty rect if not easily
+        calculated.
         """
+        _ = inset
         return Rc(0, 0)
 
 
@@ -108,8 +101,8 @@ class CircleFigure(Figure):
         return Vec2(2 * self.radius, 2 * self.radius)
 
     @override
-    def sketch(self) -> Sketch:
-        sk = Circle(self.radius)
+    def sketch(self) -> bd.Sketch:
+        sk = bd.Circle(self.radius)
         if self.holes is not None:
             sk = fill_holes(sk, self.size, self.holes)
         return sk
@@ -153,35 +146,35 @@ class RectangleFigure(Figure):
         return Vec2(self.width, self.height)
 
     @override
-    def sketch(self) -> Sketch:
-        def complex_corners() -> Sketch:
+    def sketch(self) -> bd.Sketch:
+        def complex_corners() -> bd.Sketch:
             cs = self.corners.size
             cw, ch = cs.x, cs.y
             dx, dy = (self.width / 2) - cw, (self.height / 2) - ch
-            with BuildSketch() as sk:
-                with BuildLine():
+            with bd.BuildSketch() as sk:
+                with bd.BuildLine():
                     # side lines
-                    l_top = Line((-dx, dy + ch), (dx, dy + ch))
-                    l_right = Line((dx + cw, dy), (dx + cw, -dy))
-                    l_bottom = Line((dx, -dy - ch), (-dx, -dy - ch))
-                    l_left = Line((-dx - cw, -dy), (-dx - cw, dy))
+                    l_top = bd.Line((-dx, dy + ch), (dx, dy + ch))
+                    l_right = bd.Line((dx + cw, dy), (dx + cw, -dy))
+                    l_bottom = bd.Line((dx, -dy - ch), (-dx, -dy - ch))
+                    l_left = bd.Line((-dx - cw, -dy), (-dx - cw, dy))
                     # corners
                     self.corners.draw(l_top @ 1, l_right @ 0, Corners.TOP_RIGHT)
                     self.corners.draw(l_right @ 1, l_bottom @ 0, Corners.BOTTOM_RIGHT)
                     self.corners.draw(l_bottom @ 1, l_left @ 0, Corners.BOTTOM_LEFT)
                     self.corners.draw(l_left @ 1, l_top @ 0, Corners.TOP_LEFT)
-                _ = make_face()
-            return Sketch(sk.sketch)
+                _ = bd.make_face()
+            return bd.Sketch(sk.sketch)
 
         # Optimize the square and rounded corners cases
-        def solid_fill() -> Sketch:
+        def solid_fill() -> bd.Sketch:
             match self.corners:
                 case SquareCorners():
-                    return Rectangle(self.width, self.height)
+                    return bd.Rectangle(self.width, self.height)
                 case RoundedCorners() if self.corners.radius == 0:
-                    return Rectangle(self.width, self.height)
+                    return bd.Rectangle(self.width, self.height)
                 case RoundedCorners():
-                    return RectangleRounded(
+                    return bd.RectangleRounded(
                         self.width, self.height, self.corners.radius
                     )
                 case _:
@@ -219,8 +212,8 @@ class SlotFigure(Figure):
         return Vec2(self.width, self.height)
 
     @override
-    def sketch(self) -> Sketch:
-        sk = SlotOverall(self.width, self.height)
+    def sketch(self) -> bd.Sketch:
+        sk = bd.SlotOverall(self.width, self.height)
         if self.holes is not None:
             sk = fill_holes(sk, self.size, self.holes)
         return sk
@@ -242,7 +235,6 @@ class TrapezoidFigure(Figure):
         height: Mm,
         angle1: float | None = 90,
         angle2: float | None = None,
-        minor_width: Mm | None = None,
         holes: HolePattern | None = None,
     ) -> None:
         """
@@ -253,36 +245,14 @@ class TrapezoidFigure(Figure):
             height (Mm): The height of the trapezoid.
             angle1 (Mm): The interior angle of the first side. Defaults to 90.
             angle2 (Mm): The interior angle of the second side. Defaults to angle1.
-            minor_width (Mm): The width of the minor side. Defaults to None.
         """
-        if angle1 is not None and angle2 is not None and minor_width is not None:
-            raise ValueError("angle1, angle2, and minor_width cannot all be set")
-        if angle1 is None and angle2 is None and minor_width is None:
-            raise ValueError("angle1, angle2, and minor_width cannot all be None")
-
-        if minor_width is not None:
-            # Calculate angle1 or angle2 based on minor_width
-            if angle1 is not None and angle2 is None:
-                reduction_left = (
-                    0 if angle1 == 90 else height / math.tan(math.radians(angle1))
-                )
-                angle2 = math.degrees(
-                    math.atan(height / (width - minor_width - reduction_left))
-                )
-            elif angle1 is None and angle2 is not None:
-                reduction_right = (
-                    0 if angle2 == 90 else height / math.tan(math.radians(angle2))
-                )
-                angle1 = math.degrees(
-                    math.atan(height / (width - minor_width - reduction_right))
-                )
-            else:
-                angle1 = angle2 = math.degrees(
-                    math.atan(2 * height / (width - minor_width))
-                )
-        if angle2 is not None and angle1 is None:
+        if angle1 is None and angle2 is None:
+            raise ValueError("either angle1 or angle2 must be specified.")
+        if angle1 is None and angle2 is not None:
             angle1 = angle2
-        assert angle1 is not None, "angle1 could not be calculated"
+        elif angle2 is None and angle1 is not None:
+            angle2 = angle1
+        assert angle1 is not None and angle2 is not None
 
         self.width = width
         self.height = height
@@ -296,8 +266,8 @@ class TrapezoidFigure(Figure):
         return Vec2(self.width, self.height)
 
     @override
-    def sketch(self) -> Sketch:
-        sk = Trapezoid(
+    def sketch(self) -> bd.Sketch:
+        sk = bd.Trapezoid(
             self.width,
             self.height,
             left_side_angle=self.angle1,
@@ -306,6 +276,33 @@ class TrapezoidFigure(Figure):
         if self.holes is not None:
             sk = fill_holes(sk, self.size, self.holes)
         return sk
+
+    @staticmethod
+    def angle_from_widths(
+        major_width: Mm,
+        minor_width: Mm,
+        height: Mm,
+        angle1: Degree | None = None,
+        angle2: Degree | None = None,
+    ) -> Degree:
+        """Calculate angle given widths and height and the other angle"""
+
+        # Calculate angle1 or angle2 based on minor_width
+        if angle1 is not None and angle2 is None:
+            reduction_left = (
+                0 if angle1 == 90 else height / math.tan(math.radians(angle1))
+            )
+            return math.degrees(
+                math.atan(height / (major_width - minor_width - reduction_left))
+            )
+        if angle1 is None and angle2 is not None:
+            reduction_right = (
+                0 if angle2 == 90 else height / math.tan(math.radians(angle2))
+            )
+            return math.degrees(
+                math.atan(height / (major_width - minor_width - reduction_right))
+            )
+        return math.degrees(math.atan(2 * height / (major_width - minor_width)))
 
 
 class TriangleFigure(Figure):
@@ -339,11 +336,11 @@ class TriangleFigure(Figure):
         return Vec2(max(self.width, abs(self.tip_ratio * self.width / 2)), self.height)
 
     @override
-    def sketch(self) -> Sketch:
+    def sketch(self) -> bd.Sketch:
         dx, dy = self.width / 2, self.height / 2
         tip_x = self.tip_ratio * dx
         pts = [(-dx, -dy), (tip_x, dy), (dx, -dy)]
-        sk = make_face(Polyline(pts, close=True))
+        sk = bd.make_face(bd.Polyline(pts, close=True))
         if self.holes is not None:
             sk = fill_holes(sk, self.size, self.holes)
         return sk
@@ -357,6 +354,8 @@ class TriangleFigure(Figure):
 
 
 class CombinedFigure(Figure):
+    """Combine a set of figures into another figure."""
+
     ops: Sequence[Op2]
 
     def __init__(self, ops: Sequence[Op2]) -> None:
@@ -368,24 +367,24 @@ class CombinedFigure(Figure):
         return Rc.union(*(op.to_bounds() for op in self.ops)).size
 
     @override
-    def sketch(self) -> Sketch:
-        # TODO: Reduce fusing operations by combining runs of single modes together first
-        sk = Sketch()
+    def sketch(self) -> bd.Sketch:
+        sk = bd.Sketch()
         for op in self.ops:
             if op.cut:
-                sk = Sketch(
+                sk = bd.Sketch(
                     sk
                     - (
-                        Location(op.pos.to_vector(), angle=op.angle)
+                        bd.Location(op.pos.to_vector(), angle=op.angle)
                         * op.figure.sketch()
                     )
                 )
             else:
-                sk = Sketch(
+                sk = bd.Sketch(
                     sk
-                    + Location(op.pos.to_vector(), angle=op.angle) * op.figure.sketch()
+                    + bd.Location(op.pos.to_vector(), angle=op.angle)
+                    * op.figure.sketch()
                 )
-        return Sketch(sk)
+        return bd.Sketch(sk)
 
 
 class AlignedFigure(CombinedFigure):
@@ -443,9 +442,9 @@ class OutsetFigure(Figure):
         )
 
     @override
-    def sketch(self) -> Sketch:
+    def sketch(self) -> bd.Sketch:
         base = self.base.sketch()
-        return Sketch(offset(base, self.outset))
+        return bd.Sketch(bd.offset(base, self.outset))
 
 
 class RotatedFigure(Figure):
@@ -468,7 +467,7 @@ class RotatedFigure(Figure):
         return self._op2.to_bounds().size
 
     @override
-    def sketch(self) -> Sketch:
+    def sketch(self) -> bd.Sketch:
         return self._op2.to_location() * self.base.sketch()
 
 

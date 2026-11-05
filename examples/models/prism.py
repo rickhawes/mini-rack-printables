@@ -1,11 +1,8 @@
-from mini_rack_printables import Assembler, BoxBlock, Rendering
+"""Make  a box with an assembler."""
 
+from mini_rack_printables import Assembler, BoxBlock
 
-def render() -> Rendering:
-    bx = BoxBlock(20, 20, 10)
-    asm = Assembler.make_with_block(bx)
-    return asm.make_rendering()
-
-
-rendering = render()
+bx = BoxBlock(20, 20, 10)
+asm = Assembler.make_with_block(bx)
+rendering = asm.make_rendering()
 rendering.show()

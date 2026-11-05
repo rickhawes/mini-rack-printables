@@ -8,18 +8,7 @@ import math
 from abc import ABC, abstractmethod
 from typing import Sequence, override
 
-from build123d import (
-    BoundBox,
-    Circle,
-    Face,
-    GridLocations,
-    HexLocations,
-    Location,
-    Rectangle,
-    RegularPolygon,
-    Sketch,
-    offset,
-)
+import build123d as bd
 
 from .geometry import Mm, Rc, Vec2
 
@@ -33,11 +22,11 @@ class HolePattern(ABC):
         """Return the figure inset used for this pattern"""
 
     @abstractmethod
-    def locations(self, size: Vec2) -> Sequence[Location]:
+    def locations(self, size: Vec2) -> Sequence[bd.Location]:
         """Return the locations of the holes for the given dimensions."""
 
     @abstractmethod
-    def sketch(self) -> Sketch:
+    def sketch(self) -> bd.Sketch:
         """Sketch a single hole."""
 
 
@@ -57,18 +46,19 @@ class HexFill(HolePattern):
         return self.spacing
 
     @override
-    def locations(self, size: Vec2) -> Sequence[Location]:
+    def locations(self, size: Vec2) -> Sequence[bd.Location]:
         inset = Vec2(self.inset, self.inset)
         cx, cy = (
             math.floor((size - 2 * inset).x / (2 * self.spacing)),
             math.floor(((size - 2 * inset).y - self.spacing) / (2 * self.spacing)),
         )
-        return HexLocations(self.spacing, cx, cy).locations if cx > 0 and cy > 0 else []
+        return (
+            bd.HexLocations(self.spacing, cx, cy).locations if cx > 0 and cy > 0 else []
+        )
 
     @override
-    def sketch(self) -> Sketch:
-        b = RegularPolygon(self.width - self.spacing, 6).bounding_box()
-        return RegularPolygon(self.width - self.spacing, 6)
+    def sketch(self) -> bd.Sketch:
+        return bd.RegularPolygon(self.width - self.spacing, 6)
 
 
 class CircleFill(HolePattern):
@@ -87,17 +77,19 @@ class CircleFill(HolePattern):
         return self.spacing
 
     @override
-    def locations(self, size: Vec2) -> Sequence[Location]:
+    def locations(self, size: Vec2) -> Sequence[bd.Location]:
         inset = Vec2(self.inset, self.inset)
         cx, cy = (
             math.floor((size - 2 * inset).x / (2 * self.spacing)),
             math.floor(((size - 2 * inset).y - self.spacing) / (2 * self.spacing)),
         )
-        return HexLocations(self.spacing, cx, cy).locations if cx > 0 and cy > 0 else []
+        return (
+            bd.HexLocations(self.spacing, cx, cy).locations if cx > 0 and cy > 0 else []
+        )
 
     @override
-    def sketch(self) -> Sketch:
-        return Circle(self.spacing - self.width / 2)
+    def sketch(self) -> bd.Sketch:
+        return bd.Circle(self.spacing - self.width / 2)
 
 
 class SquareFill(HolePattern):
@@ -115,43 +107,39 @@ class SquareFill(HolePattern):
     def inset(self) -> Mm:
         return self.spacing
 
-    @property
     @override
-    def inset(self) -> Mm:
-        return self.spacing
-
-    @override
-    def locations(self, size: Vec2) -> Sequence[Location]:
+    def locations(self, size: Vec2) -> Sequence[bd.Location]:
         inset = Vec2(self.inset, self.inset)
         cx, cy = (
             math.floor((size - 2 * inset).x / self.spacing),
             math.floor((size - 2 * inset).y / self.spacing),
         )
         return (
-            GridLocations(self.spacing, self.spacing, cx, cy).locations
+            bd.GridLocations(self.spacing, self.spacing, cx, cy).locations
             if cx > 0 and cy > 0
             else []
         )
 
     @override
-    def sketch(self) -> Sketch:
-        return Rectangle(
+    def sketch(self) -> bd.Sketch:
+        return bd.Rectangle(
             width=self.spacing - self.width, height=self.spacing - self.width
         )
 
 
 def fill_holes(
-    base: Sketch,
+    base: bd.Sketch,
     base_size: Vec2,
     hole_pattern: HolePattern,
     interior_rc: Rc | None = None,
-) -> Sketch:
+) -> bd.Sketch:
     """Core algorithm to fill a general outline with a hole pattern.
 
     Args:
-        base (Sketch): The base outline to fill in (must be a single closed curve)
-        hole_pattern: The pattern to use
-        interior_rc: An interior area that can be filled without interfering with edges. Used for performance.\
+        base (bd.Sketch): The base outline to fill in (must be a single closed curve)
+        hole_pattern: The hole pattern to cut into the `base` sketch
+        interior_rc: An interior area that can be filled without interfering with
+            edges. Used for performance.
     """
     # for this algorithm to work, the base shape must be simple 1 closed-wire shape
     base_wires = base.wires()
@@ -162,15 +150,15 @@ def fill_holes(
 
     # seperate the holes that are on the interior
     inset = hole_pattern.inset
-    outline = offset(base, amount=-inset) if inset > 0 else base
+    outline = bd.offset(base, amount=-inset) if inset > 0 else base
     hole_locs = hole_pattern.locations(base_size)
     moved_holes = hole_locs * hole_pattern.sketch()
-    inside_holes: list[Sketch] = []
-    unknown_holes: list[Sketch] = []
+    inside_holes: list[bd.Sketch] = []
+    unknown_holes: list[bd.Sketch] = []
     if interior_rc is not None:
-        interior_bbox = BoundBox(
-            Location(interior_rc.center.to_vector())
-            * Rectangle(interior_rc.size.x, interior_rc.size.y)
+        interior_bbox = bd.BoundBox(
+            bd.Location(interior_rc.center.to_vector())
+            * bd.Rectangle(interior_rc.size.x, interior_rc.size.y)
         )
 
         for h in moved_holes:
@@ -181,12 +169,13 @@ def fill_holes(
     else:
         unknown_holes = moved_holes
 
-    # holes that overlap the edge work in 2d to calculate the instersections for the parital hole
-    # while inside holes work in 1d for peformance
-    sk = Sketch()
+    # holes that overlap the edge work in 2d to calculate the
+    # instersections for the parital hole while inside holes
+    # work in 1d for peformance
+    sk = bd.Sketch()
     if len(unknown_holes) == 0:
         inside_wires = [h.wire() for h in inside_holes]
-        sk += Face(base.wire(), inside_wires)
+        sk += bd.Face(base.wire(), inside_wires)
     else:
         sk += base - outline
         sk += outline - (unknown_holes + inside_holes)

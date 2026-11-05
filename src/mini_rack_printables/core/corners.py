@@ -8,7 +8,7 @@ See Also:
 from abc import ABC, abstractmethod
 from typing import override
 
-from build123d import Line, Polyline, RadiusArc, Vector
+import build123d as bd
 
 from .geometry import Mm, Vec2
 
@@ -32,10 +32,13 @@ class Corners(ABC):
 
     @property
     def size(self) -> Vec2:
+        """The dimensions of the corner"""
         return Vec2(self.width, self.height)
 
     @abstractmethod
-    def draw(self, start: Vector, end: Vector, where: Corners.SelectedCorner) -> None:
+    def draw(
+        self, start: bd.Vector, end: bd.Vector, where: Corners.SelectedCorner
+    ) -> None:
         """draw the lines or arcs in the context of `BuildLine`"""
 
 
@@ -49,8 +52,10 @@ class RoundedCorners(Corners):
         self.radius = radius
 
     @override
-    def draw(self, start: Vector, end: Vector, where: Corners.SelectedCorner) -> None:
-        _ = RadiusArc(start_point=start, end_point=end, radius=self.radius)
+    def draw(
+        self, start: bd.Vector, end: bd.Vector, where: Corners.SelectedCorner
+    ) -> None:
+        _ = bd.RadiusArc(start_point=start, end_point=end, radius=self.radius)
 
 
 class SquareCorners(Corners):
@@ -60,12 +65,14 @@ class SquareCorners(Corners):
     """
 
     @override
-    def draw(self, start: Vector, end: Vector, where: Corners.SelectedCorner) -> None:
+    def draw(
+        self, start: bd.Vector, end: bd.Vector, where: Corners.SelectedCorner
+    ) -> None:
         match where:
             case Corners.TOP_LEFT | Corners.BOTTOM_RIGHT:
-                _ = Polyline(start, (start.X, end.Y), end)
+                _ = bd.Polyline(start, (start.X, end.Y), end)
             case Corners.TOP_RIGHT | Corners.BOTTOM_LEFT:
-                _ = Polyline(start, (end.X, start.Y), end)
+                _ = bd.Polyline(start, (end.X, start.Y), end)
             case _:
                 raise ValueError(f"Corners.draw called with {where}")
 
@@ -74,12 +81,14 @@ class InsetCorners(Corners):
     """Inset corners make the rectangle a cross"""
 
     @override
-    def draw(self, start: Vector, end: Vector, where: Corners.SelectedCorner) -> None:
+    def draw(
+        self, start: bd.Vector, end: bd.Vector, where: Corners.SelectedCorner
+    ) -> None:
         match where:
             case Corners.TOP_LEFT | Corners.BOTTOM_RIGHT:
-                _ = Polyline([start, (end.X, start.Y), end])
+                _ = bd.Polyline([start, (end.X, start.Y), end])
             case Corners.TOP_RIGHT | Corners.BOTTOM_LEFT:
-                _ = Polyline([start, (start.X, end.Y), end])
+                _ = bd.Polyline([start, (start.X, end.Y), end])
             case _:
                 raise ValueError(f"Corners.draw called with {where}")
 
@@ -88,8 +97,10 @@ class BeveledCorners(Corners):
     """Beveled corners"""
 
     @override
-    def draw(self, start: Vector, end: Vector, where: Corners.SelectedCorner) -> None:
-        _ = Line(start, end)
+    def draw(
+        self, start: bd.Vector, end: bd.Vector, where: Corners.SelectedCorner
+    ) -> None:
+        _ = bd.Line(start, end)
 
 
 class SelectedCorners(Corners):
@@ -118,7 +129,7 @@ class SelectedCorners(Corners):
         self.square_corners = SquareCorners(corners.size.x, corners.size.y)
 
     @override
-    def draw(self, start: Vector, end: Vector, where: str) -> None:
+    def draw(self, start: bd.Vector, end: bd.Vector, where: str) -> None:
         if self.is_selected.get(where, False):
             self.corners.draw(start, end, where)
         else:

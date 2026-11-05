@@ -1,7 +1,9 @@
+"""Assembler places blocks into models."""
+
 from dataclasses import dataclass
 from typing import Sequence, final
 
-from build123d import BuildPart, Location, Mode, Plane, insert
+import build123d as bd
 
 from .block import Block
 from .geometry import AxDir3, Bx, Dir2, Mm, Rc, Vec2, Vec3
@@ -19,29 +21,45 @@ class Assembler:
         `Block` - the building blocks that are assembled together
     """
 
-    # the base to place things on
-    base: Bx
-    """the base plate (global coordinates)"""
-    plate_side: AxDir3
-    """The side of the base to place other objects"""
+    @dataclass(frozen=True)
+    class Plate:
+        """Defines a plate for the assembler"""
+
+        bx: Bx
+        """the boundary box (global coordinates)."""
+        side: AxDir3
+        """The side of the plate to place other objects."""
+        z_dir: AxDir3
+        """The direction of the plate's plane."""
+        plane: bd.Plane
+        """The plane of the plate to place blocks (global coordinates)."""
+
+        @classmethod
+        def _make(cls, base: Bx, z_dir: AxDir3, cutout_mode: bool) -> Assembler.Plate:
+            side = z_dir.to_opposite() if cutout_mode else z_dir
+            plane = bd.Plane(
+                origin=base.side_bx(side).center.to_vector(),
+                z_dir=z_dir.to_plane_z_dir(),
+                x_dir=z_dir.to_plane_x_dir(),
+            )
+            return Assembler.Plate(base, side, z_dir, plane)
+
+    _plate: Plate
+    """The plate to assemble on."""
+
     cutout_mode: bool
-    """The default for the cut parameter for pieces rendered by blocks"""
+    """The default for the cut parameter for pieces rendered by blocks."""
 
-    # the orientation of the plane
-    z_dir: AxDir3
-    """The direction of the Assembler's plane"""
-    _plane: Plane
-    """The plane of the model to place blocks (global coordinates)"""
-
-    # Output
+    # Tree of assemblers for a model
     parent: Assembler | None = None
     """If this is a sub-assembler, then the parent assembler."""
     sub_assemblers: list[Assembler]
+
     """Assemblers attached to this model"""
     _pieces: list[Piece] | None = None
-    """If this is a top-level assembler, all the pieces"""
+    """If this is a top-level assembler, all the pieces."""
     bounds: Bx | None = None
-    """The bounds of all pieces"""
+    """The bounds of all pieces."""
 
     # properties
     @property
@@ -55,22 +73,36 @@ class Assembler:
     @property
     def plate_rc(self) -> Rc:
         """The base rc (Assembler coordinates)"""
-        return Rc(self.base.side_rc(self.plate_side).size)
+        return Rc(self._plate.bx.side_rc(self._plate.side).size)
 
     @property
     def plate_depth(self) -> Mm:
         """The base depth (Assembler coordinates)"""
-        return self.base.side_depth(self.plate_side)
+        return self._plate.bx.side_depth(self._plate.side)
 
     @property
     def origin(self) -> Vec3:
         """The assembler's origin in the global coordinates"""
-        return self.base.side_bx(self.plate_side).center
+        return self._plate.bx.side_bx(self._plate.side).center
+
+    @property
+    def z_dir(self) -> AxDir3:
+        """The assembler's z_dir for placement"""
+        return self._plate.z_dir
+
+    @property
+    def is_top_level(self) -> bool:
+        """Is the assembler a top-level assembler"""
+        return self.parent is None
+
+    @property
+    def is_sub(self) -> bool:
+        """Is the assembler a sub-level assembler"""
+        return self.parent is not None
 
     def __init__(
         self,
-        plate: Bx,
-        z_dir: AxDir3 = AxDir3.Z_PLUS,
+        _plate: Plate,
         cutout_mode: bool = False,
         parent: Assembler | None = None,
     ) -> None:
@@ -79,28 +111,19 @@ class Assembler:
         Args:
             plate: the base box on which everything is placed in global.
             z_dir: the orientation for the placement (and the z_dir).
-            cutout_mode: the default cut value for block placement and the base is above the plane.
+            cutout_mode: the default cut value for block placement
+                and the base is above the plane.
             parent: the parent assembler if any.
         """
-        self.base = plate
-        self.z_dir = z_dir
-        self.plate_side = z_dir.to_opposite() if cutout_mode else z_dir
+        self._plate = _plate
         self.cutout_mode = cutout_mode
-
-        # make internal structures
-        self._plane = Plane(
-            origin=plate.side_bx(self.plate_side).center.to_vector(),
-            z_dir=z_dir.to_plane_z_dir(),
-            x_dir=z_dir.to_plane_x_dir(),
-        )
-
-        # accumulations
         self._pieces = []
         self.sub_assemblers = []
         self.parent = parent
         self.bounds = None
 
     # region Create assemblers and sub-assemblers
+    #
 
     @classmethod
     def make(
@@ -114,9 +137,11 @@ class Assembler:
         Args:
             plate: the base box on which everything is placed in global.
             z_dir: the orientation for the placement (and the z_dir).
-            cutout_mode: the default cut value for block placement and the base is above the plane.
+            cutout_mode: the default cut value for block placement and
+                the base is above the plane.
         """
-        return Assembler(base, z_dir, cutout_mode, parent=None)
+        plate = Assembler.Plate._make(base, z_dir, cutout_mode)
+        return Assembler(plate, cutout_mode, parent=None)
 
     @classmethod
     def make_with_block(
@@ -146,30 +171,33 @@ class Assembler:
         """Create a sub-assembler with defaults of the current assembler.
 
         Args:
-            plate (Bx) - plate in relative to self
+            plate (Bx) - the plate of plate (local coordinates)
             z_dir (AxDir3) - the sub's z_dir and side of plate to use
-            cutout_mode (bool) - The assembler should default to cutting from the plate
+            cutout_mode (bool) - The assembler should default to cutting
+                from the plate
         """
-        if plate is None:
-            # take the current plate which is global and make a local copy
-            center = self.base.center - self.origin
-            plate = Bx(self.base.size, center)
-        global_plate = plate.move(self.origin)
+        if plate is not None:
+            # Convert the passed in plate to global
+            base = plate.move(self.origin)
+        else:
+            base = self._plate.bx
         if z_dir is None:
-            z_dir = self.z_dir
+            z_dir = self._plate.z_dir
         if cutout_mode is None:
             cutout_mode = self.cutout_mode
-        assembler = Assembler(global_plate, z_dir, cutout_mode, parent=self)
-        self.sub_assemblers.append(assembler)
-        return assembler
+        _plate = Assembler.Plate._make(base, z_dir, cutout_mode)
+        sub = Assembler(_plate, cutout_mode, parent=self)
+        self.sub_assemblers.append(sub)
+        return sub
 
     def make_cutout_sub(self) -> Assembler:
+        """Make a assembler with `cutout_mode` = True on the same plate."""
         if self.cutout_mode:
             raise RuntimeError("Cannot make a cutout sub on a cutout sub")
         return self.make_sub(cutout_mode=True)
 
     def make_section_sub(self, section: Rc, origin: Vec2) -> Assembler:
-        """Section relative to the plane_rc"""
+        """Create a sub assembler on a `section` of the plate"""
         size = Vec3(section.size.x, section.size.y, self.plate_depth)
         center = Vec3(origin.x, origin.y, self.plate_bx.center.z)
         return self.make_sub(Bx(size, center))
@@ -181,7 +209,10 @@ class Assembler:
         """Specifies a location relative to the base plane and bounds."""
 
         origin: Dir2 = Dir2.CENTER
-        """The region of the base where the origin is. The origin takes into account the size of the object being placed."""
+        """
+        The region of the base where the origin is. The origin takes into 
+        account the size of the object being placed.
+        """
         offset: Vec2 | Vec3 = Vec2(0, 0)
         """The offset of the center."""
 
@@ -221,7 +252,7 @@ class Assembler:
 
     def add_piece(self, piece: Piece, position: Vec3 = Vec3(0, 0, 0)) -> None:
         """Add pieces to the model at `position` relative to the assembler's plane."""
-        moved_piece = piece.moved(self._plane * Location(position.to_vector()))
+        moved_piece = piece.moved(self._plate.plane * bd.Location(position.to_vector()))
         self._append_piece(moved_piece)
 
     def _append_piece(self, piece: Piece) -> None:
@@ -238,32 +269,29 @@ class Assembler:
             assert self._pieces is not None
             self._pieces.append(piece)
         else:
+            # pylint: disable=protected-access
             self.parent._append_piece(piece)
 
     def to_global(self, local: Vec3) -> Vec3:
+        """Convert a local vector to a global coordinate vector"""
         return local + self.origin
 
     def to_local(self, gbl: Vec3) -> Vec3:
+        """Convert a global vector to a local coordinate vector"""
         return gbl - self.origin
-
-    # def _get_plane(self) -> Plane | Location:
-    #     if self.parent is None:
-    #         return self._plane
-    #     else:
-    #         return self.parent._get_plane() * self._plane
 
     def all_pieces(self) -> list[Piece]:
         """All the pieces in the top and sub assemblers."""
         if self._pieces is None:
             assert self.parent is not None
             return self.parent.all_pieces()
-        else:
-            return self._pieces
+        return self._pieces
 
     def make_rendering(self) -> Rendering:
-        with BuildPart() as builder:
+        """Make a rendering for the assembler."""
+        with bd.BuildPart() as builder:
             for p in self.all_pieces():
-                mode = Mode.SUBTRACT if p.cut else Mode.ADD
-                _ = insert(p.part, mode=mode)
+                mode = bd.Mode.SUBTRACT if p.cut else bd.Mode.ADD
+                _ = bd.insert(p.part, mode=mode)
         assert builder.part is not None
         return Rendering(builder.part)

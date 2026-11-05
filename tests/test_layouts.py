@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 
+import build123d as bd
 import pytest
-from build123d import Circle, Location, Plane, Rectangle, Sketch
 
 from mini_rack_printables import (
     Assembler,
@@ -56,14 +56,16 @@ def test_measured_rows_columns() -> None:
     assert m3.more_y == [False, False, True]
 
 
-def sketch_sections(sections: Sequence[Layout.Section]) -> Sketch:
-    sketches: list[Sketch] = []
+def sketch_sections(sections: Sequence[Layout.Section]) -> bd.Sketch:
+    sketches: list[bd.Sketch] = []
     for s in sections:
-        plane = Plane(Location(s.origin.to_vector()))
-        loc = plane * Location(s.bounds.center.to_vector())
-        sk = Sketch(loc * (Rectangle(s.bounds.size.x, s.bounds.size.y) - Circle(0.2)))
+        plane = bd.Plane(bd.Location(s.origin.to_vector()))
+        loc = plane * bd.Location(s.bounds.center.to_vector())
+        sk = bd.Sketch(
+            loc * (bd.Rectangle(s.bounds.size.x, s.bounds.size.y) - bd.Circle(0.2))
+        )
         sketches.append(sk)
-    return Sketch(sketches)
+    return bd.Sketch(sketches)
 
 
 def test_row_heights_values() -> None:

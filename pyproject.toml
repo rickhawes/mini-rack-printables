@@ -16,6 +16,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "ocp-viewer>=1.2.0",
+    "pylint>=4.1.3",
     "pyrefly>=1.4.0",
     "pytest>=9.1.1",
     "ruff",
@@ -58,10 +59,10 @@ pythonpath = [
   "."
 ]
 
-[tool.ty]
+[tool.pylint.format]
+max-line-length = 88
 
-[tool.basedpyright]
-allowedUntypedLibraries =["build123d", "ocp_vscode"]
+[tool.ty]
 
 [tool.pyrefly]
 python-platform = "all"

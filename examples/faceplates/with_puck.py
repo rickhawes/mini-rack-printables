@@ -1,8 +1,7 @@
+"""This example demonstrates a faceplate with a puck holder."""
+
 from mini_rack_printables import PuckHolder, Vec3, faceplate
 
-#
-# This example demonstrates a faceplate with a puck holder.
-#
 holder = PuckHolder(
     device_size=Vec3(60, 30, 60),
     device_rounding=10,

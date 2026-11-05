@@ -1,14 +1,13 @@
+"""This example shows a PuckHolder."""
+
 from mini_rack_printables import PuckHolder, Vec3, feature_xray
 
-#
-# This example demonstrates a corner holder part.
-#
 holder = PuckHolder(
     device_size=Vec3(100, 40, 100),
     device_rounding=10,
     style=PuckHolder.Style(has_cutout=True),
 )
-plate = feature_xray(holder)
+model = feature_xray(holder)
 
-# Show the plate in the OCP viewer
-plate.show()
+# Show the model in the OCP viewer
+model.show()

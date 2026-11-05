@@ -1,8 +1,7 @@
+"""This example demonstrates a faceplate with a holder."""
+
 from mini_rack_printables import BoxHolder, Vec3, faceplate
 
-#
-# This example demonstrates a faceplate with a holder.
-#
 holder = BoxHolder(device_size=Vec3(210.0, 33.1, 30), style=BoxHolder.BACK_LIP)
 plate = faceplate(rack_units=1.0, features=[[holder]])
 

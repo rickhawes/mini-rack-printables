@@ -97,7 +97,10 @@ def test_slot_figure(viewer_logger: TestLogger) -> None:
 def test_trapezoid_figure(viewer_logger: TestLogger) -> None:
     fig1 = TrapezoidFigure(40, 20, angle1=80)
     viewer_logger.log(fig1.sketch(), SHAPE)
-    fig2 = TrapezoidFigure(40, 20, minor_width=10, angle1=90)
+    angle2 = TrapezoidFigure.angle_from_widths(
+        major_width=40, minor_width=10, height=20, angle1=90
+    )
+    fig2 = TrapezoidFigure(40, 20, angle1=90, angle2=angle2)
     viewer_logger.log(fig2.sketch(), SHAPE)
 
 
@@ -136,7 +139,10 @@ def test_cutout_figure(viewer_logger: TestLogger) -> None:
 
 def test_aligned_figures(viewer_logger: TestLogger) -> None:
     fig1 = RectangleFigure(5, 2)
-    fig2 = RotatedFigure(TrapezoidFigure(10, 15, minor_width=2, angle1=90), 90)
+    angle2 = TrapezoidFigure.angle_from_widths(
+        major_width=10, minor_width=2, height=15, angle1=90
+    )
+    fig2 = RotatedFigure(TrapezoidFigure(10, 15, angle1=90, angle2=angle2), 90)
     fig3 = RectangleFigure(20, 10)
     fig4 = AlignedFigure([fig1, fig2, fig3], axis=Ax2.X, align=AxDir.MINUS)
     viewer_logger.log(fig4.sketch(), COMBINED)

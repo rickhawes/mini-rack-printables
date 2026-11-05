@@ -1,8 +1,7 @@
+"""This example demonstrates a faceplate with a Jet KVM cutout."""
+
 from mini_rack_printables import JetKVM, faceplate
 
-#
-# This example demonstrates a faceplate with a Jet KVM cutout.
-#
 plate = faceplate(rack_units=1.5, features=[[JetKVM()]])
 
 # Show the plate in the OCP viewer

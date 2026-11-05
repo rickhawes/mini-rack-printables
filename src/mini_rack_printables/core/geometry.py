@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from enum import Enum, IntEnum, auto
 from typing import Self
 
-from build123d import Axis, Vector
+import build123d as bd
 
 # ------------------------------------------------------------------------------
 # 1D Classes and Enums
@@ -25,7 +25,8 @@ type Degree = float | int
 
 
 class AxDir(IntEnum):
-    """A positive, neutral, or negative direction. Used for in forming 2d and 3d directions."""
+    """A positive, neutral, or negative direction.
+    Used for in forming 2d and 3d directions."""
 
     PLUS = 1
     MINUS = -1
@@ -45,17 +46,14 @@ class Ax2(Enum):
     Y = auto()
     """ Y axis """
 
-    def to_other(self) -> Ax2:
-        """Convert to the other Ax2 axis."""
-        return Ax2.X if self == Ax2.Y else Ax2.Y
-
 
 class Dir2(Enum):
     """
     A direction in 2d space.
 
-    A Dir2 is not a vector, but used to specify the sections, edges, and corners of a rectangle.
-    For a square centered at 0, 0, the x, y values of the enum will specify a corner, side or center sections.
+    A Dir2 is not a vector, but used to specify the sections, edges, and corners
+    of a rectangle.For a square centered at 0, 0, the x, y values of the enum will
+    specify a corner, side or center sections.
 
     See Also:
         AxDir2 -- Subset directions of Dir2
@@ -92,34 +90,10 @@ class Dir2(Enum):
         self.x = x
         self.y = y
 
-    @staticmethod
-    def corners() -> frozenset[Dir2]:
-        """A set of Dir2's which correspond to the corners of a rectangle."""
-        return frozenset(
-            {Dir2.CORNER_LF_BT, Dir2.CORNER_LF_TP, Dir2.CORNER_RT_BT, Dir2.CORNER_RT_TP}
-        )
-
-    @staticmethod
-    def sides() -> frozenset[Dir2]:
-        """A set of Dir2's which correspond to the sides of a rectangle."""
-        return frozenset(
-            {Dir2.SIDE_BOTTOM, Dir2.SIDE_LEFT, Dir2.SIDE_RIGHT, Dir2.SIDE_TOP}
-        )
-
-    @property
-    def is_corner(self) -> bool:
-        """Does the direction represent a corner?"""
-        return self in Dir2.corners()
-
     @property
     def is_side(self) -> bool:
-        """Does the direction represent a side?"""
-        return self in Dir2.sides()
-
-    @property
-    def is_center(self) -> bool:
-        """Does the direction represent a center?"""
-        return self == Dir2.CENTER
+        """Is the this a side"""
+        return (self.x, self.y).count(AxDir.CENTER) == 1
 
     def __neg__(self) -> Dir2:
         """Opposite direction"""
@@ -157,12 +131,7 @@ class AxDir2(Enum):
     TOP = Y_PLUS
 
     def __init__(self, x: AxDir, y: AxDir) -> None:
-        if (
-            x == AxDir.CENTER
-            and y == AxDir.CENTER
-            or x != AxDir.CENTER
-            and y != AxDir.CENTER
-        ):
+        if (x, y).count(AxDir.CENTER) != 1:
             raise ValueError("x == CENTER and y == CENTER must be exclusive")
         self.x = x
         self.y = y
@@ -179,6 +148,7 @@ class AxDir2(Enum):
 
     @property
     def is_positive(self) -> bool:
+        """True iff the AxDir is in a positive direction"""
         return self in [AxDir2.X_PLUS, AxDir2.Y_PLUS]
 
     def __neg__(self) -> AxDir2:
@@ -201,6 +171,7 @@ class AxDir2(Enum):
         return Dir2(self.x, self.y)
 
     def to_vec2(self) -> Vec2:
+        """Convert to a Vec2"""
         return Vec2(self.x, self.y)
 
 
@@ -243,16 +214,20 @@ class Vec2:
         return self.__class__(-self.x, -self.y)
 
     def to_vec3(self, z: Mm = 0) -> Vec3:
+        """Convert to a Vec3"""
         return Vec3(self.x, self.y, z)
 
-    def to_vector(self) -> Vector:
-        return Vector(self.x, self.y)
+    def to_vector(self) -> bd.Vector:
+        """Convert to a build123d Vector."""
+        return bd.Vector(self.x, self.y)
 
     def to_tuple(self) -> tuple[Mm, Mm]:
+        """Convert to a tuple with the components"""
         return self.x, self.y
 
     @classmethod
-    def from_vector(cls, vec: Vector) -> Vec2:
+    def from_vector(cls, vec: bd.Vector) -> Vec2:
+        """Covert from a build123d vector."""
         return Vec2(vec.X, vec.Y)
 
 
@@ -269,6 +244,7 @@ class Rc:
     """The center of the rectangle"""
 
     def __init__(self, *args: Mm | Vec2 | tuple[Mm, Mm]) -> None:
+        """Create from size and center. Center defaults to zero."""
         match len(args):
             case 1 if isinstance(args[0], Vec2):
                 object.__setattr__(self, "size", args[0])
@@ -299,12 +275,14 @@ class Rc:
 
     @classmethod
     def from_values(cls, dx: Mm, dy: Mm, x: Mm = 0, y: Mm = 0) -> Self:
+        """Make from specific values"""
         return cls(Vec2(dx, dy), Vec2(x, y))
 
     @classmethod
     def from_edges(
         cls, left: Mm, right: Mm, bottom: Mm, top: Mm, allow_inversion: bool = False
     ) -> Self:
+        """Make from the edge values."""
         if allow_inversion and left > right:
             right, left = left, right
         if allow_inversion and bottom > top:
@@ -315,43 +293,52 @@ class Rc:
 
     @classmethod
     def from_corners(cls, c1: Vec2, c2: Vec2) -> Self:
+        """Make from corner points."""
         dx, dy = abs(c1.x - c2.x), abs(c1.y - c2.y)
         return cls(Vec2(dx, dy), Vec2(dx / 2, dy))
 
     @classmethod
     def union(cls, *rcs: Rc) -> Self:
+        """Union multiple rectangles."""
         return cls.from_edges(
-            right=max([r.right for r in rcs]),
-            left=min([r.left for r in rcs]),
-            top=max([r.top for r in rcs]),
-            bottom=min([r.bottom for r in rcs]),
+            right=max(r.right for r in rcs),
+            left=min(r.left for r in rcs),
+            top=max(r.top for r in rcs),
+            bottom=min(r.bottom for r in rcs),
         )
 
     @property
     def min(self) -> Vec2:
+        """The lower-left corner."""
         return self.center - (self.size / 2)
 
     @property
     def max(self) -> Vec2:
+        """The upper-right corner."""
         return self.center + (self.size / 2)
 
     @property
     def top(self) -> Mm:
+        """The top edge (Y)."""
         return self.max.y
 
     @property
     def bottom(self) -> Mm:
+        """The bottom edge (Y)"""
         return self.min.y
 
     @property
     def left(self) -> Mm:
+        """The left edge (X)."""
         return self.min.x
 
     @property
     def right(self) -> Mm:
+        """The right edge (X)."""
         return self.max.x
 
     def is_within(self, outside: Rc) -> bool:
+        """Is this rect within an `outside` Rc."""
         return (
             self.min.x >= outside.min.x
             and self.min.y >= outside.min.y
@@ -360,33 +347,38 @@ class Rc:
         )
 
     def move_to(self, new_center: Vec2) -> Self:
+        """New Rc with a new center."""
         return self.__class__(self.size, new_center)
 
     def move(self, shift: Vec2) -> Self:
+        """New Rc with a new center shifted relative to the old center."""
         return self.move_to(self.center + shift)
 
     def dir_position(self, place: Dir2) -> Vec2:
         """
-        Returns the position (x,y) of the 'dir' on the rectangle. 'dir' can specify a corner, a side,
-        or the center of the rectangle.
+        Returns the position (x,y) of the 'dir' on the rectangle.
+        'dir' can specify a corner, a side, or the center of the rectangle.
         """
         return Vec2(self.size.x * place.x, self.size.y * place.y) / 2 + self.center
 
     def place_center(self, other: Rc, place: Dir2) -> Vec2:
         """
-        The center of a `other` Rc that aligns the `place` position of this Rc and the `other` Rc.
+        The center of a `other` Rc that aligns the `place` position of
+        this Rc and the `other` Rc.
         """
         return self.dir_position(place) - other.dir_position(place)
 
     def place(self, other: Rc, place: Dir2) -> Rc:
         """
-        Return a new `other` Rc moved so that `anchor` of this Rc and the `other` are aligned.
+        Return a new `other` Rc moved so that `anchor` of this Rc and
+        the `other` are aligned.
         """
         return Rc(other.size, self.place_center(other, place))
 
     def apply_padding(self, padding: Mm) -> Rc:
         """
-        Apply padding to the Rc, expanding its size by `padding` amount but not shifting its center.
+        Apply padding to the Rc, expanding its size by `padding` amount
+        but not shifting its center.
         """
         return Rc(self.size + Vec2(2 * padding, 2 * padding), self.center)
 
@@ -397,6 +389,7 @@ class Rc:
         bottom: Mm | None = None,
         top: Mm | None = None,
     ) -> Bx:
+        """Convert to a Bx with the specified z values. 0 is the default."""
         if (dz is not None or z is not None) and (
             bottom is not None or top is not None
         ):
@@ -452,7 +445,7 @@ class Rc:
                 output.append(arranged_item)
                 edge = item_bounds.right
             return output
-        elif axis == Ax2.Y:
+        if axis == Ax2.Y:
             bounds = Rc(
                 Vec2(
                     max(item.size.x for item in items),
@@ -467,8 +460,7 @@ class Rc:
                 output.append(arranged_item)
                 edge = item_bounds.top
             return output
-        else:
-            raise NotImplementedError()
+        raise NotImplementedError()
 
 
 # ------------------------------------------------------------------------------
@@ -486,32 +478,13 @@ class Ax3(Enum):
     Z = auto()
     """ Z axis """
 
-    def to_positive(self) -> AxDir3:
-        match self:
-            case Ax3.X:
-                return AxDir3.X_PLUS
-            case Ax3.Y:
-                return AxDir3.Y_PLUS
-            case Ax3.Z:
-                return AxDir3.Z_PLUS
-
-    def to_axis(self) -> Axis:
-        """To a build123d axis"""
-        match self:
-            case Ax3.X:
-                return Axis.X
-            case Ax3.Y:
-                return Axis.Y
-            case Ax3.Z:
-                return Axis.Z
-
 
 class Dir3(Enum):
-    """
-    A direction in 3d space.
+    """A direction in 3d space.
 
-    A Dir3 is not a vector, but used to specify the sections, edges, and corners of a cube.
-    For a 2x2x2 cube centered at 0, 0, the x, y, z values of the enum will specify the corner edge or a center sections.
+    A Dir3 is not a vector, but used to specify the sections, edges, and corners
+    of a cube. For a 2x2x2 cube centered at 0, 0, the x, y, z values of the
+    enum will specify the corner edge or a center sections.
 
     See Also:
         AxDir3 - Subset directions of Dir3
@@ -579,75 +552,10 @@ class Dir3(Enum):
         self.y = y
         self.z = z
 
-    @staticmethod
-    def corners() -> frozenset[Dir3]:
-        """A set of Dir3's which represent corners"""
-        return frozenset(
-            {
-                Dir3.CORNER_LF_BK_BT,
-                Dir3.CORNER_LF_BK_TP,
-                Dir3.CORNER_LF_FT_BT,
-                Dir3.CORNER_LF_FT_TP,
-                Dir3.CORNER_RT_BK_BT,
-                Dir3.CORNER_RT_BK_TP,
-                Dir3.CORNER_RT_FT_BT,
-                Dir3.CORNER_RT_FT_TP,
-            }
-        )
-
-    @staticmethod
-    def edges() -> frozenset[Dir3]:
-        """A set of Dir3's which represent edges"""
-        return frozenset(
-            {
-                Dir3.EDGE_BK_BT,
-                Dir3.EDGE_BK_TP,
-                Dir3.EDGE_FT_BT,
-                Dir3.EDGE_FT_TP,
-                Dir3.EDGE_LF_BK,
-                Dir3.EDGE_LF_BT,
-                Dir3.EDGE_LF_FT,
-                Dir3.EDGE_LF_TP,
-                Dir3.EDGE_RT_BK,
-                Dir3.EDGE_RT_BT,
-                Dir3.EDGE_RT_FT,
-                Dir3.EDGE_RT_TP,
-            }
-        )
-
-    @classmethod
-    def sides(cls) -> frozenset[Dir3]:
-        """A set of Dir3's which represent side directions"""
-        return frozenset(
-            {
-                Dir3.SIDE_RIGHT,
-                Dir3.SIDE_RIGHT,
-                Dir3.SIDE_FRONT,
-                Dir3.SIDE_BACK,
-                Dir3.SIDE_TOP,
-                Dir3.SIDE_BOTTOM,
-            }
-        )
-
-    @property
-    def is_corner(self) -> bool:
-        """Does the direction represent a corner?"""
-        return self in Dir3.corners()
-
-    @property
-    def is_edge(self) -> bool:
-        """Does the direction represent an edge?"""
-        return self in Dir3.edges()
-
     @property
     def is_side(self) -> bool:
-        """Does the direction represent a side?"""
-        return self in Dir3.sides()
-
-    @property
-    def is_center(self) -> bool:
-        """Does the direction represent a center?"""
-        return self == Dir3.CENTER
+        """Is the this a side direction"""
+        return (self.x, self.y, self.z).count(AxDir.CENTER) == 2
 
     def __neg__(self) -> Dir3:
         """Negative direction"""
@@ -665,8 +573,9 @@ class Dir3(Enum):
 class AxDir3(Enum):
     """Enum for the 6 axis aligned AxDirs from the 0,0,0 origin.
 
-    Useful to specify the AxDir of a stack, or the side of the box, or the z-dir of a `Plane`
-    The default X-Y Plane has a z-axis AxDir of AxDir.PLUS_Z.
+    Useful to specify the AxDir of a stack, or the side of the box,
+    or the z-dir of a `Plane`. The default X-Y Plane has a z-axis
+    direction of AxDir.PLUS_Z.
     """
 
     X_MINUS = (-1, 0, 0)
@@ -685,33 +594,31 @@ class AxDir3(Enum):
     TOP = Z_PLUS
 
     def __init__(self, x: AxDir, y: AxDir, z: AxDir) -> None:
-        if (
-            x == AxDir.CENTER
-            and y == AxDir.CENTER
-            and z == AxDir.CENTER
-            or x != AxDir.CENTER
-            and y != AxDir.CENTER
-            and z != AxDir.CENTER
-        ):
-            raise ValueError("x == CENTER and y == CENTER must be exclusive")
+        """Create a 3d AxDir"""
+        if (x, y, z).count(AxDir.CENTER) != 2:
+            raise ValueError(f"Only one axis direction {x, y, z}")
         self.x = x
         self.y = y
         self.z = z
 
     @property
-    def is_x(self) -> bool:
+    def has_x(self) -> bool:
+        """Does this direction have a x component."""
         return self.x != AxDir.CENTER
 
     @property
-    def is_y(self) -> bool:
+    def has_y(self) -> bool:
+        """Does this direction have a y component."""
         return self.y != AxDir.CENTER
 
     @property
-    def is_z(self) -> bool:
+    def has_z(self) -> bool:
+        """Does this direction have a z component."""
         return self.z != AxDir.CENTER
 
     @property
     def is_positive(self) -> bool:
+        """Is the direction positive"""
         return self in [
             AxDir3.X_PLUS,
             AxDir3.Y_PLUS,
@@ -722,16 +629,19 @@ class AxDir3(Enum):
         return AxDir3(-self.x, -self.y, -self.z)
 
     def to_opposite(self) -> AxDir3:
+        """Return the opposite direction"""
         return -self
 
-    def to_dir3(self) -> AxDir3:
-        return AxDir3(self.x, self.y, self.z)
+    def to_dir3(self) -> Dir3:
+        """Convert to a Dir3"""
+        return Dir3(self.x, self.y, self.z)
 
     def to_plane_z_dir(self) -> tuple[int, int, int]:
+        """Covert to the z_dir of a Build123d Plane"""
         return self.x, self.y, self.z
 
     def to_plane_x_dir(self) -> tuple[int, int, int]:
-        """Convert to the x_dir of the plane defined the side of a box"""
+        """Covert to the x_dir of a Build123d Plane"""
         conv: dict[AxDir3, tuple[int, int, int]] = {
             AxDir3.Z_PLUS: (1, 0, 0),
             AxDir3.Z_MINUS: (-1, 0, 0),
@@ -744,6 +654,7 @@ class AxDir3(Enum):
         return conv[self]
 
     def to_vec3(self) -> Vec3:
+        """Convert to a Vec3."""
         return Vec3(self.x, self.y, self.z)
 
 
@@ -779,16 +690,20 @@ class Vec3:
         return self.__class__(-self.x, -self.y, -self.z)
 
     def to_2d(self) -> Vec2:
+        """Convert to a Vec2 using only the xy components"""
         return Vec2(self.x, self.y)
 
-    def to_vector(self) -> Vector:
-        return Vector(self.x, self.y, self.z)
+    def to_vector(self) -> bd.Vector:
+        """Convert the build123d type."""
+        return bd.Vector(self.x, self.y, self.z)
 
     def to_tuple(self) -> tuple[Mm, Mm, Mm]:
+        """A tuple with all components."""
         return self.x, self.y, self.z
 
     @classmethod
-    def from_vector(cls, vec: Vector) -> Vec3:
+    def from_vector(cls, vec: bd.Vector) -> Vec3:
+        """Make from the build123d vector"""
         return Vec3(vec.X, vec.Y, vec.Z)
 
 
@@ -805,6 +720,12 @@ class Bx:
     """Center of the box"""
 
     def __init__(self, *args: Mm | Vec3 | tuple[Mm, Mm, Mm]) -> None:
+        """Create with size and center. center defaults to zero.
+
+        Args:
+            args (Mm, Vec3, tuple): the size and then center of the box
+
+        """
         match len(args):
             case 1 if isinstance(args[0], Vec3):
                 object.__setattr__(self, "size", args[0])
@@ -843,15 +764,19 @@ class Bx:
         if self.size.x < 0 or self.size.y < 0:
             raise ValueError("Bx cannot have a negative size")
 
+    # pylint: disable=too-many-arguments, too-many-positional-arguments
     @classmethod
     def from_values(cls, dx: Mm, dy: Mm, dz: Mm, x: Mm, y: Mm, z: Mm) -> Self:
+        """Make from values."""
         return cls(Vec3(dx, dy, dz), Vec3(x, y, z))
 
     @classmethod
     def from_corners(cls, c1: Vec3, c2: Vec3) -> Self:
+        """Make from the specified corners"""
         dx, dy, dz = abs(c1.x - c2.x), abs(c1.y - c2.y), abs(c1.z - c2.z)
         return cls(Vec3(dx, dy, dz), Vec3(dx / 2, dy / 2, dz / 2))
 
+    # pylint: disable=too-many-arguments, too-many-positional-arguments
     @classmethod
     def from_edges(
         cls,
@@ -863,7 +788,8 @@ class Bx:
         top: Mm = 0,
         allow_inversion: bool = False,
     ) -> Self:
-        """Specify the boxes size and position from edge values instead of size and center values."""
+        """Specify the boxes size and position from edge values instead of size and
+        center values."""
         if allow_inversion and left > right:
             left, right = right, left
         if allow_inversion and bottom > top:
@@ -909,34 +835,42 @@ class Bx:
 
     @property
     def min(self) -> Vec3:
+        """The lower corner."""
         return self.center - (self.size / 2)
 
     @property
     def max(self) -> Vec3:
+        """The upper corner."""
         return self.center + (self.size / 2)
 
     @property
     def left(self) -> Mm:
+        """The left x edge."""
         return self.min.x
 
     @property
     def right(self) -> Mm:
+        """The right x edge."""
         return self.max.x
 
     @property
     def front(self) -> Mm:
+        """The front y-edge."""
         return self.min.y
 
     @property
     def back(self) -> Mm:
+        """The back y-edge."""
         return self.max.y
 
     @property
     def top(self) -> Mm:
+        """The top z edge."""
         return self.max.z
 
     @property
     def bottom(self) -> Mm:
+        """The bottom z edge."""
         return self.min.z
 
     def move_to(self, new_center: Vec3) -> Self:
@@ -997,6 +931,7 @@ class Bx:
                 assert False, "Incomplete match statement"
 
     def side_rc(self, side: AxDir3) -> Rc:
+        """Return the Rc of the specified side."""
         size = self.side_size(side)
         center = self.side_bx(side).center
         match side:

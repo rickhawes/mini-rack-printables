@@ -99,7 +99,9 @@ def shelf(
             wall_size.y,
             wall_size.x / 2 - shelf_back,
             angle1=90,
-            minor_width=2 * plate_size.z,
+            angle2=TrapezoidFigure.angle_from_widths(
+                wall_size.y, 2 * plate_size.z, wall_size.x / 2 - shelf_back, angle1=90
+            ),
         )
         wall_trap = RotatedFigure(wall_trap, angle=90)
         wall_holes = RectangleFigure(
