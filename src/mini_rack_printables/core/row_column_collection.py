@@ -1,6 +1,5 @@
 """
-A Collection of either list of items or a list of lists of items. In all cases, the collection can
-be treated as a 2d row-column collection.
+A data structure for a sparse row-column collection....
 """
 
 from collections.abc import Callable, Iterator, Sequence
@@ -8,9 +7,9 @@ from collections.abc import Callable, Iterator, Sequence
 
 class RowColumnCollection[T]:
     """
-    A Collection of either list of items or a list of lists of items. In all cases, the collection can
-    be treated as a 2d row-column collection.
-    The array may be sparse (e.g. some rows may have fewer columns) or full (e.g. all rows have the same number of columns).
+    A Collection for rows of columns. The array may be sparse (e.g. some
+    rows may have fewer columns) or full (e.g. all rows have the same
+    number of columns).
     """
 
     rows: Sequence[Sequence[T]]
@@ -20,7 +19,8 @@ class RowColumnCollection[T]:
     col_count: int
     """The number of columns in the collection."""
     is_full: bool
-    """Whether the collection is full with all row containing the same number of columns."""
+    """Whether the collection is full with all row containing the same 
+    number of columns."""
     length: int
     """The total number of items in the collection."""
 
@@ -72,13 +72,16 @@ class RowColumnCollection[T]:
         return self.rows[row]
 
     def get_column(self, col: int) -> Sequence[T | None]:
-        """Return the column at the given `col`. If the collection is sparse, `None` is returned for missing items."""
+        """Return the column at the given `col`. If the collection is sparse,
+        `None` is returned for missing items."""
         if col >= self.col_count:
             raise IndexError("col is out of bounds")
         return [row[col] if col < len(row) else None for row in self.rows]
 
     def apply[U](self, func: Callable[[T], U]) -> RowColumnCollection[U]:
-        """Apply the given function to each item in this collection, returning a new collection with the results, keeping the shape of this collection."""
+        """Apply the given function to each item in this collection,
+        returning a new collection with the results, keeping the shape of
+        this collection."""
         new_rows: Sequence[Sequence[U]] = [
             [func(item) for item in row] for row in self.rows
         ]

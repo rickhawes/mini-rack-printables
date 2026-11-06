@@ -1,3 +1,5 @@
+"""The parts of a rendering a model."""
+
 from typing import Self
 
 import build123d as bd
@@ -9,7 +11,7 @@ class Piece:
     """The rendered the piece of a model.
 
     Created by block and features as the output of rendering.
-    This is a mutable class which is expected to
+    This is a mutable class which wraps a build123d primative.
 
     Attributes:
         part: Part - the build123d Part
@@ -26,6 +28,13 @@ class Piece:
     """The bounding box of the piece. Used for debugging. """
 
     def __init__(self, part: bd.Part | bd.Solid, cut: bool = False) -> None:
+        """Create a piece of a model.
+
+        Args:
+            part (Solid | Part): the build123d
+            cut (bool): if the part is meant to subtract when combined
+                with other parts.
+        """
         self.part = part
         self.cut = cut
         bbox = part.bounding_box()
@@ -33,6 +42,7 @@ class Piece:
         self.bounds = Bx(Vec3.from_vector(bbox.size), Vec3.from_vector(bbox.center()))
 
     def moved(self, position: bd.Location | Vec3 | Vec2) -> Piece:
+        """Return a new Piece with passed in position."""
         if isinstance(position, Vec2):
             position = bd.Location(position.to_vector())
         elif isinstance(position, Vec3):
@@ -40,8 +50,7 @@ class Piece:
         if position != bd.Location((0, 0, 0)):
             moved_part = self.part.moved(position)
             return Piece(moved_part, self.cut)
-        else:
-            return self
+        return self
 
     def set(
         self,

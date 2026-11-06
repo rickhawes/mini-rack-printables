@@ -5,7 +5,7 @@ Place parts on a model's plate. Used by most models.
 """
 
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
+from collections.abc import Callable, Iterator, Sequence
 from dataclasses import dataclass
 from typing import override
 
@@ -52,7 +52,8 @@ class Layout(ABC):
         Args:
             features (FeatureList) - The features to render
             asm (Assembler) - The assembler to add the features to
-            area: (Rc) - The area that is used for the feature, if None use the area of the assembler's plate
+            area: (Rc) - The area that is used for the feature, if None use
+            the area of the assembler's plate
         """
         if area is None:
             area = asm.plate_rc
@@ -61,12 +62,48 @@ class Layout(ABC):
             section_asm = asm.make_section_sub(section.bounds, section.origin)
             section.feature.render(section_asm)
 
+    @staticmethod
+    def form_section(feature: Feature, bounds: Rc, place: Dir2) -> Layout.Section:
+        """Helper function to place a feature in a bounds."""
+        min_size = Rc(feature.desired_size().min_size)
+        origin = bounds.place_center(min_size, place)
+        relative_bounds = bounds.move_to(bounds.center - origin)
+        return Layout.Section(relative_bounds, origin, feature)
+
+    @staticmethod
+    def enumerate_layout(
+        coll: RowColumnCollection[Feature],
+        vert_layout: Sequence[Mm],
+        layout_row: Callable[[Sequence[Feature]], Sequence[Mm]],
+        top_left: Vec2,
+        spacing: Mm,
+    ) -> Iterator[tuple[Feature, Rc]]:
+        """Helper iterator that enumerates the row and columns in the collection."""
+        pos = top_left + Vec2(spacing, -spacing)
+
+        # iterate by row
+        for row_idx, row_height in enumerate(vert_layout):
+            row = coll.get_row(row_idx)
+            horz_layout = layout_row(row)
+            # iterate over all columns
+            bottom_right = pos + Vec2(0, -row_height)
+            for col_idx, item_width in enumerate(horz_layout):
+                bottom_right = pos + Vec2(item_width, 0)
+
+                feature = coll.get_item(row_idx, col_idx)
+                if feature is not None:
+                    yield feature, Rc.from_corners(pos, bottom_right)
+
+                pos = Vec2(bottom_right.x + spacing, pos.y)
+            pos = Vec2(top_left.x + spacing, bottom_right.y - spacing)
+
 
 @dataclass(frozen=True)
 class RowLayout(Layout):
     """
-    Layout each row independently according to the feature's desired size. If desired size
-    does not fill the area's width, then allocate space according to each feature's desired size.
+    Layout each row independently according to the feature's desired size.
+    If desired size does not fill the area's width, then allocate space
+    according to each feature's desired size.
     """
 
     equal_heights: bool = False
@@ -97,7 +134,8 @@ class RowLayout(Layout):
         excess = plate_height - total_height - s * (rc + 1)
         if excess < 0:
             raise ValueError(
-                f"Minimum total height {total_height} is larger than available plate height {plate_height}"
+                f"Minimum total height {total_height} is larger than "
+                + f"available plate height {plate_height}"
             )
 
         if self.row_heights is not None:
@@ -107,9 +145,10 @@ class RowLayout(Layout):
                     "row_heights must have the same length as the number of rows"
                 )
             specified_height = sum(self.row_heights) + (rc + 1) * s
-            if not (plate_height - E <= specified_height <= plate_height + E):
+            if plate_height - E > specified_height > plate_height + E:
                 raise ValueError(
-                    f"Sum of specified row_heights {specified_height} does not equal the plate height {plate_height}"
+                    f"Sum of specified row_heights {specified_height} does not "
+                    + f"equal the plate height {plate_height}"
                 )
             return self.row_heights
 
@@ -138,7 +177,8 @@ class RowLayout(Layout):
         s = self.spacing
 
         def layout_one(row_features: Sequence[Feature]) -> list[Mm]:
-            """Calculate the horizontal widths of cells of one row the left-to-right direction"""
+            """Calculate the horizontal widths of cells of one row
+            the left-to-right direction"""
             plate_width = area.size.x
             cc = len(row_features)
             total_width = sum(p.desired_size().min_size.x for p in row_features)
@@ -170,24 +210,13 @@ class RowLayout(Layout):
         # Iterate over rows and columns to Rc for each part.
         # Increment top and left with spacing to position each sub_plate correctly.
         result: list[Layout.Section] = []
-        left = area.left + s
-        top = area.top - s
-        for row, row_height in zip(coll.rows, self._layout_vert(coll, m, area)):
-            bottom = top - row_height
-            for col_idx, item_width in enumerate(layout_one(row)):
-                right: Mm = left + item_width
-
-                feature = row[col_idx]
-                bounds = Rc.from_edges(left, right, bottom, top)
-                min_size = Rc(feature.desired_size().min_size)
-                origin = bounds.place_center(min_size, self.place)
-                relative_bounds = bounds.move_to(bounds.center - origin)
-                section = Layout.Section(relative_bounds, origin, feature)
-                result.append(section)
-
-                left = right + s
-            top = bottom - s
-            left = area.left + s
+        top_left = Vec2(area.left, area.top)
+        vert_layout = self._layout_vert(coll, m, area)
+        for feature, bounds in Layout.enumerate_layout(
+            coll, vert_layout, layout_one, top_left, s
+        ):
+            section = Layout.form_section(feature, bounds, self.place)
+            result.append(section)
 
         return result
 
@@ -195,9 +224,9 @@ class RowLayout(Layout):
 @dataclass(frozen=True)
 class GridLayout(RowLayout):
     """
-    Layout the rows and columns of parts according to the parts desired and minimum size. If desired size
-    does not fill a row or column, then allocated space evenly. The layout so that all rows and columns
-    to align.
+    Layout the rows and columns of parts according to the parts desired and
+    minimum size. If desired size does not fill a row or column, then allocated
+    space evenly. The layout so that all rows and columns to align.
     """
 
     col_widths: list[Mm] | None = None
@@ -210,7 +239,8 @@ class GridLayout(RowLayout):
         s = self.spacing
 
         def layout_horz() -> list[Mm]:
-            """Calculate the horizontal widths of cells of columns in the left-to-right direction"""
+            """Calculate the horizontal widths of cells of columns in the
+            left-to-right direction"""
             cc = coll.col_count
             plate_width: Mm = area.size.x
 
@@ -228,7 +258,7 @@ class GridLayout(RowLayout):
                 if len(self.col_widths) != cc:
                     raise ValueError("col_widths does not match number of columns")
                 specified_width = sum(self.col_widths) + (cc + 1) * s
-                if not (plate_width - E <= specified_width <= plate_width + E):
+                if plate_width - E > specified_width > plate_width + E:
                     raise ValueError(
                         f"Specified {specified_width} != plate width {plate_width}"
                     )
@@ -253,41 +283,35 @@ class GridLayout(RowLayout):
             return [expanded_width(i) for i in range(cc)]
 
         result: list[Layout.Section] = []
-        left = area.left + s
-        top = area.top - s
+        top_left = Vec2(area.left, area.top)
         vert_layout = self._layout_vert(coll, m, area)
         horz_layout = layout_horz()
-        for row_idx, row_height in enumerate(vert_layout):
-            bottom = top - row_height
-            for col_idx, item_width in enumerate(horz_layout):
-                right: Mm = left + item_width
-
-                feature = coll.get_item(row_idx, col_idx)
-                if feature is not None:
-                    bounds = Rc.from_edges(left, right, bottom, top)
-                    min_size = Rc(feature.desired_size().min_size)
-                    origin = bounds.place_center(min_size, self.place)
-                    relative_bounds = bounds.move_to(bounds.center - origin)
-                    section = Layout.Section(relative_bounds, origin, feature)
-                    result.append(section)
-
-                left = right + s
-            top = bottom - s
-            left = area.left + s
+        for feature, bounds in Layout.enumerate_layout(
+            coll, vert_layout, lambda row: horz_layout, top_left, s
+        ):
+            section = Layout.form_section(feature, bounds, self.place)
+            result.append(section)
         return result
 
 
 @dataclass(frozen=True)
 class MeasuredRowsColumns:
-    """Holds the measured rows and columns of a layout collection"""
+    """Accumulate by row and column of the row-column collection the
+    desired_size of each feature."""
 
     min_x: list[Mm]
+    """The min width of a column that will accomdate the min 
+    width of each feature in column."""
     more_x: list[bool]
+    """Does any feature in a column want more space if available."""
     min_y: list[Mm]
+    """The min height that will accomodate the min height of each feature in a row."""
     more_y: list[bool]
+    """Does any feature in a row that wants more space if available."""
 
     @classmethod
     def measure_parts(cls, parts: RowColumnCollection[Feature]) -> MeasuredRowsColumns:
+        """Measure the features of the collection."""
         min_x = [
             max(
                 part.desired_size().min_size.x if part is not None else 0
