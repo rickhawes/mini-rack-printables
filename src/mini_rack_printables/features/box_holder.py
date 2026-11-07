@@ -1,3 +1,5 @@
+"""A holder for a box on a faceplate."""
+
 from dataclasses import dataclass
 from typing import override
 
@@ -12,8 +14,10 @@ from .basic_holder import BasicHolderStyle, build_basic_holder
 class BoxHolder(Feature):
     """A holder for a box-shaped device on a faceplate.
 
-    Box holders are used to hold many different types of box-shaped devices in an electronic rack. This feature is
-    commonly used in a Faceplate model. Devices are held by friction from side, top and bottom plates.
+    Box holders are used to hold many different types of box-shaped
+    devices in an electronic rack. This feature is commonly used in
+    a Faceplate model. Devices are held by friction from side, top
+    and bottom plates.
 
     See Also:
         `Faceplate` - A model that frequently uses this feature.
@@ -30,7 +34,8 @@ class BoxHolder(Feature):
     @dataclass(frozen=True)
     class Style:
         """
-        Represents the style of a wall holder, including cutout presence and lip dimensions.
+        Represents the style of a wall holder, including cutout presence
+        and lip dimensions.
         """
 
         has_cutout: bool = True
@@ -44,9 +49,11 @@ class BoxHolder(Feature):
 
     # Common styles
     FRONT_LIP: Style = Style(True, Rib(0.5, 1.0), None)
-    """A wall holder style with a front lip to prevent the device from falling through."""
+    """A wall holder style with a front lip to prevent the 
+        device from falling through."""
     BACK_LIP: Style = Style(True, None, Rib(0.5, 1.0))
-    """A wall holder style with a back lip to prevent the device from falling through. Default."""
+    """A wall holder style with a back lip to prevent the device from 
+        falling through. Default."""
     NO_LIP: Style = Style(True, None, None)
     """A wall holder style without a lip."""
     NO_CUTOUT: Style = Style(False, None, None)

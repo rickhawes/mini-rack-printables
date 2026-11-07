@@ -1,3 +1,5 @@
+"""A feature to place a space in a feature layout."""
+
 from typing import override
 
 from ..core.assembler import Assembler

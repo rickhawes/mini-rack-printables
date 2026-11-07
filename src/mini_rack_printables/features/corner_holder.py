@@ -1,6 +1,6 @@
 """
-A device holder for a single device on a shelf. Devices are held by friction from the corners. The corners
-are cut out of holder's shape.
+A device holder for a single device on a shelf. Devices are held by 
+friction from the corners. The corners are cut out of holder's shape.
 """
 
 from typing import override
@@ -15,8 +15,9 @@ from ..core.geometry import Mm, Vec2
 
 class CornerHolder(Feature):
     """
-    A device holder for a single device on a shelf. Devices are held by friction from the corners. The corners
-    are cut out of holder's shape.
+    A device holder for a single device on a shelf. Devices are held 
+    by friction from the corners. The corners are cut out of 
+    holder's shape.
     """
 
     shape: Figure
@@ -34,14 +35,19 @@ class CornerHolder(Feature):
         wall_thickness: Mm = 3.0,
     ) -> None:
         """
-        Initialize a holder with the given style, device size, and optional label, align, shift, and padding.
+        Initialize a holder with the given style, device size, and 
+        optional label, align, shift, and padding.
 
         Args:
             shape (Figure): The shape of the device to hold.
-            corner_width (float): The width of the corner cutout. Defaults to 5.0.
-            corner_height (float): The height of the corner cutout. Defaults to 5.0.
-            wall_depth (float): The depth of the holder's corner. Defaults to 5.0.
-            wall_thickness (float): The thickness of the holder's wall. Defaults to 3.0.
+            corner_width (float): The width of the corner cutout. 
+                Defaults to 5.0.
+            corner_height (float): The height of the corner cutout. 
+                Defaults to 5.0.
+            wall_depth (float): The depth of the holder's corner. 
+                Defaults to 5.0.
+            wall_thickness (float): The thickness of the holder's wall. 
+                Defaults to 3.0.
         """
         assert corner_height >= 0 and corner_width >= 0, (
             "corner_height and corner_width must be non-negative"

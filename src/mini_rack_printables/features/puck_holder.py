@@ -1,3 +1,5 @@
+"""A holder for a puck shaped device."""
+
 from dataclasses import dataclass
 from typing import override
 
@@ -13,8 +15,10 @@ from .basic_holder import BasicHolderStyle, build_basic_holder
 class PuckHolder(Feature):
     """A holder for a puck-shaped device on a faceplate.
 
-    Puck holders are used to hold many different types of puck-shaped devices in a electronic rack. This feature is
-    commonly used in a Faceplate model. Devices are held by friction from side, top and bottom plates.
+    Puck holders are used to hold many different types of 
+    puck-shaped devices in a electronic rack. This feature is
+    commonly used in a Faceplate model. Devices are held by 
+    friction from side, top and bottom plates.
 
     See Also:
         `Faceplate` - A model that frequently uses this feature.
@@ -31,7 +35,8 @@ class PuckHolder(Feature):
     @dataclass
     class Style:
         """
-        Represents the style of a wall holder, including cutout presence and lip dimensions.
+        Represents the style of a wall holder, including cutout 
+        presence and lip dimensions.
         """
 
         has_cutout: bool = True
@@ -53,8 +58,10 @@ class PuckHolder(Feature):
         """Initialize a wall holder of a given device size and rounding.
 
         Args:
-            device_size (Vec3): The size of the device to hold from the front perspective. Defaults to Vector(0, 0, 0).
-            device_rounding (Mm): The rounding of the device edges. Defaults to 1.0.
+            device_size (Vec3): The size of the device to hold from 
+                the front perspective. Defaults to Vector(0, 0, 0).
+            device_rounding (Mm): The rounding of the device edges. 
+                Defaults to 1.0.
             style (Style): The style of the holder. Defaults to PLAIN.
         """
         assert device_rounding >= 0, "device_rounding must be non-negative"
@@ -88,7 +95,8 @@ class PuckHolder(Feature):
 
         def add_front_block(plate_asm: Assembler, front_size: Vec3) -> None:
             """
-            Make the block of the holder by sketching the device block + extra for the corners.
+            Make the block of the holder by sketching the device block + 
+            extra for the corners.
             """
             block = ExtrudedBlock(
                 RectangleFigure(front_size.x + 2 * w, front_size.y + 2 * w, w),

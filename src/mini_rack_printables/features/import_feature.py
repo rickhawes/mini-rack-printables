@@ -1,13 +1,10 @@
-from functools import cached_property
-from importlib.resources import as_file, files
+"""Import from a file the shape and place on it on a plate."""
 from pathlib import Path
 from typing import override
 
 from ..core.assembler import Assembler
 from ..core.block import BoxBlock, ImportBlock
 from ..core.feature import Feature
-from ..core.geometry import Bx
-from ..core.piece import Piece
 
 
 class ImportFeature(Feature):
@@ -25,12 +22,14 @@ class ImportFeature(Feature):
         cutout: bool = True,
     ) -> None:
         """
-        Initialize the ImportPart with the given path or asset name and optional parameters.
+        Initialize the ImportPart with the given path or asset name and 
+        optional parameters.
 
         Args:
             file (Path): The path to the BREP or STL file.
             asset (str): The name of the asset to import.
-            cutout (bool, optional): Whether to cut out the part from the enclosing model or place on top of it. Defaults to True.
+            cutout (bool, optional): Whether to cut out the part 
+                from the enclosing model or place on top of it. Defaults to True.
         """
         self.cutout = cutout
         if file is not None:

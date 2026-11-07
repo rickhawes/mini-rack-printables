@@ -1,11 +1,12 @@
+"""A plate cutout feature. """
+
 from typing import override
 
 from ..core.assembler import Assembler
 from ..core.block import ExtrudedBlock, TubeBlock
 from ..core.feature import Feature, Rib
 from ..core.figures import Figure
-from ..core.geometry import Bx, Vec2
-from ..core.piece import Piece
+from ..core.geometry import Vec2
 
 
 class Cutout(Feature):
