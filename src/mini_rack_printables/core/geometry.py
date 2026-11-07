@@ -295,7 +295,7 @@ class Rc:
     def from_corners(cls, c1: Vec2, c2: Vec2) -> Self:
         """Make from corner points."""
         dx, dy = abs(c1.x - c2.x), abs(c1.y - c2.y)
-        return cls(Vec2(dx, dy), Vec2(dx / 2, dy))
+        return cls(Vec2(dx, dy), Vec2((c1.x + c2.x) / 2, (c1.y + c2.y) / 2))
 
     @classmethod
     def union(cls, *rcs: Rc) -> Self:

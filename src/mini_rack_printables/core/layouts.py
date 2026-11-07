@@ -50,10 +50,10 @@ class Layout(ABC):
         Render all `features` using the given `plate` and `layout` algorithm.
 
         Args:
-            features (FeatureList) - The features to render
-            asm (Assembler) - The assembler to add the features to
-            area: (Rc) - The area that is used for the feature, if None use
-            the area of the assembler's plate
+            `features` (FeatureList) - The features to render
+            `asm` (Assembler) - The assembler to add the features to
+            `area`: (Rc) - The area that is used for the feature, if None use
+                the area of the assembler's plate
         """
         if area is None:
             area = asm.plate_rc
@@ -71,31 +71,40 @@ class Layout(ABC):
         return Layout.Section(relative_bounds, origin, feature)
 
     @staticmethod
-    def enumerate_layout(
+    def enumerate_rows_columns(
         coll: RowColumnCollection[Feature],
         vert_layout: Sequence[Mm],
         layout_row: Callable[[Sequence[Feature]], Sequence[Mm]],
         top_left: Vec2,
         spacing: Mm,
     ) -> Iterator[tuple[Feature, Rc]]:
-        """Helper iterator that enumerates the row and columns in the collection."""
-        pos = top_left + Vec2(spacing, -spacing)
+        """Helper iterator that enumerates the cells of the layout.
 
+        The function iterates on row and columns a left to right, top-
+        bottom fashion. Each row can have its own layout.
+
+        Args:
+            coll (RowColumnCollection): the collection of features
+            vert_layout (Sequence[Mm]): the vertical spacing of rows
+            layout_row (Callable): a function that returns horzional spacing of columns
+            top_left (Vec2): the starting top-left spot for the layout
+
+        Yields:
+            tuple[Feature, Rc]: the feature and bounds for a section
+        """
+        pos = top_left + Vec2(spacing, -spacing)
         # iterate by row
         for row_idx, row_height in enumerate(vert_layout):
             row = coll.get_row(row_idx)
             horz_layout = layout_row(row)
             # iterate over all columns
-            bottom_right = pos + Vec2(0, -row_height)
             for col_idx, item_width in enumerate(horz_layout):
-                bottom_right = pos + Vec2(item_width, 0)
-
+                bottom_right = pos + Vec2(item_width, -row_height)
                 feature = coll.get_item(row_idx, col_idx)
                 if feature is not None:
                     yield feature, Rc.from_corners(pos, bottom_right)
-
                 pos = Vec2(bottom_right.x + spacing, pos.y)
-            pos = Vec2(top_left.x + spacing, bottom_right.y - spacing)
+            pos = Vec2(top_left.x + spacing, pos.y - row_height - spacing)
 
 
 @dataclass(frozen=True)
@@ -212,7 +221,7 @@ class RowLayout(Layout):
         result: list[Layout.Section] = []
         top_left = Vec2(area.left, area.top)
         vert_layout = self._layout_vert(coll, m, area)
-        for feature, bounds in Layout.enumerate_layout(
+        for feature, bounds in Layout.enumerate_rows_columns(
             coll, vert_layout, layout_one, top_left, s
         ):
             section = Layout.form_section(feature, bounds, self.place)
@@ -286,7 +295,7 @@ class GridLayout(RowLayout):
         top_left = Vec2(area.left, area.top)
         vert_layout = self._layout_vert(coll, m, area)
         horz_layout = layout_horz()
-        for feature, bounds in Layout.enumerate_layout(
+        for feature, bounds in Layout.enumerate_rows_columns(
             coll, vert_layout, lambda row: horz_layout, top_left, s
         ):
             section = Layout.form_section(feature, bounds, self.place)
